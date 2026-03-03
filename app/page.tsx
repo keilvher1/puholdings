@@ -1,7 +1,7 @@
 import { getDb } from "@/lib/db"
 import { ClientPage } from "@/components/client-page"
 
-export const revalidate = 3600
+export const dynamic = "force-dynamic"
 
 async function getStats() {
   const sql = getDb()
