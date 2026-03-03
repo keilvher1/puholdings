@@ -16,46 +16,46 @@ export function BorderBeam({
   size = 200,
   duration = 8,
   delay = 0,
-  colorFrom = "#1e88e5",
-  colorTo = "#00bcd4",
+  colorFrom = "#c9a84c",
+  colorTo = "#dbb960",
 }: BorderBeamProps) {
+  const id = `border-beam-${Math.random().toString(36).slice(2, 9)}`
+
   return (
-    <div
-      className={cn(
-        "pointer-events-none absolute inset-0 rounded-[inherit]",
-        className
-      )}
-      style={{
-        overflow: "hidden",
-        WebkitMask:
-          "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
-        WebkitMaskComposite: "xor",
-        maskComposite: "exclude",
-        padding: "1px",
-        borderRadius: "inherit",
-      }}
-    >
-      <div
-        className="absolute"
-        style={{
-          width: size,
-          height: size,
-          background: `linear-gradient(${colorFrom}, ${colorTo})`,
-          borderRadius: "50%",
-          filter: "blur(4px)",
-          animation: `border-beam-spin ${duration}s linear ${delay}s infinite`,
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          offsetPath: `rect(0 auto auto 0)`,
-        }}
-      />
+    <>
       <style>{`
-        @keyframes border-beam-spin {
-          0% { transform: rotate(0deg) translateX(calc(50% + 20px)); }
-          100% { transform: rotate(360deg) translateX(calc(50% + 20px)); }
+        @keyframes ${id} {
+          0% { offset-distance: 0%; }
+          100% { offset-distance: 100%; }
         }
       `}</style>
-    </div>
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-0",
+          className
+        )}
+        style={{
+          overflow: "hidden",
+          WebkitMask:
+            "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+          WebkitMaskComposite: "xor",
+          maskComposite: "exclude",
+          padding: "1px",
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            width: size,
+            height: size,
+            background: `conic-gradient(from 0deg, transparent 0%, ${colorFrom} 20%, ${colorTo} 40%, transparent 60%)`,
+            borderRadius: "50%",
+            filter: "blur(6px)",
+            offsetPath: "rect(0 100% 100% 0 round 0)",
+            animation: `${id} ${duration}s linear ${delay}s infinite`,
+          }}
+        />
+      </div>
+    </>
   )
 }

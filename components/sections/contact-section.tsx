@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { BlurFade } from "@/components/magicui/blur-fade"
+import { Particles } from "@/components/magicui/particles"
 import { MapPin, Phone, Mail, CheckCircle, ArrowRight } from "lucide-react"
 
 export function ContactSection() {
@@ -35,11 +36,20 @@ export function ContactSection() {
   }
 
   const inputClass =
-    "w-full border-b border-dark-muted/30 bg-transparent px-0 py-4 text-sm text-primary-foreground placeholder-text-tertiary outline-none transition-colors focus:border-gold"
+    "w-full border-b border-dark-muted/30 bg-transparent px-0 py-4 text-sm text-primary-foreground placeholder:text-text-tertiary/60 outline-none transition-colors focus:border-gold"
 
   return (
-    <section id="contact" className="relative bg-dark py-28 lg:py-40">
-      <div className="mx-auto max-w-7xl px-8 lg:px-12">
+    <section id="contact" className="relative overflow-hidden bg-dark py-28 lg:py-40">
+      {/* Subtle particles */}
+      <Particles
+        className="absolute inset-0"
+        quantity={20}
+        color="#c9a84c"
+        size={0.8}
+        speed={0.1}
+      />
+
+      <div className="relative z-10 mx-auto max-w-7xl px-8 lg:px-12">
         <div className="grid gap-20 lg:grid-cols-12">
           {/* Left - info */}
           <div className="lg:col-span-4">
@@ -51,7 +61,9 @@ export function ContactSection() {
                 </span>
               </div>
               <h2 className="text-3xl font-bold leading-tight tracking-tight text-primary-foreground lg:text-4xl text-balance">
-                {"함께할 기업을 찾습니다."}
+                {"함께할 기업을"}
+                <br />
+                {"찾습니다."}
               </h2>
               <p className="mt-6 text-sm leading-[1.9] text-text-tertiary">
                 {"투자 문의, 제휴 제안 등 궁금하신 사항이 있으시면 연락해 주세요."}
@@ -61,21 +73,21 @@ export function ContactSection() {
             <BlurFade delay={0.25}>
               <div className="mt-14 space-y-6">
                 <div className="flex items-start gap-4">
-                  <MapPin size={16} className="mt-0.5 shrink-0 text-gold" />
+                  <MapPin size={15} className="mt-0.5 shrink-0 text-gold/70" />
                   <div>
-                    <p className="text-sm text-primary-foreground">
+                    <p className="text-sm text-primary-foreground/90">
                       {"경상북도 포항시 남구 청암로 77"}
                     </p>
-                    <p className="text-xs text-text-tertiary">POSTECH C5</p>
+                    <p className="mt-0.5 text-xs text-text-tertiary">POSTECH C5</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <Phone size={16} className="shrink-0 text-gold" />
-                  <p className="text-sm text-primary-foreground">054-279-0100</p>
+                  <Phone size={15} className="shrink-0 text-gold/70" />
+                  <p className="text-sm text-primary-foreground/90">054-279-0100</p>
                 </div>
                 <div className="flex items-center gap-4">
-                  <Mail size={16} className="shrink-0 text-gold" />
-                  <p className="text-sm text-primary-foreground">contact@puholdings.co.kr</p>
+                  <Mail size={15} className="shrink-0 text-gold/70" />
+                  <p className="text-sm text-primary-foreground/90">contact@puholdings.co.kr</p>
                 </div>
               </div>
             </BlurFade>
@@ -86,7 +98,7 @@ export function ContactSection() {
             <BlurFade delay={0.3}>
               {status === "success" ? (
                 <div className="flex flex-col items-center justify-center py-20 text-center">
-                  <CheckCircle size={40} className="mb-6 text-gold" />
+                  <CheckCircle size={36} className="mb-6 text-gold" />
                   <h3 className="text-xl font-bold text-primary-foreground">
                     {"문의가 접수되었습니다"}
                   </h3>
@@ -134,16 +146,19 @@ export function ContactSection() {
                     rows={4}
                     value={form.message}
                     onChange={(e) => setForm({ ...form, message: e.target.value })}
-                    className="mt-2 w-full resize-none border-b border-dark-muted/30 bg-transparent px-0 py-4 text-sm text-primary-foreground placeholder-text-tertiary outline-none transition-colors focus:border-gold"
+                    className="mt-2 w-full resize-none border-b border-dark-muted/30 bg-transparent px-0 py-4 text-sm text-primary-foreground placeholder:text-text-tertiary/60 outline-none transition-colors focus:border-gold"
                   />
                   <div className="mt-10">
                     <button
                       type="submit"
                       disabled={status === "loading"}
-                      className="group flex items-center gap-3 border border-gold bg-gold/10 px-10 py-4 text-[11px] font-semibold tracking-[0.2em] text-gold transition-all duration-300 hover:bg-gold hover:text-dark disabled:opacity-50"
+                      className="group relative flex items-center gap-3 overflow-hidden border border-gold/60 px-10 py-4 text-[11px] font-semibold tracking-[0.2em] text-gold transition-all duration-500 hover:border-gold hover:text-dark disabled:opacity-50"
                     >
-                      {status === "loading" ? "SENDING..." : "SEND MESSAGE"}
-                      <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
+                      <span className="absolute inset-0 -translate-x-full bg-gold transition-transform duration-500 group-hover:translate-x-0" />
+                      <span className="relative flex items-center gap-3">
+                        {status === "loading" ? "SENDING..." : "SEND MESSAGE"}
+                        <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
+                      </span>
                     </button>
                   </div>
                   {status === "error" && (

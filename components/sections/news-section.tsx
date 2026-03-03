@@ -13,11 +13,10 @@ interface NewsItem {
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr)
-  return d.toLocaleDateString("ko-KR", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).replace(/\. /g, ".").replace(/\.$/, "")
+  const y = d.getUTCFullYear()
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0")
+  const day = String(d.getUTCDate()).padStart(2, "0")
+  return `${y}.${m}.${day}`
 }
 
 export function NewsSection({ news }: { news: NewsItem[] }) {
@@ -36,25 +35,25 @@ export function NewsSection({ news }: { news: NewsItem[] }) {
             <h2 className="text-3xl font-bold leading-tight tracking-tight text-foreground lg:text-5xl text-balance">
               {"최신 소식"}
             </h2>
-            <button className="hidden text-[11px] font-medium tracking-[0.2em] text-text-secondary transition-colors hover:text-foreground lg:block">
+            <button className="hidden items-center gap-1 text-[11px] font-medium tracking-[0.2em] text-text-secondary transition-colors hover:text-foreground lg:flex">
               MORE
-              <ArrowUpRight size={12} className="ml-1 inline-block" />
+              <ArrowUpRight size={12} />
             </button>
           </div>
         </BlurFade>
 
-        {/* News list - editorial table style */}
+        {/* News list */}
         <div className="space-y-0">
           {news.map((item, i) => (
-            <BlurFade key={item.id} delay={0.12 + i * 0.06}>
-              <article className="group grid grid-cols-12 gap-4 border-t border-warm-tan py-7 transition-colors hover:border-gold/40 cursor-pointer lg:py-8">
+            <BlurFade key={item.id} delay={0.1 + i * 0.05}>
+              <article className="group grid cursor-pointer grid-cols-12 items-start gap-4 border-t border-warm-tan py-7 transition-colors hover:border-gold/40 lg:items-center lg:py-8">
                 <div className="col-span-12 lg:col-span-2">
                   <span className="text-[10px] font-medium tracking-[0.15em] text-gold">
                     {item.category.toUpperCase()}
                   </span>
                 </div>
                 <div className="col-span-10 lg:col-span-7">
-                  <h3 className="text-sm font-bold text-foreground transition-colors group-hover:text-gold lg:text-base text-balance">
+                  <h3 className="text-sm font-bold leading-snug text-foreground transition-colors group-hover:text-gold lg:text-[15px] text-balance">
                     {item.title}
                   </h3>
                   {item.summary && (
@@ -64,7 +63,7 @@ export function NewsSection({ news }: { news: NewsItem[] }) {
                   )}
                 </div>
                 <div className="col-span-2 flex items-start justify-end lg:col-span-3">
-                  <span className="text-xs tabular-nums text-text-secondary">
+                  <span className="text-[11px] tabular-nums text-text-secondary">
                     {formatDate(item.published_at)}
                   </span>
                 </div>

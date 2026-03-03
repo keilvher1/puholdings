@@ -1,6 +1,8 @@
 "use client"
 
 import { BlurFade } from "@/components/magicui/blur-fade"
+import { BorderBeam } from "@/components/magicui/border-beam"
+import { Particles } from "@/components/magicui/particles"
 
 const STEPS = [
   {
@@ -27,8 +29,15 @@ const STEPS = [
 
 export function PhilosophySection() {
   return (
-    <section id="philosophy" className="relative bg-dark py-28 lg:py-40">
-      <div className="mx-auto max-w-7xl px-8 lg:px-12">
+    <section id="philosophy" className="relative overflow-hidden bg-dark py-28 lg:py-40">
+      <Particles
+        className="absolute inset-0"
+        quantity={25}
+        color="#c9a84c"
+        size={0.8}
+        speed={0.08}
+      />
+      <div className="relative z-10 mx-auto max-w-7xl px-8 lg:px-12">
         {/* Header */}
         <div className="mb-20 grid gap-8 lg:grid-cols-2 lg:gap-16">
           <BlurFade delay={0.1}>
@@ -45,7 +54,7 @@ export function PhilosophySection() {
           </BlurFade>
           <BlurFade delay={0.2}>
             <div className="flex items-end lg:justify-end lg:pb-2">
-              <p className="max-w-md text-base leading-[1.9] text-text-tertiary">
+              <p className="max-w-md text-[15px] leading-[1.9] text-text-tertiary">
                 {"Pre-seed에서 IPO까지, 기술의 가능성을 발견하고 기업의 성장을 함께하며 미래의 가치를 창출합니다."}
               </p>
             </div>
@@ -58,14 +67,14 @@ export function PhilosophySection() {
             <BlurFade key={step.num} delay={0.15 + i * 0.1}>
               <div className="group grid grid-cols-12 gap-4 border-t border-dark-muted/40 py-8 transition-colors hover:border-gold/30 lg:py-10">
                 <div className="col-span-2 lg:col-span-1">
-                  <span className="text-sm font-light text-gold">{step.num}</span>
+                  <span className="text-sm font-light text-gold/70">{step.num}</span>
                 </div>
                 <div className="col-span-10 lg:col-span-4">
-                  <h3 className="text-lg font-bold text-primary-foreground transition-colors group-hover:text-gold lg:text-xl">
+                  <h3 className="text-base font-bold text-primary-foreground transition-colors group-hover:text-gold lg:text-lg">
                     {step.title}
                   </h3>
                 </div>
-                <div className="col-span-10 col-start-3 lg:col-span-6 lg:col-start-6">
+                <div className="col-span-10 col-start-3 mt-2 lg:col-span-6 lg:col-start-6 lg:mt-0">
                   <p className="text-sm leading-[1.8] text-text-tertiary">
                     {step.description}
                   </p>
@@ -76,11 +85,12 @@ export function PhilosophySection() {
           <div className="border-t border-dark-muted/40" />
         </div>
 
-        {/* Two highlight boxes */}
+        {/* Two highlight boxes with BorderBeam */}
         <div className="mt-16 grid gap-4 lg:grid-cols-2">
           <BlurFade delay={0.5}>
-            <div className="border border-dark-muted/40 p-10 transition-colors hover:border-gold/30 lg:p-12">
-              <span className="text-[11px] font-medium tracking-[0.2em] text-gold">DISRUPTIVE TECH</span>
+            <div className="group relative overflow-hidden border border-dark-muted/40 p-10 transition-colors hover:border-gold/20 lg:p-12">
+              <BorderBeam size={160} duration={10} colorFrom="#c9a84c" colorTo="#dbb960" />
+              <span className="text-[11px] font-medium tracking-[0.2em] text-gold/70">DISRUPTIVE TECH</span>
               <h4 className="mt-4 text-lg font-bold text-primary-foreground">{"파괴적 기술"}</h4>
               <p className="mt-3 text-sm leading-[1.8] text-text-tertiary">
                 {"신규 시장을 창출할 수 있거나, 글로벌 수준의 경쟁력이 있는 기술을 가진 기업에 투자합니다."}
@@ -88,8 +98,9 @@ export function PhilosophySection() {
             </div>
           </BlurFade>
           <BlurFade delay={0.6}>
-            <div className="border border-dark-muted/40 p-10 transition-colors hover:border-gold/30 lg:p-12">
-              <span className="text-[11px] font-medium tracking-[0.2em] text-gold">INNOVATIVE TECH</span>
+            <div className="group relative overflow-hidden border border-dark-muted/40 p-10 transition-colors hover:border-gold/20 lg:p-12">
+              <BorderBeam size={160} duration={12} delay={4} colorFrom="#dbb960" colorTo="#c9a84c" />
+              <span className="text-[11px] font-medium tracking-[0.2em] text-gold/70">INNOVATIVE TECH</span>
               <h4 className="mt-4 text-lg font-bold text-primary-foreground">{"혁신형 기술"}</h4>
               <p className="mt-3 text-sm leading-[1.8] text-text-tertiary">
                 {"기존 시장 내에서 제품을 혁신하거나, 개선할 수 있는 기술을 가진 기업에 투자합니다."}

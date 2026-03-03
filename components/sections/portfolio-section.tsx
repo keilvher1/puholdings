@@ -38,27 +38,27 @@ export function PortfolioSection({ companies }: { companies: Company[] }) {
             </div>
             <h2 className="text-3xl font-bold leading-tight tracking-tight text-foreground lg:text-5xl text-balance">
               <span className="block">{"투자"}</span>
-              <span className="block text-gold">{"포트폴리오"}</span>
+              <span className="block bg-gradient-to-r from-gold to-gold-light bg-clip-text text-transparent">{"포트폴리오"}</span>
             </h2>
           </BlurFade>
           <BlurFade delay={0.2}>
             <div className="flex items-end lg:justify-end lg:pb-2">
-              <p className="max-w-md text-base leading-[1.9] text-text-secondary">
+              <p className="max-w-md text-[15px] leading-[1.9] text-text-secondary">
                 {"포항연합기술지주가 투자하고 육성하는 혁신 기업들을 소개합니다."}
               </p>
             </div>
           </BlurFade>
         </div>
 
-        {/* Filter - minimal inline style */}
+        {/* Category filter */}
         <BlurFade delay={0.25}>
-          <div className="mb-12 flex flex-wrap items-center gap-2 border-b border-warm-tan pb-6">
+          <div className="mb-12 flex flex-wrap items-center gap-3 border-b border-warm-tan pb-6">
             {CATEGORIES.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
                 className={cn(
-                  "px-4 py-2 text-xs font-medium tracking-wide transition-all duration-300",
+                  "px-5 py-2 text-[11px] font-medium tracking-[0.08em] transition-all duration-300",
                   activeCategory === cat
                     ? "bg-foreground text-primary-foreground"
                     : "text-text-secondary hover:text-foreground"
@@ -70,22 +70,21 @@ export function PortfolioSection({ companies }: { companies: Company[] }) {
           </div>
         </BlurFade>
 
-        {/* Grid - mixed sizing for editorial feel */}
-        <div className="grid gap-px bg-warm-tan sm:grid-cols-2 lg:grid-cols-3">
+        {/* Grid */}
+        <div className="grid gap-[1px] bg-warm-tan sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((company, i) => (
-            <BlurFade key={company.id} delay={0.04 + i * 0.03}>
-              <div className="group relative flex flex-col justify-between bg-card p-8 transition-all duration-300 hover:bg-warm-beige lg:p-10 h-full">
-                {/* Category */}
+            <BlurFade key={company.id} delay={0.03 + i * 0.025}>
+              <div className="group flex h-full flex-col justify-between bg-card p-8 transition-all duration-300 hover:bg-warm-beige lg:p-10">
                 <div>
                   <span className="text-[10px] font-medium tracking-[0.2em] text-gold">
                     {company.category.toUpperCase().replace("/", " / ")}
                   </span>
 
-                  <h3 className="mt-4 text-lg font-bold text-foreground">
+                  <h3 className="mt-4 text-base font-bold text-foreground lg:text-lg">
                     {company.name}
                   </h3>
                   {company.name_en && (
-                    <p className="mt-1 text-xs font-light tracking-wide text-text-secondary">
+                    <p className="mt-1 text-[11px] font-light tracking-wide text-text-secondary">
                       {company.name_en}
                     </p>
                   )}
@@ -98,7 +97,7 @@ export function PortfolioSection({ companies }: { companies: Company[] }) {
 
                 <div className="mt-8 flex items-center justify-between">
                   {company.investment_year && (
-                    <span className="text-[10px] font-medium tracking-wider text-text-secondary">
+                    <span className="text-[10px] font-medium tabular-nums tracking-wider text-text-secondary">
                       {company.investment_year}
                     </span>
                   )}

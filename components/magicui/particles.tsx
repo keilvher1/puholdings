@@ -24,7 +24,7 @@ interface Particle {
 export function Particles({
   className,
   quantity = 60,
-  color = "#1e88e5",
+  color = "#c9a84c",
   size = 1.5,
   speed = 0.3,
 }: ParticlesProps) {
