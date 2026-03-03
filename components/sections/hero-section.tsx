@@ -1,88 +1,105 @@
 "use client"
 
-import { Particles } from "@/components/magicui/particles"
-import { TextAnimate } from "@/components/magicui/text-animate"
-import { ShimmerButton } from "@/components/magicui/shimmer-button"
-import { ChevronDown } from "lucide-react"
+import { useEffect, useState } from "react"
+import { ArrowDown } from "lucide-react"
 
 export function HeroSection() {
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    const t = setTimeout(() => setLoaded(true), 100)
+    return () => clearTimeout(t)
+  }, [])
+
   return (
-    <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-navy-deep">
-      {/* Gradient overlays */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(30,136,229,0.15)_0%,_transparent_60%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_rgba(0,188,212,0.1)_0%,_transparent_60%)]" />
+    <section className="relative flex min-h-screen items-end overflow-hidden bg-dark">
+      {/* Background image with overlay */}
+      <div className="absolute inset-0">
+        <img
+          src="/images/hero-bg.jpg"
+          alt=""
+          className="h-full w-full object-cover opacity-40"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-dark via-dark/60 to-dark/30" />
+      </div>
 
-      <Particles
-        className="absolute inset-0"
-        quantity={50}
-        color="#1e88e5"
-        size={1.2}
-        speed={0.2}
-      />
+      {/* Thin gold line accent */}
+      <div className="absolute top-0 left-0 h-full w-px bg-gradient-to-b from-transparent via-gold/20 to-transparent ml-8 lg:ml-12 hidden lg:block" />
 
-      <div className="relative z-10 mx-auto max-w-5xl px-6 text-center">
-        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-accent/30 bg-blue-accent/10 px-5 py-2">
-          <div className="h-2 w-2 animate-pulse rounded-full bg-blue-accent" />
-          <span className="text-xs font-medium tracking-wider text-blue-light">
-            POSTECH TECHNOLOGY HOLDINGS
-          </span>
-        </div>
+      {/* Content */}
+      <div className="relative z-10 w-full px-8 pb-20 pt-40 lg:px-12 lg:pb-28">
+        <div className="mx-auto max-w-7xl">
+          <div className="max-w-3xl">
+            {/* Label */}
+            <div
+              className="mb-8 flex items-center gap-4 transition-all duration-1000"
+              style={{
+                opacity: loaded ? 1 : 0,
+                transform: loaded ? "translateY(0)" : "translateY(20px)",
+              }}
+            >
+              <div className="editorial-rule" />
+              <span className="text-[11px] font-medium tracking-[0.3em] text-gold">
+                POSTECH TECHNOLOGY HOLDINGS
+              </span>
+            </div>
 
-        <h1 className="mb-6">
-          <TextAnimate
-            className="block text-4xl font-black leading-tight tracking-tight text-primary-foreground md:text-6xl lg:text-7xl"
-            animation="blurIn"
-            by="word"
-          >
-            기술의 가능성을
-          </TextAnimate>
-          <TextAnimate
-            className="block text-4xl font-black leading-tight tracking-tight text-primary-foreground md:text-6xl lg:text-7xl"
-            animation="blurIn"
-            by="word"
-            delay={0.4}
-          >
-            미래의 가치로
-          </TextAnimate>
-        </h1>
+            {/* Headline */}
+            <h1
+              className="mb-8 text-4xl font-bold leading-[1.15] tracking-tight text-primary-foreground sm:text-5xl lg:text-7xl transition-all duration-1000 delay-200"
+              style={{
+                opacity: loaded ? 1 : 0,
+                transform: loaded ? "translateY(0)" : "translateY(30px)",
+              }}
+            >
+              <span className="block">{"기술의 가능성을"}</span>
+              <span className="block text-gold">{"미래의 가치로"}</span>
+            </h1>
 
-        <TextAnimate
-          className="mx-auto mb-10 block max-w-2xl text-base leading-relaxed text-slate-400 md:text-lg"
-          animation="fadeIn"
-          by="word"
-          delay={0.8}
-        >
-          포항연합기술지주는 POSTECH의 우수한 기술력을 기반으로 혁신적인 기술 스타트업을 발굴하고 투자하여 대한민국 기술사업화를 선도합니다.
-        </TextAnimate>
+            {/* Subtext */}
+            <p
+              className="mb-12 max-w-lg text-base leading-relaxed text-text-tertiary font-light lg:text-lg transition-all duration-1000 delay-500"
+              style={{
+                opacity: loaded ? 1 : 0,
+                transform: loaded ? "translateY(0)" : "translateY(20px)",
+              }}
+            >
+              {"POSTECH의 우수한 기술력을 기반으로 혁신적인 기술 스타트업을 발굴하고 투자하여 대한민국 기술사업화를 선도합니다."}
+            </p>
 
-        <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-          <ShimmerButton
-            onClick={() =>
-              document.querySelector("#portfolio")?.scrollIntoView({ behavior: "smooth" })
-            }
-          >
-            포트폴리오 보기
-          </ShimmerButton>
-          <button
-            onClick={() =>
-              document.querySelector("#contact")?.scrollIntoView({ behavior: "smooth" })
-            }
-            className="rounded-full border border-slate-400/30 px-8 py-3 text-sm font-medium text-slate-400 transition-all hover:border-blue-accent/50 hover:text-primary-foreground"
-          >
-            투자 문의
-          </button>
+            {/* CTA */}
+            <div
+              className="flex items-center gap-8 transition-all duration-1000 delay-700"
+              style={{
+                opacity: loaded ? 1 : 0,
+                transform: loaded ? "translateY(0)" : "translateY(20px)",
+              }}
+            >
+              <button
+                onClick={() => document.querySelector("#portfolio")?.scrollIntoView({ behavior: "smooth" })}
+                className="border border-gold bg-gold/10 px-8 py-3.5 text-[11px] font-semibold tracking-[0.2em] text-gold transition-all duration-300 hover:bg-gold hover:text-dark"
+              >
+                PORTFOLIO
+              </button>
+              <button
+                onClick={() => document.querySelector("#contact")?.scrollIntoView({ behavior: "smooth" })}
+                className="text-[11px] font-medium tracking-[0.2em] text-text-tertiary transition-colors hover:text-primary-foreground"
+              >
+                CONTACT US
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Scroll indicator */}
+      {/* Scroll down indicator */}
       <button
-        onClick={() =>
-          document.querySelector("#about")?.scrollIntoView({ behavior: "smooth" })
-        }
-        className="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce text-slate-400"
-        aria-label="아래로 스크롤"
+        onClick={() => document.querySelector("#stats")?.scrollIntoView({ behavior: "smooth" })}
+        className="absolute bottom-8 right-8 flex items-center gap-3 text-text-tertiary transition-colors hover:text-primary-foreground lg:right-12"
+        aria-label="Scroll down"
       >
-        <ChevronDown size={28} />
+        <span className="text-[10px] font-medium tracking-[0.2em]">SCROLL</span>
+        <ArrowDown size={14} className="animate-bounce" />
       </button>
     </section>
   )

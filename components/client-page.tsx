@@ -2,10 +2,10 @@
 
 import { Navbar } from "@/components/sections/navbar"
 import { HeroSection } from "@/components/sections/hero-section"
-import { AboutSection } from "@/components/sections/about-section"
 import { StatsSection } from "@/components/sections/stats-section"
-import { PhilosophySection } from "@/components/sections/philosophy-section"
 import { PortfolioSection } from "@/components/sections/portfolio-section"
+import { PhilosophySection } from "@/components/sections/philosophy-section"
+import { AboutSection } from "@/components/sections/about-section"
 import { NewsSection } from "@/components/sections/news-section"
 import { ContactSection } from "@/components/sections/contact-section"
 import { Footer } from "@/components/sections/footer"
@@ -18,13 +18,13 @@ interface Props {
 
 export function ClientPage({ stats, portfolio, news }: Props) {
   return (
-    <main>
+    <main className="overflow-x-hidden">
       <Navbar />
       <HeroSection />
-      <AboutSection />
       <StatsSection stats={stats} />
-      <PhilosophySection />
       <PortfolioSection companies={portfolio} />
+      <PhilosophySection />
+      <AboutSection />
       <NewsSection news={news} />
       <ContactSection />
       <Footer />

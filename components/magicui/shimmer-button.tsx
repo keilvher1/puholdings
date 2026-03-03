@@ -18,7 +18,7 @@ export function ShimmerButton({
   shimmerSize = "0.1em",
   borderRadius = "100px",
   shimmerDuration = "2s",
-  background = "linear-gradient(135deg, #0a2463, #1e88e5)",
+  background = "linear-gradient(135deg, #1a1a2e, #c9a84c)",
   className,
   children,
   ...props
