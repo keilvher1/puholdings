@@ -1,0 +1,72 @@
+import { neon } from "@neondatabase/serverless";
+
+const sql = neon(process.env.DATABASE_URL);
+
+async function migrate() {
+  console.log("Creating tables...");
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS portfolio_companies (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(255) NOT NULL,
+      name_en VARCHAR(255),
+      category VARCHAR(100) NOT NULL,
+      description TEXT,
+      logo_url VARCHAR(500),
+      website_url VARCHAR(500),
+      founded_year INTEGER,
+      investment_stage VARCHAR(100),
+      is_featured BOOLEAN DEFAULT false,
+      sort_order INTEGER DEFAULT 0,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    )
+  `;
+  console.log("Created portfolio_companies table");
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS news (
+      id SERIAL PRIMARY KEY,
+      title VARCHAR(500) NOT NULL,
+      content TEXT,
+      category VARCHAR(100) DEFAULT 'notice',
+      thumbnail_url VARCHAR(500),
+      published_at DATE NOT NULL DEFAULT CURRENT_DATE,
+      is_published BOOLEAN DEFAULT true,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    )
+  `;
+  console.log("Created news table");
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS statistics (
+      id SERIAL PRIMARY KEY,
+      label VARCHAR(255) NOT NULL,
+      value INTEGER NOT NULL,
+      suffix VARCHAR(50) DEFAULT '',
+      prefix VARCHAR(50) DEFAULT '',
+      sort_order INTEGER DEFAULT 0,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    )
+  `;
+  console.log("Created statistics table");
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS inquiries (
+      id SERIAL PRIMARY KEY,
+      company_name VARCHAR(255) NOT NULL,
+      contact_person VARCHAR(255) NOT NULL,
+      email VARCHAR(255) NOT NULL,
+      phone VARCHAR(50),
+      message TEXT,
+      status VARCHAR(50) DEFAULT 'new',
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    )
+  `;
+  console.log("Created inquiries table");
+
+  console.log("All tables created successfully!");
+}
+
+migrate().catch(console.error);
