@@ -7,6 +7,18 @@ const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "puholdings-cms-secret-key-change-in-production"
 )
 
+// Demo mode credentials (used when DATABASE_URL is not set)
+const DEMO_ADMIN = {
+  id: 1,
+  email: "admin@puholdings.com",
+  name: "관리자",
+  password: "admin1234"
+}
+
+export function isDemoMode(): boolean {
+  return !process.env.DATABASE_URL
+}
+
 export interface AdminUser {
   id: number
   email: string
@@ -45,6 +57,15 @@ export async function getSession(): Promise<AdminUser | null> {
 }
 
 export async function login(email: string, password: string): Promise<{ success: boolean; error?: string; user?: AdminUser }> {
+  // Demo mode - use hardcoded credentials
+  if (isDemoMode()) {
+    if (email === DEMO_ADMIN.email && password === DEMO_ADMIN.password) {
+      const user: AdminUser = { id: DEMO_ADMIN.id, email: DEMO_ADMIN.email, name: DEMO_ADMIN.name }
+      return { success: true, user }
+    }
+    return { success: false, error: "이메일 또는 비밀번호가 올바르지 않습니다" }
+  }
+
   const sql = getDb()
   if (!sql) return { success: false, error: "데이터베이스 연결 실패" }
 
@@ -72,6 +93,11 @@ export async function login(email: string, password: string): Promise<{ success:
 }
 
 export async function createAdmin(email: string, password: string, name: string): Promise<{ success: boolean; error?: string }> {
+  // Demo mode - skip actual creation, just succeed
+  if (isDemoMode()) {
+    return { success: true }
+  }
+
   const sql = getDb()
   if (!sql) return { success: false, error: "데이터베이스 연결 실패" }
 
@@ -92,6 +118,8 @@ export async function createAdmin(email: string, password: string, name: string)
 
 // Initialize admin table if needed
 export async function initAdminTable(): Promise<void> {
+  if (isDemoMode()) return
+
   const sql = getDb()
   if (!sql) return
 
