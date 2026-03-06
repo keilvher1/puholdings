@@ -56,31 +56,33 @@ export function HeroSection() {
 
             {/* Headline */}
             <h1
+              suppressHydrationWarning
               className="mb-10 transition-all duration-[1200ms] delay-200"
               style={{
                 opacity: loaded ? 1 : 0,
                 transform: loaded ? "translateY(0)" : "translateY(24px)",
               }}
             >
-              <span className="block text-4xl font-[900] leading-[1.1] tracking-tight text-primary-foreground sm:text-5xl lg:text-[4.5rem]">
-                {"기술의 가능성을"}
+              <span suppressHydrationWarning className="block text-4xl font-[900] leading-[1.1] tracking-tight text-primary-foreground sm:text-5xl lg:text-[4.5rem]">
+                기술의 가능성을
               </span>
               <span className="mt-2 block text-4xl font-[900] leading-[1.1] tracking-tight sm:text-5xl lg:text-[4.5rem]">
-                <span className="bg-gradient-to-r from-gold to-gold-light bg-clip-text text-transparent">
-                  {"미래의 가치로"}
+                <span suppressHydrationWarning className="bg-gradient-to-r from-gold to-gold-light bg-clip-text text-transparent">
+                  미래의 가치로
                 </span>
               </span>
             </h1>
 
             {/* Subtext */}
             <p
+              suppressHydrationWarning
               className="mb-14 max-w-lg text-[15px] font-light leading-[1.9] text-text-tertiary lg:text-base transition-all duration-[1200ms] delay-500"
               style={{
                 opacity: loaded ? 1 : 0,
                 transform: loaded ? "translateY(0)" : "translateY(16px)",
               }}
             >
-              {"POSTECH의 우수한 기술력을 기반으로 혁신적인 기술 스타트업을 발굴하고 투자하여 대한민국 기술사업화를 선도합니다."}
+              POSTECH의 우수한 기술력을 기반으로 혁신적인 기술 스타트업을 발굴하고 투자하여 대한민국 기술사업화를 선도합니다.
             </p>
 
             {/* CTA buttons */}
