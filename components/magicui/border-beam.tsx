@@ -1,5 +1,6 @@
 "use client"
 
+import { useId } from "react"
 import { cn } from "@/lib/utils"
 
 interface BorderBeamProps {
@@ -19,7 +20,8 @@ export function BorderBeam({
   colorFrom = "#c9a84c",
   colorTo = "#dbb960",
 }: BorderBeamProps) {
-  const id = `border-beam-${Math.random().toString(36).slice(2, 9)}`
+  const reactId = useId()
+  const id = `border-beam${reactId.replace(/:/g, "-")}`
 
   return (
     <>
