@@ -1,3 +1,5 @@
+import Image from "next/image"
+
 export function Footer() {
   return (
     <footer className="bg-dark border-t border-dark-muted/20">
@@ -5,12 +7,13 @@ export function Footer() {
         {/* Main footer */}
         <div className="grid gap-10 py-16 lg:grid-cols-12 lg:py-20">
           <div className="lg:col-span-4">
-            <span className="text-lg font-bold tracking-tight text-primary-foreground">
-              PU Holdings
-            </span>
-            <p className="mt-1 text-[10px] tracking-[0.2em] text-text-tertiary">
-              {"(주)포항연합기술지주"}
-            </p>
+            <Image
+              src="/images/logo-full.png"
+              alt="(주)포항연합기술지주 로고"
+              width={360}
+              height={80}
+              className="h-12 w-auto brightness-0 invert"
+            />
           </div>
 
           <div className="lg:col-span-4">

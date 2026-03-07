@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Menu, X } from "lucide-react"
+import Image from "next/image"
 import { cn } from "@/lib/utils"
 
 const NAV_ITEMS = [
@@ -50,11 +51,20 @@ export function Navbar() {
         <div className="mx-auto flex max-w-7xl items-center justify-between px-8 py-5 lg:px-12">
           <button
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-            className="group flex items-center gap-3"
+            className="group flex items-center"
+            aria-label="PU Holdings 홈으로 이동"
           >
-            <span className="text-lg font-bold tracking-tight text-primary-foreground">
-              PU Holdings
-            </span>
+            <Image
+              src="/images/logo.png"
+              alt="(주)포항연합기술지주 로고"
+              width={220}
+              height={60}
+              className={cn(
+                "h-10 w-auto transition-all duration-500",
+                scrolled ? "brightness-0 invert" : "brightness-0 invert"
+              )}
+              priority
+            />
           </button>
 
           {/* Desktop nav */}
