@@ -9,33 +9,27 @@ export function getDb() {
 // ---------- Fallback static data (used when DATABASE_URL is absent) ----------
 
 export const FALLBACK_STATS = [
-  { id: 1, label: "설립연도", value: 2012, suffix: "년", sort_order: 1 },
-  { id: 2, label: "포트폴리오 기업", value: 112, suffix: "개+", sort_order: 2 },
-  { id: 3, label: "운용 펀드", value: 8, suffix: "개", sort_order: 3 },
-  { id: 4, label: "누적 투자금액", value: 1500, suffix: "억+", sort_order: 4 },
-  { id: 5, label: "투자 전문인력", value: 15, suffix: "명", sort_order: 5 },
+  { id: 1, label: "입주 기업", value: 26, suffix: "개사", sort_order: 1 },
+  { id: 2, label: "누적 매출액", value: 141, suffix: "억원", sort_order: 2 },
+  { id: 3, label: "고용 인원", value: 188, suffix: "명", sort_order: 3 },
+  { id: 4, label: "투자 유치", value: 90, suffix: "억원", sort_order: 4 },
+  { id: 5, label: "지식재산권/인증", value: 22, suffix: "건", sort_order: 5 },
 ]
 
 export const FALLBACK_PORTFOLIO = [
-  { id: 1, name: "에이치엘비생명과학", name_en: "HLB Life Science", category: "바이오/헬스케어", description: "바이오 신약 개발 전문 기업", investment_year: 2018, sort_order: 1, status: "active" },
-  { id: 2, name: "퓨처켐", name_en: "FutureChem", category: "바이오/헬스케어", description: "방사성 의약품 개발 기업", investment_year: 2019, sort_order: 2, status: "active" },
-  { id: 3, name: "나노브릭", name_en: "NanoBrick", category: "소재/화학", description: "나노소재 기반 디스플레이 기술", investment_year: 2017, sort_order: 3, status: "active" },
-  { id: 4, name: "에이아이더뉴트리진", name_en: "AI DeNutrizen", category: "AI/IT", description: "AI 기반 맞춤형 영양 솔루션", investment_year: 2021, sort_order: 4, status: "active" },
-  { id: 5, name: "라이트브라더스", name_en: "Light Brothers", category: "에너지/환경", description: "드론 기반 태양광 패널 검사", investment_year: 2020, sort_order: 5, status: "active" },
-  { id: 6, name: "씨앤투스성진", name_en: "CN2S SJ", category: "소재/화학", description: "고기능성 필름 소재 개발", investment_year: 2018, sort_order: 6, status: "active" },
-  { id: 7, name: "엔서", name_en: "Encer", category: "AI/IT", description: "AI 기반 음성인식 솔루션", investment_year: 2022, sort_order: 7, status: "active" },
-  { id: 8, name: "크라우드웍스", name_en: "Crowdworks", category: "AI/IT", description: "AI 데이터 구축 플랫폼", investment_year: 2021, sort_order: 8, status: "active" },
-  { id: 9, name: "에이피알", name_en: "APR", category: "바이오/헬스케어", description: "뷰티테크 기반 화장품", investment_year: 2019, sort_order: 9, status: "active" },
-  { id: 10, name: "포스텍나노팹", name_en: "POSTECH NanoFab", category: "소재/화학", description: "반도체 나노소재 기술", investment_year: 2017, sort_order: 10, status: "active" },
-  { id: 11, name: "이노테라피", name_en: "InnoTherapy", category: "바이오/헬스케어", description: "세포치료제 개발", investment_year: 2020, sort_order: 11, status: "active" },
-  { id: 12, name: "메디픽셀", name_en: "MediPixel", category: "AI/IT", description: "AI 기반 의료영상 분석", investment_year: 2022, sort_order: 12, status: "active" },
+  { id: 1, name: "아이언박스", name_en: "IRONBOX", category: "AI/로봇", description: "지능형 산업로봇 및 감시솔루션", investment_year: 2019, sort_order: 1, status: "active" },
+  { id: 2, name: "에이치디에스바이오", name_en: "HDS Bio", category: "바이오/헬스케어", description: "마이크로바이옴 기반 신약개발", investment_year: 2019, sort_order: 2, status: "active" },
+  { id: 3, name: "이롭", name_en: "IROP", category: "AI/IT", description: "AI 기반 화재감시 솔루션", investment_year: 2020, sort_order: 3, status: "active" },
+  { id: 4, name: "오픈인", name_en: "OpenIn", category: "AI/IT", description: "ML 기반 지능형 CCTV 솔루션", investment_year: 2020, sort_order: 4, status: "active" },
+  { id: 5, name: "에콤환경", name_en: "ECOM", category: "에너지/환경", description: "열회수 환기장치", investment_year: 2020, sort_order: 5, status: "active" },
+  { id: 6, name: "다솜엑스", name_en: "Dasom X", category: "AI/IT", description: "AI Agentic workflow 기반 플랫폼 개발 및 운영", investment_year: 2025, sort_order: 6, status: "active" },
 ]
 
 export const FALLBACK_NEWS = [
-  { id: 1, title: "포항연합기술지주, 2024년 신규 펀드 300억 규모 결성", summary: "포항연합기술지주가 POSTECH 기술사업화를 위한 신규 펀드를 결성하며 초기 기술기업에 대한 투자를 확대한다.", category: "펀드", published_at: "2024-03-15T00:00:00.000Z" },
-  { id: 2, title: "AI 의료영상 분석 스타트업 메디픽셀 시리즈A 투자 주도", summary: "포항연합기술지주가 AI 기반 의료영상 분석 스타트업 메디픽셀의 시리즈A 라운드를 주도하며 50억원 규모의 투자를 진행했다.", category: "투자", published_at: "2024-02-20T00:00:00.000Z" },
-  { id: 3, title: "2023년 포트폴리오 기업 3사 코스닥 상장", summary: "포항연합기술지주가 투자한 포트폴리오 기업 중 3개사가 2023년 코스닥 시장에 성공적으로 상장했다.", category: "실적", published_at: "2024-01-10T00:00:00.000Z" },
-  { id: 4, title: "POSTECH 기술지주회사 연합 기술사업화 포럼 개최", summary: "POSTECH과 연합 기술지주회사들이 공동으로 기술사업화 촉진을 위한 포럼을 개최하고 산학협력 방안을 논의했다.", category: "행사", published_at: "2023-11-25T00:00:00.000Z" },
-  { id: 5, title: "에너지 분야 신규 투자 - 라이트브라더스 후속투자 진행", summary: "드론 기반 태양광 패널 검사 기술을 보유한 라이트브라더스에 대한 후속 투자를 진행하며 에너지 분야 투자를 강화한다.", category: "투자", published_at: "2023-10-05T00:00:00.000Z" },
-  { id: 6, title: "포항연합기술지주, 중소벤처기업부 우수 기술지주회사 선정", summary: "중소벤처기업부가 실시한 기술지주회사 평가에서 포항연합기술지주가 우수 기술지주회사로 선정되었다.", category: "수상", published_at: "2023-09-01T00:00:00.000Z" },
+  { id: 1, title: "다솜엑스, AI Agentic workflow 플랫폼 신규 투자", summary: "포항연합기술지주가 AI Agentic workflow 기반 플랫폼을 개발하는 다솜엑스에 신규 투자를 진행했다.", category: "투자", published_at: "2025-11-01T00:00:00.000Z" },
+  { id: 2, title: "창업보육센터 경영평가 93점 달성, 전국 상위 10%", summary: "2024년 중소벤처기업부 창업보육센터 경영평가에서 93점을 기록하며 전국 239개 센터 중 상위 10%에 진입했다.", category: "수상", published_at: "2024-12-15T00:00:00.000Z" },
+  { id: 3, title: "입주기업 투자유치 누적 90억원 돌파", summary: "2025년 3분기 기준 창업보육센터 입주기업들의 누적 투자유치 금액이 90억원을 돌파했다.", category: "실적", published_at: "2024-09-30T00:00:00.000Z" },
+  { id: 4, title: "글로컬대학30·RISE 연계 창업생태계 구축 추진", summary: "대학 창업 활성화 및 대학 공동사업 확대를 통한 지산학연 창업생태계 구축을 본격 추진한다.", category: "사업", published_at: "2024-08-20T00:00:00.000Z" },
+  { id: 5, title: "투자조합 결성, 교원·학생·동문 기업 투자 확대", summary: "향후 투자조합 결성을 통해 POSTECH 교원, 학생, 동문 기업 중심으로 투자를 확대할 예정이다.", category: "펀드", published_at: "2024-07-15T00:00:00.000Z" },
+  { id: 6, title: "포항연합기술지주 자회사 3건 EXIT 완료", summary: "고유계정으로 투자한 자회사 중 3건의 투자 회수를 성공적으로 완료했다.", category: "EXIT", published_at: "2024-06-01T00:00:00.000Z" },
 ]

@@ -17,9 +17,8 @@ export function AboutSection() {
                 </span>
               </div>
               <h2 className="text-3xl font-bold leading-tight tracking-tight text-foreground lg:text-5xl text-balance">
-                <span className="block">{"포항연합기술지주,"}</span>
-                <span className="mt-2 block text-gold">{"기술벤처 창업시장을"}</span>
-                <span className="block">{"주도합니다."}</span>
+                <span className="block">Bridging Local,</span>
+                <span className="mt-2 block text-gold">Building Future</span>
               </h2>
             </BlurFade>
           </div>
@@ -28,10 +27,10 @@ export function AboutSection() {
           <div className="lg:col-span-7 lg:pt-20">
             <BlurFade delay={0.25}>
               <p className="text-base leading-[1.9] text-text-secondary lg:text-lg">
-                {"포항연합기술지주(PU Holdings)는 2012년 설립 이래 POSTECH의 혁신 기술을 기반으로 기술사업화를 전문적으로 수행하는 기술지주회사입니다."}
+                포항연합기술지주(Pohang United Holdings)는 대학 기술지주회사이자 지역 액셀러레이터로서, 대학 창업 활성화 및 글로컬대학30·RISE 연계를 통한 지산학연 창업생태계 구축을 추진합니다.
               </p>
               <p className="mt-6 text-base leading-[1.9] text-text-secondary lg:text-lg">
-                {"국내 최고의 교수진과 연구진이 창출한 우수한 성과를 기반으로 투자 대상을 발굴하고, 사업 전략 수립 및 투자, 성장 지원을 통해 미래 유망 기업을 집중 육성합니다."}
+                창업보육센터 운영, 벤처투자, 창업지원사업을 통해 우수 (예비)창업자를 발굴하고, 액셀러레이팅 프로그램, 멘토링, 투자유치 지원으로 성장을 함께합니다.
               </p>
             </BlurFade>
 
@@ -39,10 +38,10 @@ export function AboutSection() {
             <BlurFade delay={0.4}>
               <div className="mt-14 grid grid-cols-2 gap-8 border-t border-warm-tan pt-10 lg:grid-cols-4">
                 {[
-                  { label: "기술 발굴", desc: "우수 연구성과 사업화" },
-                  { label: "투자 육성", desc: "맞춤형 성장 지원" },
-                  { label: "네트워크", desc: "산학연 시너지 창출" },
-                  { label: "가치 창출", desc: "지속 가능한 생태계" },
+                  { label: "창업보육", desc: "입주기업 26개사 운영" },
+                  { label: "벤처투자", desc: "TIPS/LIPS 추천" },
+                  { label: "액셀러레이팅", desc: "맞춤형 성장 프로그램" },
+                  { label: "오픈이노베이션", desc: "지산학연 협력 네트워크" },
                 ].map((item) => (
                   <div key={item.label}>
                     <h4 className="text-sm font-bold text-foreground">{item.label}</h4>

@@ -82,7 +82,7 @@ export function HeroSection() {
                 transform: loaded ? "translateY(0)" : "translateY(16px)",
               }}
             >
-              POSTECH의 우수한 기술력을 기반으로 혁신적인 기술 스타트업을 발굴하고 투자하여 대한민국 기술사업화를 선도합니다.
+              대학 기술지주회사이자 지역 액셀러레이터로서, 창업보육센터 운영과 벤처투자를 통해 지산학연 창업생태계를 구축합니다.
             </p>
 
             {/* CTA buttons */}
