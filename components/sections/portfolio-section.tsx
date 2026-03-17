@@ -171,19 +171,19 @@ export function PortfolioSection({ companies }: { companies: Company[] }) {
               {/* Table Header */}
               <div className="grid grid-cols-[60px_60px_1fr_120px_60px] min-w-[700px] bg-warm-beige border-b border-warm-tan">
                 <div className="px-3 py-3 border-r border-warm-tan">
-                  <p className="text-sm font-medium text-foreground text-center">구분</p>
+                  <p className="text-sm font-medium text-foreground text-center whitespace-nowrap">구분</p>
                 </div>
                 <div className="px-3 py-3 border-r border-warm-tan">
-                  <p className="text-sm font-medium text-foreground text-center">분류</p>
+                  <p className="text-sm font-medium text-foreground text-center whitespace-nowrap">분류</p>
                 </div>
                 <div className="px-4 py-3 border-r border-warm-tan">
-                  <p className="text-sm font-medium text-foreground text-center">기술명</p>
+                  <p className="text-sm font-medium text-foreground text-center whitespace-nowrap">기술명</p>
                 </div>
                 <div className="px-3 py-3 border-r border-warm-tan">
-                  <p className="text-sm font-medium text-foreground text-center">발명자</p>
+                  <p className="text-sm font-medium text-foreground text-center whitespace-nowrap">발명자</p>
                 </div>
                 <div className="px-3 py-3">
-                  <p className="text-sm font-medium text-foreground text-center">TRL</p>
+                  <p className="text-sm font-medium text-foreground text-center whitespace-nowrap">TRL</p>
                 </div>
               </div>
               
@@ -194,19 +194,19 @@ export function PortfolioSection({ companies }: { companies: Company[] }) {
                   className={`grid grid-cols-[60px_60px_1fr_120px_60px] min-w-[700px] bg-card ${index !== EXCELLENT_TECHNOLOGIES.length - 1 ? 'border-b border-warm-tan' : ''}`}
                 >
                   <div className="px-3 py-3 border-r border-warm-tan flex items-center justify-center">
-                    <p className="text-sm text-text-secondary">{tech.id}</p>
+                    <p className="text-sm text-text-secondary whitespace-nowrap">{tech.id}</p>
                   </div>
                   <div className="px-3 py-3 border-r border-warm-tan flex items-center justify-center">
-                    <p className="text-sm text-text-secondary">{tech.category}</p>
+                    <p className="text-sm text-text-secondary whitespace-nowrap">{tech.category}</p>
                   </div>
                   <div className="px-4 py-3 border-r border-warm-tan flex items-center">
-                    <p className="text-sm text-text-secondary">{tech.name}</p>
+                    <p className="text-sm text-text-secondary whitespace-nowrap">{tech.name}</p>
                   </div>
                   <div className="px-3 py-3 border-r border-warm-tan flex items-center justify-center">
-                    <p className="text-sm text-text-secondary">{tech.inventor}</p>
+                    <p className="text-sm text-text-secondary whitespace-nowrap">{tech.inventor}</p>
                   </div>
                   <div className="px-3 py-3 flex items-center justify-center">
-                    <p className="text-sm text-text-secondary">{tech.trl}</p>
+                    <p className="text-sm text-text-secondary whitespace-nowrap">{tech.trl}</p>
                   </div>
                 </div>
               ))}

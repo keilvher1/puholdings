@@ -230,27 +230,27 @@ export function OrganizationSection() {
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center gap-5">
                     <div className="bg-dark-muted border border-warm-tan/20 w-[96px] h-[64px] flex items-center justify-center shrink-0">
-                      <p className="text-sm text-primary-foreground text-center leading-tight">투자<br/>사업팀</p>
+                      <p className="text-sm text-primary-foreground text-center leading-tight whitespace-nowrap">투자사업팀</p>
                     </div>
-                    <ul className="text-xs text-text-tertiary leading-relaxed">
+                    <ul className="text-xs text-text-tertiary leading-relaxed whitespace-nowrap">
                       <li>외부 신규사업 유치 및 운영</li>
                       <li>기업 발굴 및 투자, 투자조합 결성 등</li>
                     </ul>
                   </div>
                   <div className="flex items-center gap-5">
                     <div className="bg-dark-muted border border-warm-tan/20 w-[96px] h-[64px] flex items-center justify-center shrink-0">
-                      <p className="text-sm text-primary-foreground text-center leading-tight">창업<br/>보육팀</p>
+                      <p className="text-sm text-primary-foreground text-center leading-tight whitespace-nowrap">창업보육팀</p>
                     </div>
-                    <ul className="text-xs text-text-tertiary leading-relaxed">
+                    <ul className="text-xs text-text-tertiary leading-relaxed whitespace-nowrap">
                       <li>창업보육센터 운영 및 관련 사업 유치</li>
                       <li>교내 사업 운영</li>
                     </ul>
                   </div>
                   <div className="flex items-center gap-5">
                     <div className="bg-dark-muted border border-warm-tan/20 w-[96px] h-[64px] flex items-center justify-center shrink-0">
-                      <p className="text-sm text-primary-foreground text-center leading-tight">경영<br/>관리팀</p>
+                      <p className="text-sm text-primary-foreground text-center leading-tight whitespace-nowrap">경영관리팀</p>
                     </div>
-                    <ul className="text-xs text-text-tertiary leading-relaxed">
+                    <ul className="text-xs text-text-tertiary leading-relaxed whitespace-nowrap">
                       <li>대외 협력 및 사업 관리</li>
                       <li>기타 경영지원 업무</li>
                     </ul>
@@ -270,7 +270,7 @@ export function OrganizationSection() {
               {/* Table Header */}
               <div className="grid grid-cols-[240px_1fr] bg-dark-muted border-b border-warm-tan/20">
                 <div className="px-6 py-4 border-r border-warm-tan/20">
-                  <p className="text-sm font-medium text-primary-foreground text-center">지역 창업유관기관</p>
+                  <p className="text-sm font-medium text-primary-foreground text-center whitespace-nowrap">지역 창업유관기관</p>
                 </div>
                 <div className="px-6 py-4">
                   <p className="text-sm font-medium text-primary-foreground text-center">주요 내용</p>

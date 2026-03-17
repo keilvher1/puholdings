@@ -72,7 +72,7 @@ export function Navbar() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "text-sm font-medium tracking-[0.15em] transition-colors duration-300 hover:text-primary-foreground",
+                  "text-sm font-medium tracking-[0.15em] transition-colors duration-300 hover:text-primary-foreground whitespace-nowrap",
                   pathname === item.href 
                     ? "text-gold" 
                     : "text-primary-foreground/60"
