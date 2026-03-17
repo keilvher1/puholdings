@@ -181,8 +181,8 @@ export function OrganizationSection() {
                 {/* 전략기획실 with line to left */}
                 <div className="flex items-center justify-start w-full">
                   <div className="w-6 h-px bg-warm-tan/30" />
-                  <div className="bg-gold/10 border border-gold/40 px-5 py-2.5 text-center min-w-[100px]">
-                    <p className="text-sm font-medium text-gold">전략기획실</p>
+                  <div className="bg-dark-muted border border-warm-tan/20 px-5 py-2.5 text-center min-w-[100px]">
+                    <p className="text-sm text-primary-foreground">전략기획실</p>
                   </div>
                 </div>
               </div>
@@ -208,8 +208,8 @@ export function OrganizationSection() {
                     <li>교내 사업 운영</li>
                   </ul>
                 </div>
-                <div className="flex-1 max-w-[220px] bg-dark-muted border border-gold/30 p-4">
-                  <p className="text-sm font-medium text-gold mb-2">경영관리팀</p>
+                <div className="flex-1 max-w-[220px] bg-dark-muted border border-warm-tan/20 p-4">
+                  <p className="text-sm font-medium text-primary-foreground mb-2">경영관리팀</p>
                   <ul className="space-y-1 text-[11px] text-text-tertiary leading-relaxed">
                     <li>대외 협력 및 사업 관리</li>
                     <li>기타 경영지원 업무</li>
