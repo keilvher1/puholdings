@@ -163,22 +163,31 @@ export function OrganizationSection() {
                 <div className="w-px h-6 bg-warm-tan/30" />
               </div>
 
-              {/* Middle Row */}
-              <div className="flex items-center justify-center gap-3 mb-6">
-                <div className="bg-dark-muted border border-warm-tan/20 px-5 py-2.5 text-center">
-                  <p className="text-sm text-primary-foreground">부대표</p>
+              {/* Middle Row - Using grid for perfect centering */}
+              <div className="grid grid-cols-3 items-center justify-items-center max-w-[600px] mx-auto mb-6">
+                {/* 부대표 with line to right */}
+                <div className="flex items-center justify-end w-full">
+                  <div className="bg-dark-muted border border-warm-tan/20 px-5 py-2.5 text-center min-w-[100px]">
+                    <p className="text-sm text-primary-foreground">부대표</p>
+                  </div>
+                  <div className="w-6 h-px bg-warm-tan/30" />
                 </div>
-                <div className="w-4 h-px bg-warm-tan/30" />
-                <div className="bg-dark-muted border border-warm-tan/20 px-5 py-2.5 text-center">
+                
+                {/* 이사 - centered */}
+                <div className="bg-dark-muted border border-warm-tan/20 px-5 py-2.5 text-center min-w-[100px]">
                   <p className="text-sm text-primary-foreground">이사</p>
                 </div>
-                <div className="w-4 h-px bg-warm-tan/30" />
-                <div className="bg-gold/10 border border-gold/40 px-5 py-2.5 text-center">
-                  <p className="text-sm font-medium text-gold">전략기획실</p>
+                
+                {/* 전략기획실 with line to left */}
+                <div className="flex items-center justify-start w-full">
+                  <div className="w-6 h-px bg-warm-tan/30" />
+                  <div className="bg-gold/10 border border-gold/40 px-5 py-2.5 text-center min-w-[100px]">
+                    <p className="text-sm font-medium text-gold">전략기획실</p>
+                  </div>
                 </div>
               </div>
 
-              {/* Connector */}
+              {/* Connector - aligned to center column */}
               <div className="flex justify-center mb-6">
                 <div className="w-px h-6 bg-warm-tan/30" />
               </div>
