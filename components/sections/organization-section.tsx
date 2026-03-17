@@ -181,7 +181,7 @@ export function OrganizationSection() {
                 {/* Teams - Vertical stack on right */}
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center gap-5">
-                    <div className="bg-dark-muted border border-warm-tan/20 w-24 h-16 flex items-center justify-center shrink-0">
+                    <div className="bg-dark-muted border border-warm-tan/20 w-[96px] h-[64px] flex items-center justify-center shrink-0">
                       <p className="text-sm text-primary-foreground text-center leading-tight">투자<br/>사업팀</p>
                     </div>
                     <ul className="text-xs text-text-tertiary leading-relaxed">
@@ -190,7 +190,7 @@ export function OrganizationSection() {
                     </ul>
                   </div>
                   <div className="flex items-center gap-5">
-                    <div className="bg-dark-muted border border-warm-tan/20 w-24 h-16 flex items-center justify-center shrink-0">
+                    <div className="bg-dark-muted border border-warm-tan/20 w-[96px] h-[64px] flex items-center justify-center shrink-0">
                       <p className="text-sm text-primary-foreground text-center leading-tight">창업<br/>보육팀</p>
                     </div>
                     <ul className="text-xs text-text-tertiary leading-relaxed">
@@ -199,7 +199,7 @@ export function OrganizationSection() {
                     </ul>
                   </div>
                   <div className="flex items-center gap-5">
-                    <div className="bg-dark-muted border border-warm-tan/20 w-24 h-16 flex items-center justify-center shrink-0">
+                    <div className="bg-dark-muted border border-warm-tan/20 w-[96px] h-[64px] flex items-center justify-center shrink-0">
                       <p className="text-sm text-primary-foreground text-center leading-tight">경영<br/>관리팀</p>
                     </div>
                     <ul className="text-xs text-text-tertiary leading-relaxed">
