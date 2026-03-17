@@ -145,75 +145,68 @@ export function OrganizationSection() {
           </div>
         </BlurFade>
 
-        {/* Org Chart Diagram */}
+        {/* Org Chart Diagram - Horizontal Layout */}
         <BlurFade delay={0.2}>
           <div className="mb-20 overflow-x-auto">
-            <div className="min-w-[700px] pb-4">
-              {/* CEO */}
-              <div className="flex items-center justify-center mb-6">
-                <div className="bg-dark-muted border border-warm-tan/20 rounded px-8 py-5 text-center">
+            <div className="min-w-[900px] pb-4">
+              <div className="flex items-center gap-0">
+                {/* CEO - Circle */}
+                <div className="shrink-0 w-36 h-36 rounded-full bg-dark-muted border border-warm-tan/20 flex flex-col items-center justify-center text-center p-4">
                   <p className="text-[10px] tracking-wider text-gold mb-1">대표이사</p>
-                  <p className="text-lg font-bold text-primary-foreground mb-0.5">한동대 이권영 교수</p>
-                  <p className="text-[11px] text-text-tertiary">한동대학교 산학처장 및 산학협력단장</p>
+                  <p className="text-sm font-bold text-primary-foreground leading-tight">한동대 이권영 교수</p>
+                  <p className="text-[9px] text-text-tertiary mt-1 leading-tight">한동대학교 산학처장<br/>및 산학협력단장</p>
                 </div>
-              </div>
 
-              {/* Connector */}
-              <div className="flex justify-center mb-6">
-                <div className="w-px h-6 bg-warm-tan/30" />
-              </div>
+                {/* Connector line */}
+                <div className="w-8 h-px bg-warm-tan/30 shrink-0" />
 
-              {/* Middle Row - Using grid for perfect centering */}
-              <div className="grid grid-cols-3 items-center justify-items-center max-w-[600px] mx-auto mb-6">
-                {/* 부대표 with line to right */}
-                <div className="flex items-center justify-end w-full">
-                  <div className="bg-dark-muted border border-warm-tan/20 px-5 py-2.5 text-center min-w-[100px]">
-                    <p className="text-sm text-primary-foreground">부대표</p>
+                {/* Middle boxes - 부대표, 이사, 전략기획실 */}
+                <div className="flex items-center gap-0 shrink-0">
+                  <div className="bg-dark-muted border border-warm-tan/20 w-24 h-24 flex items-center justify-center">
+                    <p className="text-sm text-primary-foreground text-center">부대표</p>
                   </div>
-                  <div className="w-6 h-px bg-warm-tan/30" />
-                </div>
-                
-                {/* 이사 - centered */}
-                <div className="bg-dark-muted border border-warm-tan/20 px-5 py-2.5 text-center min-w-[100px]">
-                  <p className="text-sm text-primary-foreground">이사</p>
-                </div>
-                
-                {/* 전략기획실 with line to left */}
-                <div className="flex items-center justify-start w-full">
-                  <div className="w-6 h-px bg-warm-tan/30" />
-                  <div className="bg-dark-muted border border-warm-tan/20 px-5 py-2.5 text-center min-w-[100px]">
-                    <p className="text-sm text-primary-foreground">전략기획실</p>
+                  <div className="w-4 h-px bg-warm-tan/30" />
+                  <div className="bg-dark-muted border border-warm-tan/20 w-24 h-24 flex items-center justify-center">
+                    <p className="text-sm text-primary-foreground text-center">이사</p>
+                  </div>
+                  <div className="w-4 h-px bg-warm-tan/30" />
+                  <div className="bg-dark-muted border border-warm-tan/20 w-24 h-24 flex items-center justify-center">
+                    <p className="text-sm text-primary-foreground text-center">전략기획실</p>
                   </div>
                 </div>
-              </div>
 
-              {/* Connector - aligned to center column */}
-              <div className="flex justify-center mb-6">
-                <div className="w-px h-6 bg-warm-tan/30" />
-              </div>
+                {/* Connector line */}
+                <div className="w-8 h-px bg-warm-tan/30 shrink-0" />
 
-              {/* Teams */}
-              <div className="flex justify-center gap-4">
-                <div className="flex-1 max-w-[220px] bg-dark-muted border border-warm-tan/20 p-4">
-                  <p className="text-sm font-medium text-primary-foreground mb-2">투자사업팀</p>
-                  <ul className="space-y-1 text-[11px] text-text-tertiary leading-relaxed">
-                    <li>외부 신규사업 유치 및 운영</li>
-                    <li>기업 발굴 및 투자, 투자조합 결성</li>
-                  </ul>
-                </div>
-                <div className="flex-1 max-w-[220px] bg-dark-muted border border-warm-tan/20 p-4">
-                  <p className="text-sm font-medium text-primary-foreground mb-2">창업보육팀</p>
-                  <ul className="space-y-1 text-[11px] text-text-tertiary leading-relaxed">
-                    <li>창업보육센터 운영 및 관련 사업 유치</li>
-                    <li>교내 사업 운영</li>
-                  </ul>
-                </div>
-                <div className="flex-1 max-w-[220px] bg-dark-muted border border-warm-tan/20 p-4">
-                  <p className="text-sm font-medium text-primary-foreground mb-2">경영관리팀</p>
-                  <ul className="space-y-1 text-[11px] text-text-tertiary leading-relaxed">
-                    <li>대외 협력 및 사업 관리</li>
-                    <li>기타 경영지원 업무</li>
-                  </ul>
+                {/* Teams - Vertical stack on right */}
+                <div className="flex flex-col gap-3 flex-1">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-dark-muted border border-warm-tan/20 w-20 h-14 flex items-center justify-center shrink-0">
+                      <p className="text-xs text-primary-foreground text-center leading-tight">투자<br/>사업팀</p>
+                    </div>
+                    <ul className="text-[11px] text-text-tertiary leading-relaxed">
+                      <li>외부 신규사업 유치 및 운영</li>
+                      <li>기업 발굴 및 투자, 투자조합 결성 등</li>
+                    </ul>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="bg-dark-muted border border-warm-tan/20 w-20 h-14 flex items-center justify-center shrink-0">
+                      <p className="text-xs text-primary-foreground text-center leading-tight">창업<br/>보육팀</p>
+                    </div>
+                    <ul className="text-[11px] text-text-tertiary leading-relaxed">
+                      <li>창업보육센터 운영 및 관련 사업 유치</li>
+                      <li>교내 사업 운영</li>
+                    </ul>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="bg-dark-muted border border-warm-tan/20 w-20 h-14 flex items-center justify-center shrink-0">
+                      <p className="text-xs text-primary-foreground text-center leading-tight">경영<br/>관리팀</p>
+                    </div>
+                    <ul className="text-[11px] text-text-tertiary leading-relaxed">
+                      <li>대외 협력 및 사업 관리</li>
+                      <li>기타 경영지원 업무</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             </div>
