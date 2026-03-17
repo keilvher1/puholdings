@@ -26,9 +26,7 @@ export function Footer() {
 
           <div className="lg:col-span-4 lg:text-right">
             <p className="text-xs leading-[2.2] text-text-tertiary">
-              {"TEL  054-279-0100"}
-              <br />
-              {"EMAIL  contact@puholdings.co.kr"}
+              TEL  054-279-8710
             </p>
           </div>
         </div>

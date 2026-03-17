@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { BlurFade } from "@/components/magicui/blur-fade"
-import { ArrowUpRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface Company {
@@ -14,7 +13,7 @@ interface Company {
   investment_year: number | null
 }
 
-const CATEGORIES = ["전체", "바이오/헬스케어", "AI/IT", "소재/화학", "에너지/환경"]
+const CATEGORIES = ["전체", "AI/로봇", "AI/IT", "바이오/헬스케어", "에너지/환경"]
 
 export function PortfolioSection({ companies }: { companies: Company[] }) {
   const [activeCategory, setActiveCategory] = useState("전체")
@@ -43,8 +42,8 @@ export function PortfolioSection({ companies }: { companies: Company[] }) {
           </BlurFade>
           <BlurFade delay={0.2}>
             <div className="flex items-end lg:justify-end lg:pb-2">
-              <p className="max-w-md text-[15px] leading-[1.9] text-text-secondary">
-                {"포항연합기술지주가 투자하고 육성하는 혁신 기업들을 소개합니다."}
+              <p className="max-w-md text-[15px] leading-[1.9] text-text-secondary [word-break:keep-all]">
+                창업보육 입주기업 및 벤처투자 포트폴리오 기업들과 함께 성장합니다.
               </p>
             </div>
           </BlurFade>
@@ -95,17 +94,13 @@ export function PortfolioSection({ companies }: { companies: Company[] }) {
                   )}
                 </div>
 
-                <div className="mt-8 flex items-center justify-between">
-                  {company.investment_year && (
-                    <span className="text-[10px] font-medium tabular-nums tracking-wider text-text-secondary">
-                      {company.investment_year}
+                {company.investment_year && (
+                  <div className="mt-8">
+                    <span className="text-[10px] font-medium tabular-nums tracking-[0.15em] text-warm-tan">
+                      {company.investment_year}년 투자
                     </span>
-                  )}
-                  <ArrowUpRight
-                    size={16}
-                    className="text-warm-tan transition-all duration-300 group-hover:text-gold group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                  />
-                </div>
+                  </div>
+                )}
               </div>
             </BlurFade>
           ))}

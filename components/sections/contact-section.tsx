@@ -75,19 +75,15 @@ export function ContactSection() {
                 <div className="flex items-start gap-4">
                   <MapPin size={15} className="mt-0.5 shrink-0 text-gold/70" />
                   <div>
-                    <p className="text-sm text-primary-foreground/90">
-                      {"경상북도 포항시 남구 청암로 77"}
+                    <p className="text-sm text-primary-foreground/90 [word-break:keep-all]">
+                      경상북도 포항시 남구 청암로 77
                     </p>
-                    <p className="mt-0.5 text-xs text-text-tertiary">POSTECH C5</p>
+                    <p className="mt-0.5 text-xs text-text-tertiary">POSTECH 창업보육센터</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
                   <Phone size={15} className="shrink-0 text-gold/70" />
-                  <p className="text-sm text-primary-foreground/90">054-279-0100</p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <Mail size={15} className="shrink-0 text-gold/70" />
-                  <p className="text-sm text-primary-foreground/90">contact@puholdings.co.kr</p>
+                  <p className="text-sm text-primary-foreground/90">054-279-8710</p>
                 </div>
               </div>
             </BlurFade>
