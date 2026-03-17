@@ -80,6 +80,8 @@ export function HeroSection() {
               style={{
                 opacity: loaded ? 1 : 0,
                 transform: loaded ? "translateY(0)" : "translateY(16px)",
+                wordBreak: "keep-all",
+                overflowWrap: "break-word",
               }}
             >
               대학 기술지주회사이자 지역 액셀러레이터로서, 창업보육센터 운영과 벤처투자를 통해 지산학연 창업생태계를 구축합니다.
