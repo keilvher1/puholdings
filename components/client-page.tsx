@@ -3,12 +3,9 @@
 import { Navbar } from "@/components/sections/navbar"
 import { HeroSection } from "@/components/sections/hero-section"
 import { StatsSection } from "@/components/sections/stats-section"
-import { PortfolioSection } from "@/components/sections/portfolio-section"
 import { PhilosophySection } from "@/components/sections/philosophy-section"
 import { AboutSection } from "@/components/sections/about-section"
-import { OrganizationSection } from "@/components/sections/organization-section"
-import { HistorySection } from "@/components/sections/history-section"
-import { NewsSection } from "@/components/sections/news-section"
+import { PortfolioPreviewSection } from "@/components/sections/portfolio-preview-section"
 import { ContactSection } from "@/components/sections/contact-section"
 import { Footer } from "@/components/sections/footer"
 
@@ -24,12 +21,9 @@ export function ClientPage({ stats, portfolio, news }: Props) {
       <Navbar />
       <HeroSection />
       <StatsSection stats={stats} />
-      <PortfolioSection companies={portfolio} />
       <PhilosophySection />
       <AboutSection />
-      <OrganizationSection />
-      <HistorySection />
-      <NewsSection news={news} />
+      <PortfolioPreviewSection companies={portfolio} />
       <ContactSection />
       <Footer />
     </main>
