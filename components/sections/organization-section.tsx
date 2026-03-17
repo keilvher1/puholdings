@@ -78,6 +78,21 @@ const INCUBATION_TEAM = [
   },
 ]
 
+const VENTURE_PARTNERS = [
+  {
+    name: "이원중 (David)",
+    position: "벤처파트너",
+    role: "F&B 인큐베이팅 / 투자",
+    details: [
+      "UC San Diego 경제학과 졸업",
+      "두더지프로젝트 대표 CEO (F&B 인큐베이팅 전문기업)",
+      "창리단길 로컬스페이스 10개소 설립 운영",
+      "AI 언어학습 '원아원', 웰니스 '달램' VC 투자",
+      "LINC 3.0 산학연계 교육협력기관 (한동대 외 4개교)",
+    ],
+  },
+]
+
 const PARTNER_ORGANIZATIONS = [
   {
     name: "경북창조경제혁신센터",
@@ -301,6 +316,11 @@ export function OrganizationSection() {
                 <TeamSection title="투자사업팀" members={INVESTMENT_TEAM} startIndex={3} />
                 <TeamSection title="창업보육팀" members={INCUBATION_TEAM} startIndex={5} />
               </div>
+            </div>
+            
+            {/* Venture Partners */}
+            <div className="mt-12 pt-10 border-t border-warm-tan/10">
+              <TeamSection title="벤처파트너" members={VENTURE_PARTNERS} startIndex={7} />
             </div>
           </div>
         </BlurFade>
