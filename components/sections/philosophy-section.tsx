@@ -1,7 +1,6 @@
 "use client"
 
 import { BlurFade } from "@/components/magicui/blur-fade"
-import { BorderBeam } from "@/components/magicui/border-beam"
 import { Particles } from "@/components/magicui/particles"
 
 const STEPS = [
@@ -85,11 +84,10 @@ export function PhilosophySection() {
           <div className="border-t border-dark-muted/40" />
         </div>
 
-        {/* Two highlight boxes with BorderBeam */}
+        {/* Two highlight boxes */}
         <div className="mt-16 grid gap-4 lg:grid-cols-2">
           <BlurFade delay={0.5}>
-            <div className="group relative overflow-hidden border border-dark-muted/40 p-10 transition-colors hover:border-gold/20 lg:p-12">
-              <BorderBeam size={160} duration={10} colorFrom="#c9a84c" colorTo="#dbb960" />
+            <div className="group relative overflow-hidden border border-dark-muted/40 p-10 transition-colors hover:border-gold/30 lg:p-12">
               <span className="text-[11px] font-medium tracking-[0.2em] text-gold/70">INTERNAL SUPPORT</span>
               <h4 className="mt-4 text-lg font-bold text-primary-foreground">내부역량 기반 자체지원</h4>
               <p className="mt-3 text-sm leading-[1.8] text-text-tertiary [word-break:keep-all]">
@@ -98,8 +96,7 @@ export function PhilosophySection() {
             </div>
           </BlurFade>
           <BlurFade delay={0.6}>
-            <div className="group relative overflow-hidden border border-dark-muted/40 p-10 transition-colors hover:border-gold/20 lg:p-12">
-              <BorderBeam size={160} duration={12} delay={4} colorFrom="#dbb960" colorTo="#c9a84c" />
+            <div className="group relative overflow-hidden border border-dark-muted/40 p-10 transition-colors hover:border-gold/30 lg:p-12">
               <span className="text-[11px] font-medium tracking-[0.2em] text-gold/70">EXTERNAL NETWORK</span>
               <h4 className="mt-4 text-lg font-bold text-primary-foreground">네트워크 기반 외부연계</h4>
               <p className="mt-3 text-sm leading-[1.8] text-text-tertiary [word-break:keep-all]">
