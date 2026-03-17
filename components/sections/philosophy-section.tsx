@@ -54,7 +54,7 @@ export function PhilosophySection() {
           </BlurFade>
           <BlurFade delay={0.2}>
             <div className="flex items-end lg:justify-end lg:pb-2">
-              <p className="max-w-md text-[15px] leading-[1.9] text-text-tertiary">
+              <p className="max-w-md text-[15px] leading-[1.9] text-text-tertiary [word-break:keep-all]">
                 창업교육에서 벤처투자, 오픈이노베이션까지. 내부 역량 기반 자체지원과 네트워크 기반 외부연계로 창업생태계를 구축합니다.
               </p>
             </div>
@@ -92,7 +92,7 @@ export function PhilosophySection() {
               <BorderBeam size={160} duration={10} colorFrom="#c9a84c" colorTo="#dbb960" />
               <span className="text-[11px] font-medium tracking-[0.2em] text-gold/70">INTERNAL SUPPORT</span>
               <h4 className="mt-4 text-lg font-bold text-primary-foreground">내부역량 기반 자체지원</h4>
-              <p className="mt-3 text-sm leading-[1.8] text-text-tertiary">
+              <p className="mt-3 text-sm leading-[1.8] text-text-tertiary [word-break:keep-all]">
                 창업보육센터 운영, 액셀러레이팅 프로그램, 벤처투자, TIPS/LIPS 추천 등 직접 지원합니다.
               </p>
             </div>
@@ -102,7 +102,7 @@ export function PhilosophySection() {
               <BorderBeam size={160} duration={12} delay={4} colorFrom="#dbb960" colorTo="#c9a84c" />
               <span className="text-[11px] font-medium tracking-[0.2em] text-gold/70">EXTERNAL NETWORK</span>
               <h4 className="mt-4 text-lg font-bold text-primary-foreground">네트워크 기반 외부연계</h4>
-              <p className="mt-3 text-sm leading-[1.8] text-text-tertiary">
+              <p className="mt-3 text-sm leading-[1.8] text-text-tertiary [word-break:keep-all]">
                 오픈이노베이션, 판로개척, 해외진출, VC/PE/IB 투자연계, 동문/대기업/해외대학 네트워크를 활용합니다.
               </p>
             </div>

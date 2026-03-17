@@ -26,10 +26,10 @@ export function AboutSection() {
           {/* Right column - body copy */}
           <div className="lg:col-span-7 lg:pt-20">
             <BlurFade delay={0.25}>
-              <p className="text-base leading-[1.9] text-text-secondary lg:text-lg">
+              <p className="text-base leading-[1.9] text-text-secondary lg:text-lg [word-break:keep-all]">
                 포항연합기술지주(Pohang United Holdings)는 대학 기술지주회사이자 지역 액셀러레이터로서, 대학 창업 활성화 및 글로컬대학30·RISE 연계를 통한 지산학연 창업생태계 구축을 추진합니다.
               </p>
-              <p className="mt-6 text-base leading-[1.9] text-text-secondary lg:text-lg">
+              <p className="mt-6 text-base leading-[1.9] text-text-secondary lg:text-lg [word-break:keep-all]">
                 창업보육센터 운영, 벤처투자, 창업지원사업을 통해 우수 (예비)창업자를 발굴하고, 액셀러레이팅 프로그램, 멘토링, 투자유치 지원으로 성장을 함께합니다.
               </p>
             </BlurFade>
