@@ -11,7 +11,7 @@ const NAV_ITEMS = [
   { label: "회사소개", href: "/about" },
   { label: "조직", href: "/organization" },
   { label: "포트폴리오", href: "/portfolio" },
-  { label: "뉴스", href: "/news" },
+  // { label: "뉴스", href: "/news" },
   { label: "문의", href: "/contact" },
 ]
 
