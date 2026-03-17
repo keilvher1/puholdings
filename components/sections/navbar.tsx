@@ -3,19 +3,22 @@
 import { useState, useEffect } from "react"
 import { Menu, X } from "lucide-react"
 import Image from "next/image"
+import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 
 const NAV_ITEMS = [
-  { label: "PORTFOLIO", href: "#portfolio" },
-  { label: "INVESTMENT", href: "#philosophy" },
-  { label: "ABOUT", href: "#about" },
-  { label: "NOTICE", href: "#news" },
-  { label: "CONTACT", href: "#contact" },
+  { label: "회사소개", href: "/about" },
+  { label: "조직", href: "/organization" },
+  { label: "포트폴리오", href: "/portfolio" },
+  { label: "뉴스", href: "/news" },
+  { label: "문의", href: "/contact" },
 ]
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const pathname = usePathname()
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 80)
@@ -33,11 +36,6 @@ export function Navbar() {
     return () => { document.body.style.overflow = "" }
   }, [mobileOpen])
 
-  const handleClick = (href: string) => {
-    setMobileOpen(false)
-    document.querySelector(href)?.scrollIntoView({ behavior: "smooth" })
-  }
-
   return (
     <>
       <nav
@@ -49,8 +47,8 @@ export function Navbar() {
         )}
       >
         <div className="mx-auto flex max-w-7xl items-center justify-between px-8 py-5 lg:px-12">
-          <button
-            onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          <Link
+            href="/"
             className="group flex items-center"
             aria-label="PU Holdings 홈으로 이동"
           >
@@ -65,18 +63,23 @@ export function Navbar() {
               )}
               priority
             />
-          </button>
+          </Link>
 
           {/* Desktop nav */}
           <div className="hidden items-center gap-10 md:flex">
             {NAV_ITEMS.map((item) => (
-              <button
+              <Link
                 key={item.href}
-                onClick={() => handleClick(item.href)}
-                className="text-[11px] font-medium tracking-[0.2em] text-primary-foreground/50 transition-colors duration-300 hover:text-primary-foreground"
+                href={item.href}
+                className={cn(
+                  "text-[11px] font-medium tracking-[0.2em] transition-colors duration-300 hover:text-primary-foreground",
+                  pathname === item.href 
+                    ? "text-gold" 
+                    : "text-primary-foreground/50"
+                )}
               >
                 {item.label}
-              </button>
+              </Link>
             ))}
           </div>
 
@@ -102,10 +105,16 @@ export function Navbar() {
       >
         <div className="px-12">
           {NAV_ITEMS.map((item, i) => (
-            <button
+            <Link
               key={item.href}
-              onClick={() => handleClick(item.href)}
-              className="block w-full border-b border-dark-muted/20 py-6 text-left text-2xl font-light tracking-wide text-primary-foreground/60 transition-all duration-300 hover:text-gold hover:pl-2"
+              href={item.href}
+              onClick={() => setMobileOpen(false)}
+              className={cn(
+                "block w-full border-b border-dark-muted/20 py-6 text-left text-2xl font-light tracking-wide transition-all duration-300 hover:text-gold hover:pl-2",
+                pathname === item.href 
+                  ? "text-gold" 
+                  : "text-primary-foreground/60"
+              )}
               style={{
                 opacity: mobileOpen ? 1 : 0,
                 transform: mobileOpen ? "translateY(0)" : "translateY(12px)",
@@ -113,7 +122,7 @@ export function Navbar() {
               }}
             >
               {item.label}
-            </button>
+            </Link>
           ))}
         </div>
       </div>
