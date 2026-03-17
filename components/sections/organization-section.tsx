@@ -140,7 +140,7 @@ const PARTNER_ORGANIZATIONS = [
   {
     name: "(주)대경지역대학공동기술지주",
     logo: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-XgwGBVPdempHBZXSbs30XEeOXrtH2U.png",
-    description: "대구·경북 소재 11개 대학과 대구TP 및 경북TP가 공동 출자로 설립한 기술사업화 및 스타트업 투자전문기관으로, 본 사업의 참여기업에 대한 투자 및 TIPS 추천 등이 가능한 협력 투자사임.",
+    description: "대구·경북 소재 11개 대학과 대구TP 및 경북TP가 공동 출자로 설립한 기술사���화 및 스타트업 투자전문기관으로, 본 사업의 참여기업에 대한 투자 및 TIPS 추천 등이 가능한 협력 투자사임.",
   },
   {
     name: "Y&ARCHER",
@@ -293,7 +293,7 @@ export function OrganizationSection() {
               {/* Table Header */}
               <div className="grid grid-cols-[240px_1fr] bg-dark-muted border-b border-warm-tan/20">
                 <div className="px-6 py-4 border-r border-warm-tan/20">
-                  <p className="text-sm font-medium text-primary-foreground text-center">지역 창업유관기관</p>
+                  <p className="text-sm font-medium text-primary-foreground text-center">지역 창업유관���관</p>
                 </div>
                 <div className="px-6 py-4">
                   <p className="text-sm font-medium text-primary-foreground text-center">주요 내용</p>
@@ -357,14 +357,7 @@ export function OrganizationSection() {
                     <p className="text-sm text-text-tertiary">{tech.id}</p>
                   </div>
                   <div className="px-3 py-3 border-r border-warm-tan/20 flex items-center justify-center">
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded ${
-                      tech.category === 'IT' ? 'bg-blue-500/20 text-blue-400' :
-                      tech.category === 'BT' ? 'bg-green-500/20 text-green-400' :
-                      tech.category === 'ET' ? 'bg-orange-500/20 text-orange-400' :
-                      'bg-purple-500/20 text-purple-400'
-                    }`}>
-                      {tech.category}
-                    </span>
+                    <p className="text-sm text-text-tertiary">{tech.category}</p>
                   </div>
                   <div className="px-4 py-3 border-r border-warm-tan/20 flex items-center">
                     <p className="text-sm text-text-tertiary">{tech.name}</p>
