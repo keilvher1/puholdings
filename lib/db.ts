@@ -27,16 +27,18 @@ export const FALLBACK_PORTFOLIO = [
     sort_order: 1, 
     status: "active",
     ceo: "오상택",
+    founded: null,
     achievements: "벤처기업인증, 한국기업데이터 기술평가 우수기업 인증(T4) 획득",
     website: null,
-    exited: false
+    exited: false,
+    slug: "ironbox"
   },
   { 
     id: 2, 
     name: "에이치디에스바이오", 
     name_en: "HDS Bio", 
     category: "바이오/헬스케어", 
-    description: "프로바이오틱스, 의약외품, 임상실험수탁사업(CRO), 미생물 스크리닝 약리평가", 
+    description: "프로바이오틱스, 의약외품, 임상실험수탁사업(CRO), 미생물 스크리닝 약리평가(항생제, 내성유전자)", 
     investment_year: 2018, 
     sort_order: 2, 
     status: "active",
@@ -44,7 +46,8 @@ export const FALLBACK_PORTFOLIO = [
     founded: "2018.09.01",
     achievements: "벤처기업인증",
     website: null,
-    exited: true
+    exited: true,
+    slug: "hds-bio"
   },
   { 
     id: 3, 
@@ -59,7 +62,8 @@ export const FALLBACK_PORTFOLIO = [
     founded: "2020.12.24",
     achievements: "벤처기업인증, 서울혁신챌린지 선정, 경북창조경제혁신센터 G-star Dreamer 기업 선정",
     website: "www.irop.co.kr",
-    exited: true
+    exited: true,
+    slug: "irop-robotics"
   },
   { 
     id: 4, 
@@ -74,12 +78,13 @@ export const FALLBACK_PORTFOLIO = [
     founded: "2020.11.25",
     achievements: "포스코(POSCO)와 협동 로봇 솔루션 공동 R&D 협약 체결",
     website: "www.openin.co.kr",
-    exited: true
+    exited: true,
+    slug: "openin"
   },
   { 
     id: 5, 
     name: "에콤환경", 
-    name_en: "ECOM", 
+    name_en: "ECOM Environment", 
     category: "에너지/환경", 
     description: "열회수환기장치, 공기조화장치", 
     investment_year: 2020, 
@@ -89,7 +94,8 @@ export const FALLBACK_PORTFOLIO = [
     founded: "2020.11.27",
     achievements: "벤처기업인증, 혁신기업인증",
     website: null,
-    exited: false
+    exited: false,
+    slug: "ecom"
   },
   { 
     id: 6, 
@@ -104,7 +110,8 @@ export const FALLBACK_PORTFOLIO = [
     founded: "2024.09.02",
     achievements: "기업부설연구소설립, 포항시 외국인 정착 지원 에이전트 '퐝이' 개발",
     website: null,
-    exited: false
+    exited: false,
+    slug: "dasom-x"
   },
 ]
 

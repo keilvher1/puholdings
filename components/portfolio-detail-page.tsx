@@ -2,10 +2,11 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import Image from "next/image"
 import { ArrowLeft, ExternalLink, Building2, User, Calendar, Award, CheckCircle } from "lucide-react"
 import { BlurFade } from "@/components/magicui/blur-fade"
 import { Particles } from "@/components/magicui/particles"
+import { Navbar } from "@/components/sections/navbar"
+import { Footer } from "@/components/sections/footer"
 import { cn } from "@/lib/utils"
 
 interface Company {
@@ -16,10 +17,11 @@ interface Company {
   description: string | null
   investment_year: number | null
   ceo?: string
-  founded?: string
+  founded?: string | null
   achievements?: string
   website?: string | null
   exited?: boolean
+  slug?: string
 }
 
 const CATEGORIES = ["전체", "AI/로봇", "AI/IT", "바이오/헬스케어", "에너지/환경"]
@@ -38,8 +40,10 @@ export function PortfolioDetailPage({ companies }: { companies: Company[] }) {
 
   return (
     <main className="min-h-screen bg-warm-ivory">
+      <Navbar />
+      
       {/* Hero Header */}
-      <section className="relative overflow-hidden bg-dark py-32 lg:py-40">
+      <section className="relative overflow-hidden bg-dark pt-24 pb-20 lg:pt-32 lg:pb-28">
         <Particles
           className="absolute inset-0"
           quantity={30}
@@ -123,56 +127,102 @@ export function PortfolioDetailPage({ companies }: { companies: Company[] }) {
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filtered.map((company, i) => (
               <BlurFade key={company.id} delay={0.05 + i * 0.03}>
-                <button
-                  onClick={() => setSelectedCompany(company)}
-                  className="group w-full text-left"
-                >
-                  <div className="relative flex h-full flex-col border border-warm-tan bg-card p-8 transition-all duration-300 hover:border-gold/50 hover:shadow-lg">
-                    {company.exited && (
-                      <div className="absolute right-4 top-4 flex items-center gap-1 rounded-full bg-gold/10 px-2 py-1">
-                        <CheckCircle size={10} className="text-gold" />
-                        <span className="text-[9px] font-medium text-gold">EXIT</span>
-                      </div>
-                    )}
-                    
-                    <span className="text-[10px] font-medium tracking-[0.2em] text-gold">
-                      {company.category.toUpperCase().replace("/", " / ")}
-                    </span>
-
-                    <h3 className="mt-4 text-lg font-bold text-foreground group-hover:text-gold transition-colors">
-                      {company.name}
-                    </h3>
-                    {company.name_en && (
-                      <p className="mt-1 text-[11px] font-light tracking-wide text-text-secondary">
-                        {company.name_en}
-                      </p>
-                    )}
-
-                    {company.description && (
-                      <p className="mt-4 flex-1 text-sm leading-relaxed text-text-secondary [word-break:keep-all]">
-                        {company.description}
-                      </p>
-                    )}
-
-                    <div className="mt-6 flex items-center justify-between border-t border-warm-tan pt-4">
-                      {company.investment_year && (
-                        <span className="text-[10px] font-medium tabular-nums text-text-secondary">
-                          {company.investment_year}년 투자
-                        </span>
+                {company.slug ? (
+                  <Link
+                    href={`/portfolio/${company.slug}`}
+                    className="group block w-full text-left"
+                  >
+                    <div className="relative flex h-full flex-col border border-warm-tan bg-card p-8 transition-all duration-300 hover:border-gold/50 hover:shadow-lg">
+                      {company.exited && (
+                        <div className="absolute right-4 top-4 flex items-center gap-1 rounded-full bg-gold/10 px-2 py-1">
+                          <CheckCircle size={10} className="text-gold" />
+                          <span className="text-[9px] font-medium text-gold">EXIT</span>
+                        </div>
                       )}
-                      <span className="text-[10px] text-gold opacity-0 transition-opacity group-hover:opacity-100">
-                        자세히 보기 →
+                      
+                      <span className="text-[10px] font-medium tracking-[0.2em] text-gold">
+                        {company.category.toUpperCase().replace("/", " / ")}
                       </span>
+
+                      <h3 className="mt-4 text-lg font-bold text-foreground group-hover:text-gold transition-colors">
+                        {company.name}
+                      </h3>
+                      {company.name_en && (
+                        <p className="mt-1 text-[11px] font-light tracking-wide text-text-secondary">
+                          {company.name_en}
+                        </p>
+                      )}
+
+                      {company.description && (
+                        <p className="mt-4 flex-1 text-sm leading-relaxed text-text-secondary [word-break:keep-all]">
+                          {company.description}
+                        </p>
+                      )}
+
+                      <div className="mt-6 flex items-center justify-between border-t border-warm-tan pt-4">
+                        {company.investment_year && (
+                          <span className="text-[10px] font-medium tabular-nums text-text-secondary">
+                            {company.investment_year}년 투자
+                          </span>
+                        )}
+                        <span className="text-[10px] text-gold opacity-0 transition-opacity group-hover:opacity-100">
+                          자세히 보기
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                </button>
+                  </Link>
+                ) : (
+                  <button
+                    onClick={() => setSelectedCompany(company)}
+                    className="group w-full text-left"
+                  >
+                    <div className="relative flex h-full flex-col border border-warm-tan bg-card p-8 transition-all duration-300 hover:border-gold/50 hover:shadow-lg">
+                      {company.exited && (
+                        <div className="absolute right-4 top-4 flex items-center gap-1 rounded-full bg-gold/10 px-2 py-1">
+                          <CheckCircle size={10} className="text-gold" />
+                          <span className="text-[9px] font-medium text-gold">EXIT</span>
+                        </div>
+                      )}
+                      
+                      <span className="text-[10px] font-medium tracking-[0.2em] text-gold">
+                        {company.category.toUpperCase().replace("/", " / ")}
+                      </span>
+
+                      <h3 className="mt-4 text-lg font-bold text-foreground group-hover:text-gold transition-colors">
+                        {company.name}
+                      </h3>
+                      {company.name_en && (
+                        <p className="mt-1 text-[11px] font-light tracking-wide text-text-secondary">
+                          {company.name_en}
+                        </p>
+                      )}
+
+                      {company.description && (
+                        <p className="mt-4 flex-1 text-sm leading-relaxed text-text-secondary [word-break:keep-all]">
+                          {company.description}
+                        </p>
+                      )}
+
+                      <div className="mt-6 flex items-center justify-between border-t border-warm-tan pt-4">
+                        {company.investment_year && (
+                          <span className="text-[10px] font-medium tabular-nums text-text-secondary">
+                            {company.investment_year}년 투자
+                          </span>
+                        )}
+                        <span className="text-[10px] text-gold opacity-0 transition-opacity group-hover:opacity-100">
+                          자세히 보기
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+                )}
               </BlurFade>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Modal */}
+      {/* Modal (fallback for companies without slug) */}
       {selectedCompany && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center bg-dark/80 p-4 backdrop-blur-sm"
@@ -187,7 +237,10 @@ export function PortfolioDetailPage({ companies }: { companies: Company[] }) {
                 onClick={() => setSelectedCompany(null)}
                 className="absolute right-4 top-4 text-text-secondary hover:text-foreground transition-colors"
               >
-                ✕
+                <span className="sr-only">닫기</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                </svg>
               </button>
 
               {selectedCompany.exited && (
@@ -259,7 +312,7 @@ export function PortfolioDetailPage({ companies }: { companies: Company[] }) {
                     <div>
                       <p className="text-[10px] font-medium tracking-wider text-text-secondary">홈페이지</p>
                       <a 
-                        href={`https://${selectedCompany.website}`}
+                        href={selectedCompany.website.startsWith("http") ? selectedCompany.website : `https://${selectedCompany.website}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="mt-0.5 inline-block text-sm text-gold hover:underline"
@@ -299,6 +352,8 @@ export function PortfolioDetailPage({ companies }: { companies: Company[] }) {
           </BlurFade>
         </div>
       </section>
+
+      <Footer />
     </main>
   )
 }
