@@ -78,6 +78,39 @@ const INCUBATION_TEAM = [
   },
 ]
 
+const PARTNER_ORGANIZATIONS = [
+  {
+    name: "경북창조경제혁신센터",
+    logo: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-u38ZbQsP95bwhyJFc2JffYWy2xPHky.png",
+    description: "경북 지역의 혁신창업 어브로서 창업기업 발굴부터 육성, 성장까지 지원하고 있으며, 특히 다양한 엑셀러레이팅 프로그램을 운영 중으로 본 사업 참여기업 공동 발굴 및 후속 연계 지원 등이 가능함.",
+  },
+  {
+    name: "(재)포항테크노파크",
+    logo: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-6qEQAHXMCjqamXrFWMZQsB3cucVt8U.png",
+    description: "지역의 유망기업을 발굴·육성하는 지역산업 거점기관으로 창업보육, 연구개발, 시험생산 등 기업지원 서비스와 지역 맞춤형 산업 발전 전략 및 정책을 수립하며 기술집약 기업의 창업과 성장을 지원하고 있음.",
+  },
+  {
+    name: "경북콘텐츠기업지원센터",
+    logo: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-wSZUHEhnkFolquwX83rMiWaBwBH2dA.png",
+    description: "경상북도 콘텐츠기업지원센터는 지역 ICT 융복합 콘텐츠를 기반으로 지원 생태계 허브 구축을 통해 지역 경제 혁신 성장 및 콘텐츠 기업 진흥을 위한 원스톱 지원센터로, 참여기업 공동 발굴 및 후속 연계 지원 등이 가능함.",
+  },
+  {
+    name: "KOSME 청년창업사관학교",
+    logo: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-Vs2uo5OdOCBWUzd6dcjmrteiRAVTJ7.png",
+    description: "경북청년창업사관학교는 유망 창업아이템 및 혁신기술을 보유한 우수 창업자를 발굴하여 성공적인 창업사업화 지원을 위한 프로그램 운영하고 있으며, 참여기업 공동 발굴 등 다방면에서 협력이 가능할 것으로 예상함.",
+  },
+  {
+    name: "(주)대경지역대학공동기술지주",
+    logo: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-XgwGBVPdempHBZXSbs30XEeOXrtH2U.png",
+    description: "대구·경북 소재 11개 대학과 대구TP 및 경북TP가 공동 출자로 설립한 기술사업화 및 스타트업 투자전문기관으로, 본 사업의 참여기업에 대한 투자 및 TIPS 추천 등이 가능한 협력 투자사임.",
+  },
+  {
+    name: "Y&ARCHER",
+    logo: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-w2ArVNJW80Zrb0KGE5dDPNgIPzfMYu.png",
+    description: "콘텐츠·콘텐츠융합·스포츠·스포츠융합 분야 등의 초기스타트업을 대상으로 하는 전문 액셀러레이터로 유망한 초기스타트업을 발굴 및 육성하고 발굴된 기업에 체계적인 밀착 지원과 글로벌 진출 및 연계를 지원하고자 있음.",
+  },
+]
+
 function PersonCard({ person, index }: { person: typeof MANAGEMENT[0]; index: number }) {
   return (
     <BlurFade delay={0.05 * index}>
@@ -213,8 +246,46 @@ export function OrganizationSection() {
           </div>
         </BlurFade>
 
-        {/* Personnel Section */}
+        {/* Partner Organizations Section */}
         <BlurFade delay={0.3}>
+          <div className="mb-20">
+            <h3 className="text-xl font-bold text-primary-foreground mb-8">지자체 협력 업체 (유관기관)</h3>
+            
+            <div className="border border-warm-tan/20 overflow-hidden">
+              {/* Table Header */}
+              <div className="grid grid-cols-[240px_1fr] bg-dark-muted border-b border-warm-tan/20">
+                <div className="px-6 py-4 border-r border-warm-tan/20">
+                  <p className="text-sm font-medium text-primary-foreground text-center">지역 창업유관기관</p>
+                </div>
+                <div className="px-6 py-4">
+                  <p className="text-sm font-medium text-primary-foreground text-center">주요 내용</p>
+                </div>
+              </div>
+              
+              {/* Table Rows */}
+              {PARTNER_ORGANIZATIONS.map((org, index) => (
+                <div 
+                  key={org.name} 
+                  className={`grid grid-cols-[240px_1fr] ${index !== PARTNER_ORGANIZATIONS.length - 1 ? 'border-b border-warm-tan/20' : ''}`}
+                >
+                  <div className="px-6 py-5 border-r border-warm-tan/20 flex items-center justify-center bg-white/[0.02]">
+                    <img 
+                      src={org.logo} 
+                      alt={org.name}
+                      className="max-w-[180px] max-h-[60px] object-contain"
+                    />
+                  </div>
+                  <div className="px-6 py-5 flex items-center">
+                    <p className="text-sm text-text-tertiary leading-relaxed">{org.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </BlurFade>
+
+        {/* Personnel Section */}
+        <BlurFade delay={0.4}>
           <div className="border-t border-warm-tan/20 pt-14">
             <h3 className="text-xl font-bold text-primary-foreground mb-10">구성원</h3>
             
