@@ -1,6 +1,7 @@
 import { Navbar } from "@/components/sections/navbar"
 import { PhilosophySection } from "@/components/sections/philosophy-section"
 import { AboutSection } from "@/components/sections/about-section"
+import { EcosystemSection } from "@/components/sections/ecosystem-section"
 import { HistorySection } from "@/components/sections/history-section"
 import { Footer } from "@/components/sections/footer"
 
@@ -32,6 +33,7 @@ export default function AboutPage() {
       </section>
       <PhilosophySection />
       <AboutSection />
+      <EcosystemSection />
       <HistorySection />
       <Footer />
     </main>
