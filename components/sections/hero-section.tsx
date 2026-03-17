@@ -50,7 +50,7 @@ export function HeroSection() {
             >
               <div className="editorial-rule" />
               <span className="text-[11px] font-medium tracking-[0.3em] text-gold/80">
-                POSTECH TECHNOLOGY HOLDINGS
+                POHANG TECHNOLOGY HOLDINGS
               </span>
             </div>
 
