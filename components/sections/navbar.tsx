@@ -46,7 +46,7 @@ export function Navbar() {
             : "bg-transparent"
         )}
       >
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-8 py-5 lg:px-12">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-8 py-6 lg:px-12">
           <Link
             href="/"
             className="group flex items-center"
@@ -55,10 +55,10 @@ export function Navbar() {
             <Image
               src="/images/logo.png"
               alt="(주)포항연합기술지주 로고"
-              width={220}
-              height={60}
+              width={280}
+              height={70}
               className={cn(
-                "h-10 w-auto transition-all duration-500",
+                "h-14 w-auto transition-all duration-500",
                 scrolled ? "brightness-0 invert" : "brightness-0 invert"
               )}
               priority
@@ -66,16 +66,16 @@ export function Navbar() {
           </Link>
 
           {/* Desktop nav */}
-          <div className="hidden items-center gap-10 md:flex">
+          <div className="hidden items-center gap-12 md:flex">
             {NAV_ITEMS.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "text-[11px] font-medium tracking-[0.2em] transition-colors duration-300 hover:text-primary-foreground",
+                  "text-sm font-medium tracking-[0.15em] transition-colors duration-300 hover:text-primary-foreground",
                   pathname === item.href 
                     ? "text-gold" 
-                    : "text-primary-foreground/50"
+                    : "text-primary-foreground/60"
                 )}
               >
                 {item.label}
@@ -89,7 +89,7 @@ export function Navbar() {
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label={mobileOpen ? "Close menu" : "Open menu"}
           >
-            {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+            {mobileOpen ? <X size={26} /> : <Menu size={26} />}
           </button>
         </div>
       </nav>
