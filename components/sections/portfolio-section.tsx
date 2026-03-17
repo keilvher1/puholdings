@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, CheckCircle } from "lucide-react"
 import { BlurFade } from "@/components/magicui/blur-fade"
 import { cn } from "@/lib/utils"
 
@@ -13,6 +13,8 @@ interface Company {
   category: string
   description: string | null
   investment_year: number | null
+  slug?: string
+  exited?: boolean
 }
 
 const CATEGORIES = ["전체", "AI/로봇", "AI/IT", "바이오/헬스케어", "에너지/환경"]
@@ -82,13 +84,24 @@ export function PortfolioSection({ companies }: { companies: Company[] }) {
         <div className="grid gap-[1px] bg-warm-tan sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((company, i) => (
             <BlurFade key={company.id} delay={0.03 + i * 0.025}>
-              <div className="group flex h-full flex-col justify-between bg-card p-8 transition-all duration-300 hover:bg-warm-beige lg:p-10">
+              <Link
+                href={company.slug ? `/portfolio/${company.slug}` : "/portfolio"}
+                className="group flex h-full flex-col justify-between bg-card p-8 transition-all duration-300 hover:bg-warm-beige lg:p-10"
+              >
                 <div>
-                  <span className="text-[10px] font-medium tracking-[0.2em] text-gold">
-                    {company.category.toUpperCase().replace("/", " / ")}
-                  </span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-medium tracking-[0.2em] text-gold">
+                      {company.category.toUpperCase().replace("/", " / ")}
+                    </span>
+                    {company.exited && (
+                      <div className="flex items-center gap-1 rounded-full bg-gold/10 px-2 py-0.5">
+                        <CheckCircle size={10} className="text-gold" />
+                        <span className="text-[9px] font-medium text-gold">EXIT</span>
+                      </div>
+                    )}
+                  </div>
 
-                  <h3 className="mt-4 text-base font-bold text-foreground lg:text-lg">
+                  <h3 className="mt-4 text-base font-bold text-foreground transition-colors group-hover:text-gold lg:text-lg">
                     {company.name}
                   </h3>
                   {company.name_en && (
@@ -97,20 +110,23 @@ export function PortfolioSection({ companies }: { companies: Company[] }) {
                     </p>
                   )}
                   {company.description && (
-                    <p className="mt-3 text-sm leading-relaxed text-text-secondary">
+                    <p className="mt-3 text-sm leading-relaxed text-text-secondary line-clamp-2">
                       {company.description}
                     </p>
                   )}
                 </div>
 
-                {company.investment_year && (
-                  <div className="mt-8">
+                <div className="mt-8 flex items-center justify-between">
+                  {company.investment_year && (
                     <span className="text-[10px] font-medium tabular-nums tracking-[0.15em] text-warm-tan">
                       {company.investment_year}년 투자
                     </span>
-                  </div>
-                )}
-              </div>
+                  )}
+                  <span className="text-[10px] text-gold opacity-0 transition-opacity group-hover:opacity-100">
+                    자세히 보기
+                  </span>
+                </div>
+              </Link>
             </BlurFade>
           ))}
         </div>
