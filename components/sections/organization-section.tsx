@@ -234,7 +234,7 @@ export function OrganizationSection() {
                     </div>
                     <ul className="text-xs text-text-tertiary leading-relaxed">
                       <li>외부 신규사업 유치 및 운영</li>
-                      <li>기업 발굴 및 투자, 투자조합 결성 등</li>
+                      <li>기업 발굴 및 투자, 투자조합 결성 ��</li>
                     </ul>
                   </div>
                   <div className="flex items-center gap-5">
@@ -319,7 +319,7 @@ export function OrganizationSection() {
             </div>
             
             {/* Venture Partners */}
-            <div className="mt-12 pt-10 border-t border-warm-tan/10">
+            <div className="mt-10">
               <TeamSection title="벤처파트너" members={VENTURE_PARTNERS} startIndex={7} />
             </div>
           </div>
