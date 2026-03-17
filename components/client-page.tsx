@@ -4,7 +4,7 @@ import { Navbar } from "@/components/sections/navbar"
 import { HeroSection } from "@/components/sections/hero-section"
 import { StatsSection } from "@/components/sections/stats-section"
 import { PortfolioSection } from "@/components/sections/portfolio-section"
-import { NewsSection } from "@/components/sections/news-section"
+// import { NewsSection } from "@/components/sections/news-section"
 import { ContactSection } from "@/components/sections/contact-section"
 import { Footer } from "@/components/sections/footer"
 
@@ -21,7 +21,7 @@ export function ClientPage({ stats, portfolio, news }: Props) {
       <HeroSection />
       <StatsSection stats={stats} />
       <PortfolioSection companies={portfolio} />
-      <NewsSection news={news} />
+      {/* <NewsSection news={news} /> */}
       <ContactSection />
       <Footer />
     </main>
