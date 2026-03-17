@@ -108,3 +108,13 @@ html[data-scroll-behavior="smooth"] {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Border beam animation */
+@keyframes border-beam {
+  0% { offset-distance: 0%; }
+  100% { offset-distance: 100%; }
+}
+
+.animate-border-beam {
+  animation: border-beam linear infinite;
+}
