@@ -19,6 +19,29 @@ interface Company {
 
 const CATEGORIES = ["전체", "AI/로봇", "AI/IT", "바이오/헬스케어", "에너지/환경"]
 
+const EXCELLENT_TECHNOLOGIES = [
+  { id: 1, category: "IT", name: "정확도가향상된인공지능기반암판별장치", inventor: "안태진교수", trl: 4 },
+  { id: 2, category: "BT", name: "바이오마커를활용한자폐범주성장애판별장치", inventor: "안태진교수", trl: 4 },
+  { id: 3, category: "BT", name: "프로바이오틱스균주를이용한장내질환치료및예방조성물", inventor: "곽진환교수", trl: 4 },
+  { id: 4, category: "IT", name: "치료효율및경제성이우수한미러링재활로봇", inventor: "김재효교수", trl: 4 },
+  { id: 5, category: "IT", name: "인공신경망을이용한정확도높은유의파고측정시스템", inventor: "안경모교수", trl: 8 },
+  { id: 6, category: "ET", name: "공간제약이없는블레이드리스풍력발전기", inventor: "이재영교수", trl: 4 },
+  { id: 7, category: "IT", name: "간섭없이다중스타일구현이가능한텍스트→음성합성", inventor: "김인중교수", trl: 4 },
+  { id: 8, category: "BT", name: "비알콜성지방간을감소시키는조성물(모링가올레이페라)", inventor: "도명술교수", trl: 4 },
+  { id: 9, category: "IT", name: "CCTV 영상을이용한도로혼잡도분석방법및시스템", inventor: "이강교수", trl: 6 },
+  { id: 10, category: "ET", name: "원자로비상상황시사용성이우수한히트파이프", inventor: "이재영교수", trl: 4 },
+  { id: 11, category: "IT", name: "다감각피드백기반스마트재활운동장치", inventor: "김재효교수", trl: 4 },
+  { id: 12, category: "IT", name: "뇌졸중환자의자율수지운동을위한공기팽창형재활운동장치", inventor: "김재효교수", trl: 6 },
+  { id: 13, category: "IT", name: "속도가향상된음성합성시스템(딥러닝경량화TTS)", inventor: "김인중교수", trl: 4 },
+  { id: 14, category: "IT", name: "자율주행차량용고정밀라이다센서장착오차검사장치", inventor: "김영근교수", trl: 4 },
+  { id: 15, category: "IT", name: "저비용및고효율해안침식복구시스템", inventor: "안경모교수", trl: 4 },
+  { id: 16, category: "IT", name: "동시적위치추정및지도작성(SLAM) 시스템", inventor: "황성수교수", trl: 4 },
+  { id: 17, category: "BT", name: "수산양식생존율향상이가능한면역증진기능성사료첨가제", inventor: "송성규교수", trl: 4 },
+  { id: 18, category: "IT", name: "뇌전도(EEG) 데이터기반의정확한뇌상태분류기술", inventor: "안민규교수", trl: 4 },
+  { id: 19, category: "ET", name: "소듐고속냉각로의인쇄기판형증기발생기용유체다이오드", inventor: "이재영교수", trl: 4 },
+  { id: 20, category: "NT", name: "친수성이향상된이산화티타늄광촉매", inventor: "박영춘교수", trl: 4 },
+]
+
 export function PortfolioSection({ companies }: { companies: Company[] }) {
   const [activeCategory, setActiveCategory] = useState("전체")
 
@@ -130,6 +153,66 @@ export function PortfolioSection({ companies }: { companies: Company[] }) {
             </BlurFade>
           ))}
         </div>
+
+        {/* Excellent Technologies Section */}
+        <BlurFade delay={0.4}>
+          <div className="mt-20 pt-16 border-t border-warm-tan">
+            <div className="mb-8">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="editorial-rule" />
+                <span className="text-[11px] font-medium tracking-[0.3em] text-gold">
+                  TECHNOLOGY
+                </span>
+              </div>
+              <h3 className="text-2xl font-bold text-foreground lg:text-3xl">우수기술</h3>
+            </div>
+            
+            <div className="border border-warm-tan overflow-hidden overflow-x-auto">
+              {/* Table Header */}
+              <div className="grid grid-cols-[60px_60px_1fr_120px_60px] min-w-[700px] bg-warm-beige border-b border-warm-tan">
+                <div className="px-3 py-3 border-r border-warm-tan">
+                  <p className="text-sm font-medium text-foreground text-center">구분</p>
+                </div>
+                <div className="px-3 py-3 border-r border-warm-tan">
+                  <p className="text-sm font-medium text-foreground text-center">분류</p>
+                </div>
+                <div className="px-4 py-3 border-r border-warm-tan">
+                  <p className="text-sm font-medium text-foreground text-center">기술명</p>
+                </div>
+                <div className="px-3 py-3 border-r border-warm-tan">
+                  <p className="text-sm font-medium text-foreground text-center">발명자</p>
+                </div>
+                <div className="px-3 py-3">
+                  <p className="text-sm font-medium text-foreground text-center">TRL</p>
+                </div>
+              </div>
+              
+              {/* Table Rows */}
+              {EXCELLENT_TECHNOLOGIES.map((tech, index) => (
+                <div 
+                  key={tech.id} 
+                  className={`grid grid-cols-[60px_60px_1fr_120px_60px] min-w-[700px] bg-card ${index !== EXCELLENT_TECHNOLOGIES.length - 1 ? 'border-b border-warm-tan' : ''}`}
+                >
+                  <div className="px-3 py-3 border-r border-warm-tan flex items-center justify-center">
+                    <p className="text-sm text-text-secondary">{tech.id}</p>
+                  </div>
+                  <div className="px-3 py-3 border-r border-warm-tan flex items-center justify-center">
+                    <p className="text-sm text-text-secondary">{tech.category}</p>
+                  </div>
+                  <div className="px-4 py-3 border-r border-warm-tan flex items-center">
+                    <p className="text-sm text-text-secondary">{tech.name}</p>
+                  </div>
+                  <div className="px-3 py-3 border-r border-warm-tan flex items-center justify-center">
+                    <p className="text-sm text-text-secondary">{tech.inventor}</p>
+                  </div>
+                  <div className="px-3 py-3 flex items-center justify-center">
+                    <p className="text-sm text-text-secondary">{tech.trl}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </BlurFade>
       </div>
     </section>
   )
