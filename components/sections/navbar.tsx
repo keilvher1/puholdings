@@ -20,8 +20,6 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const pathname = usePathname()
 
-  console.log("[v0] Current pathname:", pathname)
-
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 80)
     window.addEventListener("scroll", handleScroll, { passive: true })
@@ -73,7 +71,6 @@ export function Navbar() {
               <Link
                 key={item.href}
                 href={item.href}
-                onClick={() => console.log("[v0] Nav clicked:", item.href)}
                 className={cn(
                   "text-[11px] font-medium tracking-[0.2em] transition-colors duration-300 hover:text-primary-foreground",
                   pathname === item.href 
