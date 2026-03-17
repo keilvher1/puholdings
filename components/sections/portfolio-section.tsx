@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
+import { ArrowRight } from "lucide-react"
 import { BlurFade } from "@/components/magicui/blur-fade"
 import { cn } from "@/lib/utils"
 
@@ -41,10 +43,17 @@ export function PortfolioSection({ companies }: { companies: Company[] }) {
             </h2>
           </BlurFade>
           <BlurFade delay={0.2}>
-            <div className="flex items-end lg:justify-end lg:pb-2">
-              <p className="max-w-md text-[15px] leading-[1.9] text-text-secondary [word-break:keep-all]">
+            <div className="flex flex-col items-start gap-6 lg:items-end lg:pb-2">
+              <p className="max-w-md text-[15px] leading-[1.9] text-text-secondary [word-break:keep-all] lg:text-right">
                 창업보육 입주기업 및 벤처투자 포트폴리오 기업들과 함께 성장합니다.
               </p>
+              <Link
+                href="/portfolio"
+                className="inline-flex items-center gap-2 text-sm font-medium text-gold transition-colors hover:text-gold-light"
+              >
+                전체 포트폴리오 보기
+                <ArrowRight size={14} />
+              </Link>
             </div>
           </BlurFade>
         </div>
