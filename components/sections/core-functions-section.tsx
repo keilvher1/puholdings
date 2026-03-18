@@ -24,11 +24,18 @@ const EXTERNAL_NETWORK = [
   "해외 진출",
 ]
 
+const PORTFOLIO_COMPANIES = [
+  { name: "HEM파마", subtitle: "Human Effective Microbes Pharma Inc." },
+  { name: "Impactive AI", subtitle: "" },
+  { name: "MIDBAR", subtitle: "" },
+  { name: "deep visions", subtitle: "" },
+]
+
 const LOCAL_GOVERNMENTS = [
-  { name: "경상북도", logo: "/images/partners/gyeongbuk.png" },
-  { name: "포항시", logo: "/images/partners/pohang.png" },
-  { name: "영덕군", logo: "/images/partners/yeongdeok.png" },
-  { name: "안동시", logo: "/images/partners/andong.png" },
+  { name: "경상북도" },
+  { name: "pohang", subtitle: "포항시" },
+  { name: "영덕군" },
+  { name: "안동시" },
 ]
 
 export function CoreFunctionsSection() {
@@ -40,7 +47,7 @@ export function CoreFunctionsSection() {
           <div className="mb-6 flex items-center gap-4">
             <div className="editorial-rule" />
             <span className="text-[11px] font-medium tracking-[0.3em] text-gold">
-              CORE FUNCTIONS
+              DEPARTMENT OVERVIEW
             </span>
           </div>
           <h2 className="text-3xl font-bold leading-tight tracking-tight text-foreground lg:text-4xl">
@@ -60,13 +67,22 @@ export function CoreFunctionsSection() {
           </div>
         </BlurFade>
 
-        {/* Two Column: Handong + PU Holdings */}
+        {/* 3 Column Layout */}
         <BlurFade delay={0.3}>
-          <div className="mt-16 grid gap-8 lg:grid-cols-2">
-            {/* Handong University */}
-            <div className="border border-blue-500/30 bg-card p-8 lg:p-10">
-              <div className="mb-6 flex flex-col items-center gap-4">
-                <div className="relative h-14 w-48">
+          <div className="mt-16 grid gap-6 lg:grid-cols-[1.2fr_0.8fr_0.6fr]">
+            {/* Left Column: 내부 역량 기반 자체 지원 */}
+            <div className="border border-warm-tan bg-card p-6 lg:p-8">
+              {/* Label */}
+              <div className="mb-6 border border-dashed border-warm-tan px-4 py-2 inline-block">
+                <p className="text-sm text-text-secondary text-center">
+                  내부 역량 기반<br />
+                  <span className="font-medium text-foreground">자체 지원</span>
+                </p>
+              </div>
+
+              {/* Two Logos */}
+              <div className="flex items-center justify-center gap-6 mb-8">
+                <div className="relative h-12 w-36">
                   <Image 
                     src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-Gr0HGRS2EgHMVp6hUlFloPH4NbnZqE.png"
                     alt="한동대학교"
@@ -74,20 +90,7 @@ export function CoreFunctionsSection() {
                     className="object-contain"
                   />
                 </div>
-              </div>
-              <div className="space-y-3">
-                {HANDONG_ACTIVITIES.map((item) => (
-                  <div key={item} className="border border-blue-500/30 bg-white rounded-full px-5 py-3 text-center">
-                    <span className="text-sm text-foreground font-medium">{item}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* PU Holdings */}
-            <div className="border border-red-500/30 bg-card p-8 lg:p-10">
-              <div className="mb-6 flex flex-col items-center gap-4">
-                <div className="relative h-14 w-48">
+                <div className="relative h-12 w-36">
                   <Image 
                     src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-5SMkRAzZQ5MANmKw9kknm38UuBSgc1.png"
                     alt="(주)포항연합기술지주"
@@ -96,10 +99,60 @@ export function CoreFunctionsSection() {
                   />
                 </div>
               </div>
-              <div className="space-y-3">
-                {PUHOLDINGS_ACTIVITIES.map((item) => (
-                  <div key={item} className="border border-red-500/30 bg-white rounded-full px-5 py-3 text-center">
-                    <span className="text-sm text-foreground font-medium">{item}</span>
+
+              {/* Two Column Grid for Activities */}
+              <div className="grid grid-cols-2 gap-3">
+                {/* Left: Handong Activities */}
+                <div className="space-y-2">
+                  {HANDONG_ACTIVITIES.map((item) => (
+                    <div key={item} className="border border-blue-500/40 bg-white rounded-full px-4 py-2 text-center">
+                      <span className="text-xs text-foreground whitespace-nowrap">{item}</span>
+                    </div>
+                  ))}
+                </div>
+                {/* Right: PU Holdings Activities */}
+                <div className="space-y-2">
+                  {PUHOLDINGS_ACTIVITIES.map((item) => (
+                    <div key={item} className="border border-red-500/40 bg-white rounded-full px-4 py-2 text-center">
+                      <span className="text-xs text-foreground whitespace-nowrap">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Center Column: 네트워크 기반 외부 연계 */}
+            <div className="border border-warm-tan bg-card p-6 lg:p-8">
+              {/* Label */}
+              <div className="mb-6 border border-dashed border-warm-tan px-4 py-2 inline-block">
+                <p className="text-sm text-text-secondary text-center">
+                  네트워크 기반<br />
+                  <span className="font-medium text-foreground">외부 연계</span>
+                </p>
+              </div>
+
+              {/* Subtitle */}
+              <p className="text-xs text-text-secondary mb-6 text-center">동문, 대기업, 해외 대학 등</p>
+
+              {/* Vertical List */}
+              <div className="space-y-2">
+                {EXTERNAL_NETWORK.map((item) => (
+                  <div key={item} className="border border-gold/40 bg-white rounded-full px-4 py-2 text-center">
+                    <span className="text-xs text-foreground whitespace-nowrap">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right Column: Portfolio Companies */}
+            <div className="p-6 lg:p-8 flex flex-col justify-center">
+              <div className="space-y-6">
+                {PORTFOLIO_COMPANIES.map((company) => (
+                  <div key={company.name} className="text-center">
+                    <p className="text-base font-bold text-foreground">{company.name}</p>
+                    {company.subtitle && (
+                      <p className="text-[10px] text-text-secondary mt-0.5">{company.subtitle}</p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -107,39 +160,17 @@ export function CoreFunctionsSection() {
           </div>
         </BlurFade>
 
-        {/* External Network */}
-        <BlurFade delay={0.4}>
-          <div className="mt-12 border border-warm-tan bg-card p-8 lg:p-10">
-            <div className="mb-6 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gold/10 flex items-center justify-center">
-                <svg className="w-5 h-5 text-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-foreground">네트워크 기반 외부 연계</h3>
-                <p className="text-xs text-text-secondary">동문, 대기업, 해외 대학</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-              {EXTERNAL_NETWORK.map((item) => (
-                <div key={item} className="flex items-center gap-2 bg-warm-beige px-3 py-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-gold" />
-                  <span className="text-sm text-foreground">{item}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </BlurFade>
-
         {/* Local Government Cooperation */}
-        <BlurFade delay={0.5}>
+        <BlurFade delay={0.4}>
           <div className="mt-16 pt-12 border-t border-warm-tan">
             <h3 className="text-lg font-bold text-foreground mb-8 text-center">지자체 협력</h3>
             <div className="flex flex-wrap justify-center items-center gap-8 lg:gap-16">
               {LOCAL_GOVERNMENTS.map((gov) => (
-                <div key={gov.name} className="flex items-center gap-2 text-text-secondary">
+                <div key={gov.name} className="flex flex-col items-center gap-1 text-text-secondary">
                   <span className="text-sm font-medium">{gov.name}</span>
+                  {gov.subtitle && (
+                    <span className="text-xs text-text-secondary">{gov.subtitle}</span>
+                  )}
                 </div>
               ))}
             </div>
