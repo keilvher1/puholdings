@@ -31,8 +31,8 @@ const STRATEGY = [
     position: "실장",
     role: "사업 기획 총괄",
     details: [
-      "VC 전문인력, 창업보육매니저",
-      "기술가치평가사, 기술창업지도사",
+      "VC 전문인력, 창업보육전문매니저",
+      "동국대학교 창업보육센터 매니저",
     ],
   },
 ]
@@ -43,8 +43,8 @@ const INVESTMENT_TEAM = [
     position: "팀장",
     role: "투자 / 외부사업",
     details: [
-      "투자자산운용사, 재무위험관리사",
-      "웰컴저축은행, 푸드팡(스타트업) CFO",
+      "창업보육전문매니저",
+      "웰컴저축은행, 푸드팡(스타트업) 팀장 등",
     ],
   },
   {
@@ -53,7 +53,7 @@ const INVESTMENT_TEAM = [
     role: "투자 / 외부사업",
     details: [
       "창업보육전문매니저, 벤처투자분석사",
-      "조슈아파트너스(AC), 아트와(스타트업) CEO STAFF/PO",
+      "조슈아파트너스(AC), 아트와(스타트업) 이사 등",
     ],
   },
 ]
@@ -246,15 +246,7 @@ export function OrganizationSection() {
                       <li>교내 사업 운영</li>
                     </ul>
                   </div>
-                  <div className="flex items-center gap-5">
-                    <div className="bg-dark-muted border border-warm-tan/20 w-[96px] h-[64px] flex items-center justify-center shrink-0">
-                      <p className="text-sm text-primary-foreground text-center leading-tight whitespace-nowrap">경영관리팀</p>
-                    </div>
-                    <ul className="text-xs text-text-tertiary leading-relaxed whitespace-nowrap">
-                      <li>대외 협력 및 사업 관리</li>
-                      <li>기타 경영지원 업무</li>
-                    </ul>
-                  </div>
+
                 </div>
               </div>
             </div>
