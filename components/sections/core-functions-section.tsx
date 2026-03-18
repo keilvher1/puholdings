@@ -171,18 +171,23 @@ export function CoreFunctionsSection() {
         <BlurFade delay={0.4}>
           {/* Wrapper that matches the left+center width */}
           <div className="mt-6 flex gap-6">
-            {/* 지자체 박스 — same flex-1 as left+center group */}
-            <div className="flex-1 border border-warm-tan bg-card px-10 py-5 flex items-center justify-around gap-6">
-              <p className="text-sm font-bold text-foreground whitespace-nowrap">지자체 협력</p>
-              <div className="w-px h-6 bg-warm-tan" />
-              {LOCAL_GOVERNMENTS.map((gov, i) => (
-                <span key={gov.name} className="flex items-center gap-4">
-                  <span className="text-sm font-medium text-foreground whitespace-nowrap">{gov.name}</span>
-                  {i < LOCAL_GOVERNMENTS.length - 1 && (
-                    <span className="text-warm-tan">|</span>
-                  )}
-                </span>
-              ))}
+            {/* 지자체 박스 — 타이틀이 상단 테두리에 걸친 배지 형태 */}
+            <div className="flex-1 relative mt-4">
+              {/* 배지 타이틀 */}
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10 bg-warm-ivory px-4">
+                <span className="text-sm font-medium text-foreground whitespace-nowrap">지자체 협력</span>
+              </div>
+              {/* 박스 본체 */}
+              <div className="border border-warm-tan bg-card px-10 py-5 flex items-center justify-around gap-6">
+                {LOCAL_GOVERNMENTS.map((gov, i) => (
+                  <span key={gov.name} className="flex items-center gap-4">
+                    <span className="text-sm font-medium text-foreground whitespace-nowrap">{gov.name}</span>
+                    {i < LOCAL_GOVERNMENTS.length - 1 && (
+                      <span className="text-warm-tan">|</span>
+                    )}
+                  </span>
+                ))}
+              </div>
             </div>
             {/* Spacer matching portfolio column width */}
             <div className="w-40" />
