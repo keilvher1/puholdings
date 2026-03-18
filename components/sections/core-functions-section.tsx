@@ -83,7 +83,7 @@ export function CoreFunctionsSection() {
                   <div className="flex justify-center mb-6">
                     <div className="border border-dashed border-warm-tan px-5 py-2">
                       <p className="text-sm text-center">
-                        내부 역량 기반{" "}
+                        내부 역량 기반<br />
                         <span className="font-semibold text-foreground">자체 지원</span>
                       </p>
                     </div>
@@ -129,7 +129,7 @@ export function CoreFunctionsSection() {
                   <div className="flex justify-center mb-6">
                     <div className="border border-dashed border-warm-tan px-5 py-2">
                       <p className="text-sm text-center">
-                        네트워크 기반{" "}
+                        네트워크 기반<br />
                         <span className="font-semibold text-foreground">외부 연계</span>
                       </p>
                     </div>
