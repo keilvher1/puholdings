@@ -66,15 +66,14 @@ export function CoreFunctionsSection() {
             {/* Handong University */}
             <div className="border border-blue-500/30 bg-card p-8 lg:p-10">
               <div className="mb-6 flex flex-col items-center gap-4">
-                <div className="w-20 h-20 relative">
+                <div className="relative h-14 w-48">
                   <Image 
-                    src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-j9ESHtfkYL1xEZKqq4jMQaY5mBeL3A.png"
+                    src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-Gr0HGRS2EgHMVp6hUlFloPH4NbnZqE.png"
                     alt="한동대학교"
                     fill
                     className="object-contain"
                   />
                 </div>
-                <h3 className="text-lg font-bold text-foreground text-center">한동대학교</h3>
               </div>
               <div className="space-y-3">
                 {HANDONG_ACTIVITIES.map((item) => (
@@ -88,15 +87,14 @@ export function CoreFunctionsSection() {
             {/* PU Holdings */}
             <div className="border border-red-500/30 bg-card p-8 lg:p-10">
               <div className="mb-6 flex flex-col items-center gap-4">
-                <div className="w-20 h-20 relative">
+                <div className="relative h-14 w-48">
                   <Image 
-                    src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-hQULUJohK58buj11npJv65rkDqO3C8.png"
-                    alt="포항연합기술지주"
+                    src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-5SMkRAzZQ5MANmKw9kknm38UuBSgc1.png"
+                    alt="(주)포항연합기술지주"
                     fill
                     className="object-contain"
                   />
                 </div>
-                <h3 className="text-lg font-bold text-foreground text-center">(주)포항연합기술지주</h3>
               </div>
               <div className="space-y-3">
                 {PUHOLDINGS_ACTIVITIES.map((item) => (
