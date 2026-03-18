@@ -25,10 +25,10 @@ const EXTERNAL_NETWORK = [
 ]
 
 const PORTFOLIO_COMPANIES = [
-  { name: "HEM파마", subtitle: "Human Effective Microbes Pharma Inc." },
-  { name: "Impactive AI", subtitle: "" },
-  { name: "MIDBAR", subtitle: "" },
-  { name: "deep visions", subtitle: "" },
+  { name: "HEM파마",      src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-lpszLl0NGvMMe7r7GHdmcsLrNaflGe.png" },
+  { name: "Impactive AI", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-hEpm4hGVKMJdJNLrF1IAqUynTRwFJ3.png" },
+  { name: "MIDBAR",       src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-zhKV0KhPM9QawpZ71DPRS53Rh2pnTO.png" },
+  { name: "deep visions", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-ueMrPquQsTjuepDuXMdPXt5yXmVJ7p.png" },
 ]
 
 const LOCAL_GOVERNMENTS = [
@@ -174,11 +174,13 @@ export function CoreFunctionsSection() {
             {/* Right: Portfolio Companies — stretches full height including 지자체 row */}
             <div className="w-40 border border-warm-tan bg-card p-6 flex flex-col justify-center gap-6">
               {PORTFOLIO_COMPANIES.map((company) => (
-                <div key={company.name} className="text-center">
-                  <p className="text-sm font-bold text-foreground">{company.name}</p>
-                  {company.subtitle && (
-                    <p className="text-[9px] text-text-secondary mt-0.5 leading-tight">{company.subtitle}</p>
-                  )}
+                <div key={company.name} className="relative h-10 w-full">
+                  <Image
+                    src={company.src}
+                    alt={company.name}
+                    fill
+                    className="object-contain"
+                  />
                 </div>
               ))}
             </div>
