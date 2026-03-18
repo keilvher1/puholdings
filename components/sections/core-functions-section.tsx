@@ -32,10 +32,10 @@ const PORTFOLIO_COMPANIES = [
 ]
 
 const LOCAL_GOVERNMENTS = [
-  { name: "경상북도" },
-  { name: "포항시" },
-  { name: "영덕군" },
-  { name: "안동시" },
+  { name: "경상북도", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-iFegBh7VyvxoPhRiSGeM5QPfpR4N6F.png" },
+  { name: "포항시",   src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-JWCIEV9GZks9XhIA5DzTAEl0GxThwg.png" },
+  { name: "영덕군",   src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-3KbKz1jefLxFrY48LTpAX1OI38J1l3.png" },
+  { name: "안동시",   src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-Kp8e6BfPFz7umQwSjDgwCfLSbdti20.png" },
 ]
 
 export function CoreFunctionsSection() {
@@ -157,13 +157,15 @@ export function CoreFunctionsSection() {
                   <span className="text-sm font-medium text-foreground whitespace-nowrap">지자체 협력</span>
                 </div>
                 <div className="border border-warm-tan bg-card px-10 py-5 flex items-center justify-around gap-6">
-                  {LOCAL_GOVERNMENTS.map((gov, i) => (
-                    <span key={gov.name} className="flex items-center gap-4">
-                      <span className="text-sm font-medium text-foreground whitespace-nowrap">{gov.name}</span>
-                      {i < LOCAL_GOVERNMENTS.length - 1 && (
-                        <span className="text-warm-tan">|</span>
-                      )}
-                    </span>
+                  {LOCAL_GOVERNMENTS.map((gov) => (
+                    <div key={gov.name} className="relative h-10 w-28">
+                      <Image
+                        src={gov.src}
+                        alt={gov.name}
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
                   ))}
                 </div>
               </div>
