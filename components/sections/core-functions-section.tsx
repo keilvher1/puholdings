@@ -88,33 +88,37 @@ export function CoreFunctionsSection() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center justify-center gap-4 mb-8">
-                    <div className="relative h-10 w-32">
-                      <Image
-                        src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-Gr0HGRS2EgHMVp6hUlFloPH4NbnZqE.png"
-                        alt="한동대학교"
-                        fill
-                        className="object-contain"
-                      />
-                    </div>
-                    <div className="relative h-10 w-32">
-                      <Image
-                        src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-5SMkRAzZQ5MANmKw9kknm38UuBSgc1.png"
-                        alt="(주)포항연합기술지주"
-                        fill
-                        className="object-contain"
-                      />
-                    </div>
-                  </div>
                   <div className="grid grid-cols-2 gap-3 flex-1">
+                    {/* 한동대학교 column */}
                     <div className="flex flex-col gap-3">
+                      <div className="flex justify-center items-center h-12 mb-2">
+                        <div className="relative h-10 w-full">
+                          <Image
+                            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-Gr0HGRS2EgHMVp6hUlFloPH4NbnZqE.png"
+                            alt="한동대학교"
+                            fill
+                            className="object-contain"
+                          />
+                        </div>
+                      </div>
                       {HANDONG_ACTIVITIES.map((item) => (
                         <div key={item} className="flex-1 border border-blue-500/40 bg-white rounded-full flex items-center justify-center px-3 py-2 min-h-[40px]">
                           <span className="text-xs text-foreground text-center leading-tight">{item}</span>
                         </div>
                       ))}
                     </div>
+                    {/* 포항연합기술지주 column */}
                     <div className="flex flex-col gap-3">
+                      <div className="flex justify-center items-center h-12 mb-2">
+                        <div className="relative h-10 w-full">
+                          <Image
+                            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-5SMkRAzZQ5MANmKw9kknm38UuBSgc1.png"
+                            alt="(주)포항연합기술지주"
+                            fill
+                            className="object-contain"
+                          />
+                        </div>
+                      </div>
                       {PUHOLDINGS_ACTIVITIES.map((item) => (
                         <div key={item} className="flex-1 border border-red-500/40 bg-white rounded-full flex items-center justify-center px-3 py-2 min-h-[40px]">
                           <span className="text-xs text-foreground text-center leading-tight">{item}</span>
