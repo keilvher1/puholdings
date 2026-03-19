@@ -138,9 +138,12 @@ export function CoreFunctionsSection() {
                       </p>
                     </div>
                   </div>
-                  <p className="text-base font-bold text-foreground mb-6 text-center whitespace-nowrap">
-                    동문, 대기업, 해외 대학 등
-                  </p>
+                  {/* 로고 영역과 높이 맞추기: h-12 + mb-2 = 왼쪽 로고 영역과 동일 */}
+                  <div className="flex justify-center items-center h-12 mb-2">
+                    <p className="text-base font-bold text-foreground text-center whitespace-nowrap">
+                      동문, 대기업, 해외 대학 등
+                    </p>
+                  </div>
                   <div className="flex flex-col gap-3 flex-1">
                     {EXTERNAL_NETWORK.map((item) => (
                       <div key={item} className="flex-1 border border-gold/40 bg-white rounded-full flex items-center justify-center px-4 py-2 min-h-[40px]">
