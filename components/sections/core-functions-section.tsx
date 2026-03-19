@@ -38,6 +38,15 @@ const LOCAL_GOVERNMENTS = [
   { name: "안동시",   src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-Kp8e6BfPFz7umQwSjDgwCfLSbdti20.png" },
 ]
 
+const RELATED_ORGANIZATIONS = [
+  { name: "포항테크노파크",         src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-WEHXO0v9ZMA1gNSBjAnt9iGY7A56sf.png" },
+  { name: "경북창조경제혁신센터",   src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-tcKR7EOy3jhY4s10JLmZnqPU7Fs8Eh.png" },
+  { name: "Y&ARCHER",              src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-7Ye9ddTOIPoaKRd9UwguZjFFxcMybP.png" },
+  { name: "KOSME 청년창업사관학교", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-lfGehbwPLxuIujpMhIUiBb2RiriqQs.png" },
+  { name: "경북콘텐츠기업지원센터", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-02rGemct5mMtBJmpIgGj3J8DR6dmcI.png" },
+  { name: "대경지역대학공동기술지주", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-6AkA7EVwXXnH21QNWv0uajbsMcSuPC.png" },
+]
+
 export function CoreFunctionsSection() {
   return (
     <section className="relative bg-warm-ivory py-28 lg:py-40 border-t border-warm-tan">
@@ -165,6 +174,25 @@ export function CoreFunctionsSection() {
                       <Image
                         src={gov.src}
                         alt={gov.name}
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Bottom: 유관기관 협력 박스 */}
+              <div className="relative mt-4">
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10 bg-warm-ivory px-4">
+                  <span className="text-sm font-medium text-foreground whitespace-nowrap">유관기관 협력</span>
+                </div>
+                <div className="border border-warm-tan bg-card px-10 py-5 flex items-center justify-around gap-6">
+                  {RELATED_ORGANIZATIONS.map((org) => (
+                    <div key={org.name} className="relative h-10 w-32">
+                      <Image
+                        src={org.src}
+                        alt={org.name}
                         fill
                         className="object-contain"
                       />
