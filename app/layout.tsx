@@ -4,9 +4,9 @@ import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
 const notoSansKR = Noto_Sans_KR({
-  subsets: ['latin'],
   weight: ['300', '400', '500', '700', '900'],
   display: 'swap',
+  preload: false,
 })
 
 const _geist = Geist({ subsets: ['latin'] })
