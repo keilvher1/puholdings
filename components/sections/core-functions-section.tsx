@@ -90,14 +90,14 @@ export function CoreFunctionsSection() {
                 {/* Left: 내부 역량 기반 자체 지원 */}
                 <div className="flex-1 border border-warm-tan bg-card p-6 lg:p-8 flex flex-col">
                   <div className="flex justify-center mb-6">
-                    <div className="border border-dashed border-warm-tan px-5 py-2">
-                      <p className="text-sm text-center">
+                    <div className="border border-gold/30 bg-gold/5 px-5 py-2.5">
+                      <p className="text-xs text-center text-text-secondary">
                         내부 역량 기반<br />
                         <span className="font-semibold text-foreground">자체 지원</span>
                       </p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3 flex-1">
+                  <div className="grid grid-cols-2 gap-4 flex-1">
                     {/* 한동대학교 column */}
                     <div className="flex flex-col gap-3">
                       <div className="flex justify-center items-center h-12 mb-2">
@@ -111,7 +111,7 @@ export function CoreFunctionsSection() {
                         </div>
                       </div>
                       {HANDONG_ACTIVITIES.map((item) => (
-                        <div key={item} className="flex-1 border border-blue-500/40 bg-white rounded-full flex items-center justify-center px-3 py-2 min-h-[40px]">
+                        <div key={item} className="flex-1 border border-warm-tan bg-warm-beige flex items-center justify-center px-3 py-2.5 min-h-[42px]">
                           <span className="text-xs text-foreground text-center leading-tight">{item}</span>
                         </div>
                       ))}
@@ -129,7 +129,7 @@ export function CoreFunctionsSection() {
                         </div>
                       </div>
                       {PUHOLDINGS_ACTIVITIES.map((item) => (
-                        <div key={item} className="flex-1 border border-red-500/40 bg-white rounded-full flex items-center justify-center px-3 py-2 min-h-[40px]">
+                        <div key={item} className="flex-1 border border-gold/30 bg-gold/5 flex items-center justify-center px-3 py-2.5 min-h-[42px]">
                           <span className="text-xs text-foreground text-center leading-tight">{item}</span>
                         </div>
                       ))}
@@ -140,8 +140,8 @@ export function CoreFunctionsSection() {
                 {/* Center: 네트워크 기반 외부 연계 */}
                 <div className="w-56 border border-warm-tan bg-card p-6 lg:p-8 flex flex-col">
                   <div className="flex justify-center mb-6">
-                    <div className="border border-dashed border-warm-tan px-5 py-2">
-                      <p className="text-sm text-center">
+                    <div className="border border-gold/30 bg-gold/5 px-5 py-2.5">
+                      <p className="text-xs text-center text-text-secondary">
                         네트워크 기반<br />
                         <span className="font-semibold text-foreground">외부 연계</span>
                       </p>
@@ -155,7 +155,7 @@ export function CoreFunctionsSection() {
                   </div>
                   <div className="flex flex-col gap-3 flex-1">
                     {EXTERNAL_NETWORK.map((item) => (
-                      <div key={item} className="flex-1 border border-gold/40 bg-white rounded-full flex items-center justify-center px-4 py-2 min-h-[40px]">
+                      <div key={item} className="flex-1 border border-warm-tan bg-warm-beige flex items-center justify-center px-4 py-2.5 min-h-[42px]">
                         <span className="text-xs text-foreground text-center leading-tight whitespace-nowrap">{item}</span>
                       </div>
                     ))}
@@ -164,11 +164,11 @@ export function CoreFunctionsSection() {
               </div>
 
               {/* Bottom: 지자체 협력 박스 */}
-              <div className="relative mt-4">
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10 bg-warm-ivory px-4">
-                  <span className="text-sm font-medium text-foreground whitespace-nowrap">지자체 협력</span>
+              <div className="relative mt-6">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10 bg-warm-ivory px-4">
+                  <span className="text-xs font-medium tracking-wide text-gold whitespace-nowrap">지자체 협력</span>
                 </div>
-                <div className="border border-warm-tan bg-card px-10 py-5 flex items-center justify-around gap-6">
+                <div className="border border-warm-tan bg-warm-beige/50 px-10 py-6 flex items-center justify-around gap-6">
                   {LOCAL_GOVERNMENTS.map((gov) => (
                     <div key={gov.name} className="relative h-10 w-28">
                       <Image
@@ -183,11 +183,11 @@ export function CoreFunctionsSection() {
               </div>
 
               {/* Bottom: 유관기관 협력 박스 */}
-              <div className="relative mt-4">
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10 bg-warm-ivory px-4">
-                  <span className="text-sm font-medium text-foreground whitespace-nowrap">유관기관 협력</span>
+              <div className="relative mt-6">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10 bg-warm-ivory px-4">
+                  <span className="text-xs font-medium tracking-wide text-gold whitespace-nowrap">유관기관 협력</span>
                 </div>
-                <div className="border border-warm-tan bg-card px-10 py-5 flex items-center justify-around gap-6">
+                <div className="border border-warm-tan bg-warm-beige/50 px-10 py-6 flex items-center justify-around gap-6">
                   {RELATED_ORGANIZATIONS.map((org) => (
                     <div key={org.name} className="relative h-10 w-32">
                       <Image
@@ -203,7 +203,7 @@ export function CoreFunctionsSection() {
             </div>
 
             {/* Right: Portfolio Companies — stretches full height including 지자체 row */}
-            <div className="w-40 border border-warm-tan bg-card p-6 flex flex-col justify-center gap-6">
+            <div className="w-44 border border-gold/20 bg-gold/5 p-6 flex flex-col justify-center gap-8">
               {PORTFOLIO_COMPANIES.map((company) => (
                 <div key={company.name} className="relative h-10 w-full">
                   <Image
