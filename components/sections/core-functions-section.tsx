@@ -25,10 +25,10 @@ const EXTERNAL_NETWORK = [
 ]
 
 const PORTFOLIO_COMPANIES = [
-  { name: "HEM파마", subtitle: "Human Effective Microbes Pharma Inc." },
-  { name: "Impactive AI", subtitle: "" },
-  { name: "MIDBAR", subtitle: "" },
-  { name: "deep visions", subtitle: "" },
+  { name: "HEM파마",      src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-lpszLl0NGvMMe7r7GHdmcsLrNaflGe.png" },
+  { name: "Impactive AI", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-hEpm4hGVKMJdJNLrF1IAqUynTRwFJ3.png" },
+  { name: "MIDBAR",       src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-zhKV0KhPM9QawpZ71DPRS53Rh2pnTO.png" },
+  { name: "deep visions", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-ueMrPquQsTjuepDuXMdPXt5yXmVJ7p.png" },
 ]
 
 const LOCAL_GOVERNMENTS = [
@@ -36,6 +36,15 @@ const LOCAL_GOVERNMENTS = [
   { name: "포항시",   src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-JWCIEV9GZks9XhIA5DzTAEl0GxThwg.png" },
   { name: "영덕군",   src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-3KbKz1jefLxFrY48LTpAX1OI38J1l3.png" },
   { name: "안동시",   src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-Kp8e6BfPFz7umQwSjDgwCfLSbdti20.png" },
+]
+
+const RELATED_ORGANIZATIONS = [
+  { name: "포항테크노파크",         src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-WEHXO0v9ZMA1gNSBjAnt9iGY7A56sf.png" },
+  { name: "경북창조경제혁신센터",   src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-tcKR7EOy3jhY4s10JLmZnqPU7Fs8Eh.png" },
+  { name: "Y&ARCHER",              src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-7Ye9ddTOIPoaKRd9UwguZjFFxcMybP.png" },
+  { name: "KOSME 청년창업사관학교", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-lfGehbwPLxuIujpMhIUiBb2RiriqQs.png" },
+  { name: "경북콘텐츠기업지원센터", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-02rGemct5mMtBJmpIgGj3J8DR6dmcI.png" },
+  { name: "대경지역대학공동기술지주", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-6AkA7EVwXXnH21QNWv0uajbsMcSuPC.png" },
 ]
 
 export function CoreFunctionsSection() {
@@ -138,9 +147,12 @@ export function CoreFunctionsSection() {
                       </p>
                     </div>
                   </div>
-                  <p className="text-base font-bold text-foreground mb-6 text-center whitespace-nowrap">
-                    동문, 대기업, 해외 대학 등
-                  </p>
+                  {/* 로고 영역과 높이 맞추기: h-12 + mb-2 = 왼쪽 로고 영역과 동일 */}
+                  <div className="flex justify-center items-center h-12 mb-2">
+                    <p className="text-base font-bold text-foreground text-center whitespace-nowrap">
+                      동문, 대기업, 해외 대학 등
+                    </p>
+                  </div>
                   <div className="flex flex-col gap-3 flex-1">
                     {EXTERNAL_NETWORK.map((item) => (
                       <div key={item} className="flex-1 border border-gold/40 bg-white rounded-full flex items-center justify-center px-4 py-2 min-h-[40px]">
@@ -169,16 +181,37 @@ export function CoreFunctionsSection() {
                   ))}
                 </div>
               </div>
+
+              {/* Bottom: 유관기관 협력 박스 */}
+              <div className="relative mt-4">
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10 bg-warm-ivory px-4">
+                  <span className="text-sm font-medium text-foreground whitespace-nowrap">유관기관 협력</span>
+                </div>
+                <div className="border border-warm-tan bg-card px-10 py-5 flex items-center justify-around gap-6">
+                  {RELATED_ORGANIZATIONS.map((org) => (
+                    <div key={org.name} className="relative h-10 w-32">
+                      <Image
+                        src={org.src}
+                        alt={org.name}
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* Right: Portfolio Companies — stretches full height including 지자체 row */}
             <div className="w-40 border border-warm-tan bg-card p-6 flex flex-col justify-center gap-6">
               {PORTFOLIO_COMPANIES.map((company) => (
-                <div key={company.name} className="text-center">
-                  <p className="text-sm font-bold text-foreground">{company.name}</p>
-                  {company.subtitle && (
-                    <p className="text-[9px] text-text-secondary mt-0.5 leading-tight">{company.subtitle}</p>
-                  )}
+                <div key={company.name} className="relative h-10 w-full">
+                  <Image
+                    src={company.src}
+                    alt={company.name}
+                    fill
+                    className="object-contain"
+                  />
                 </div>
               ))}
             </div>
