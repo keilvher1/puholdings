@@ -25,7 +25,7 @@ const EXTERNAL_NETWORK = [
 ]
 
 const PORTFOLIO_COMPANIES = [
-  { name: "HEM파마",      src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/HEM%E1%84%91%E1%85%A1%E1%84%86%E1%85%A1_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-hUtjk8snyWuWEF0GoFKungqzP3thBM.jpg" },
+  { name: "HEM파마",      src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/HEM%E1%84%91%E1%85%A1%E1%84%86%E1%85%A1_CI-1-fYz4G5Ld5rfaFhdppQPaawBcivPYA2.png", cropTop: true },
   { name: "Impactive AI", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Impactive_AI_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-63XPQG0DuzorwF4HiMH9d2sHX7laM4.svg" },
   { name: "MIDBAR",       src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/MIDBAR_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-VTtxhnWkT0lkNPatvqcC6xX3ga4sla.png" },
   { name: "deep visions", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/deep_visions_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-ohjOSZUffMN9CqIwYpaZy1jcwni4bR.jpg" },
@@ -204,14 +204,28 @@ export function CoreFunctionsSection() {
             {/* Right: Portfolio Companies — stretches full height including 지자체 row */}
             <div className="w-44 border border-gold/20 bg-gold/5 p-6 flex flex-col justify-center gap-8">
               {PORTFOLIO_COMPANIES.map((company) => (
-                <div key={company.name} className="relative h-10 w-full">
-                  <Image
-                    src={company.src}
-                    alt={company.name}
-                    fill
-                    className="object-contain"
-                  />
-                </div>
+                company.cropTop ? (
+                  // CI 디자인 페이지 이미지의 상단 절반(로고 영역)만 표시
+                  <div key={company.name} className="relative w-full overflow-hidden" style={{ height: 40 }}>
+                    <div className="absolute inset-0" style={{ height: '200%' }}>
+                      <Image
+                        src={company.src}
+                        alt={company.name}
+                        fill
+                        className="object-contain object-top"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div key={company.name} className="relative h-10 w-full">
+                    <Image
+                      src={company.src}
+                      alt={company.name}
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
+                )
               ))}
             </div>
           </div>
