@@ -25,10 +25,10 @@ const EXTERNAL_NETWORK = [
 ]
 
 const PORTFOLIO_COMPANIES = [
-  { name: "HEM파마",      src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-lpszLl0NGvMMe7r7GHdmcsLrNaflGe.png" },
-  { name: "Impactive AI", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-hEpm4hGVKMJdJNLrF1IAqUynTRwFJ3.png" },
-  { name: "MIDBAR",       src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-zhKV0KhPM9QawpZ71DPRS53Rh2pnTO.png" },
-  { name: "deep visions", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-ueMrPquQsTjuepDuXMdPXt5yXmVJ7p.png" },
+  { name: "HEM파마",      src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/HEM%E1%84%91%E1%85%A1%E1%84%86%E1%85%A1_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-hUtjk8snyWuWEF0GoFKungqzP3thBM.jpg" },
+  { name: "Impactive AI", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Impactive_AI_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-63XPQG0DuzorwF4HiMH9d2sHX7laM4.svg" },
+  { name: "MIDBAR",       src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/MIDBAR_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-VTtxhnWkT0lkNPatvqcC6xX3ga4sla.png" },
+  { name: "deep visions", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/deep_visions_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-ohjOSZUffMN9CqIwYpaZy1jcwni4bR.jpg" },
 ]
 
 const LOCAL_GOVERNMENTS = [
