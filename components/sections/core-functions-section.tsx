@@ -39,12 +39,11 @@ const LOCAL_GOVERNMENTS = [
 ]
 
 const RELATED_ORGANIZATIONS = [
-  { name: "포항테크노파크",         src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-WEHXO0v9ZMA1gNSBjAnt9iGY7A56sf.png" },
-  { name: "경북창조경제혁신센터",   src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-tcKR7EOy3jhY4s10JLmZnqPU7Fs8Eh.png" },
-  { name: "Y&ARCHER",              src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-7Ye9ddTOIPoaKRd9UwguZjFFxcMybP.png" },
-  { name: "KOSME 청년창업사관학교", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-lfGehbwPLxuIujpMhIUiBb2RiriqQs.png" },
-  { name: "경북콘텐츠기업지원센터", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-02rGemct5mMtBJmpIgGj3J8DR6dmcI.png" },
-  { name: "대경지역대학공동기술지주", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-6AkA7EVwXXnH21QNWv0uajbsMcSuPC.png" },
+  { name: "포항테크노파크",         src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%91%E1%85%A9%E1%84%92%E1%85%A1%E1%86%BC%E1%84%90%E1%85%A6%E1%84%8F%E1%85%B3%E1%84%82%E1%85%A9%E1%84%91%E1%85%A1%E1%84%8F%E1%85%B3_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-KYY9EfhPyxhtWAW9eEvhxglAhkC65T.png" },
+  { name: "경북창조경제혁신센터",   src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%80%E1%85%A7%E1%86%BC%E1%84%87%E1%85%AE%E1%86%A8%E1%84%8E%E1%85%A1%E1%86%BC%E1%84%8C%E1%85%A9%E1%84%80%E1%85%A7%E1%86%BC%E1%84%8C%E1%85%A6%E1%84%92%E1%85%A7%E1%86%A8%E1%84%89%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A6%E1%86%AB%E1%84%90%E1%85%A5_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-we2uo0tpDzF3DqJVXR7oA19yG4hwXn.png" },
+  { name: "Y&ARCHER",              src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Y%26ARCHER_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-ev97r2lvSbWl3AORjo7HDgtH0Ug0tt.svg" },
+  { name: "경북콘텐츠기업지원센터", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%80%E1%85%A7%E1%86%BC%E1%84%87%E1%85%AE%E1%86%A8%E1%84%8F%E1%85%A9%E1%86%AB%E1%84%90%E1%85%A6%E1%86%AB%E1%84%8E%E1%85%B3%E1%84%80%E1%85%B5%E1%84%8B%E1%85%A5%E1%86%B8%E1%84%8C%E1%85%B5%E1%84%8B%E1%85%AF%E1%86%AB%E1%84%89%E1%85%A6%E1%86%AB%E1%84%90%E1%85%A5_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-Vrn2WSg3scOaJu02kaEDCkVzLX3BAE.png" },
+  { name: "대경지역대학공동기술지주", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%83%E1%85%A2%E1%84%80%E1%85%A7%E1%86%BC%E1%84%8C%E1%85%B5%E1%84%8B%E1%85%A7%E1%86%A8%E1%84%83%E1%85%A2%E1%84%92%E1%85%A1%E1%86%A8%E1%84%80%E1%85%A9%E1%86%BC%E1%84%83%E1%85%A9%E1%86%BC%E1%84%80%E1%85%B5%E1%84%89%E1%85%AE%E1%86%AF%E1%84%8C%E1%85%B5%E1%84%8C%E1%85%AE_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-V2kbSeLEXexwa2POhXOhJClNtErobB.jpg" },
 ]
 
 export function CoreFunctionsSection() {
