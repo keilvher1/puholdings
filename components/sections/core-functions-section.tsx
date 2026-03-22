@@ -32,10 +32,10 @@ const PORTFOLIO_COMPANIES = [
 ]
 
 const LOCAL_GOVERNMENTS = [
-  { name: "경상북도", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-iFegBh7VyvxoPhRiSGeM5QPfpR4N6F.png" },
-  { name: "포항시",   src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-JWCIEV9GZks9XhIA5DzTAEl0GxThwg.png" },
-  { name: "영덕군",   src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-3KbKz1jefLxFrY48LTpAX1OI38J1l3.png" },
-  { name: "안동시",   src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-Kp8e6BfPFz7umQwSjDgwCfLSbdti20.png" },
+  { name: "경상북도", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/gb_logo-HD90eDQap9ucRE8jY4uQuzRy5b5CgO.png" },
+  { name: "포항시",   src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%91%E1%85%A9%E1%84%92%E1%85%A1%E1%86%BC%E1%84%89%E1%85%B5_%E1%84%89%E1%85%B5%E1%86%B7%E1%84%87%E1%85%A5%E1%86%AF%E1%84%86%E1%85%A1%E1%84%8F%E1%85%B3-RtbRvsaGUZ6vMr2I3UNyB4gS6ZdM2v.png" },
+  { name: "영덕군",   src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%8B%E1%85%A7%E1%86%BC%E1%84%83%E1%85%A5%E1%86%A8%E1%84%80%E1%85%AE%E1%86%AB%E1%84%89%E1%85%B5%E1%86%B7%E1%84%87%E1%85%A5%E1%86%AF_ai-jNI4YxybV2YDq5tIwnbEMX4bTmVMTI.png" },
+  { name: "안동시",   src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%8B%E1%85%A1%E1%86%AB%E1%84%83%E1%85%A9%E1%86%BC%E1%84%89%E1%85%B5_%E1%84%89%E1%85%B5%E1%86%B7%E1%84%87%E1%85%A5%E1%86%AF%E1%84%86%E1%85%A1%E1%84%8F%E1%85%B3-g9cwmiJZ7cngWjO49gYBwS9cPk2qos.png" },
 ]
 
 const RELATED_ORGANIZATIONS = [
