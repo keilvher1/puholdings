@@ -157,7 +157,7 @@ export function EcosystemSection() {
             <h3 className="text-xl font-bold text-primary-foreground mb-10">주요 역할</h3>
             
             <div className="grid gap-12 lg:grid-cols-2">
-              {/* 왼쪽: 포항 창업 단계별 주요 투자사 역할 */}
+              {/* 왼쪽: 포항 창업 단계별 주요 투자��� 역할 */}
               <div>
                 <h4 className="text-base font-semibold text-primary-foreground mb-6 flex items-center gap-2">
                   <span className="w-4 h-4 border border-warm-tan/50" />
@@ -335,31 +335,31 @@ export function EcosystemSection() {
             </h3>
 
             {/* 상단 타임라인 화살표 */}
-            <div className="relative mb-12">
-              {/* 화살표 바 */}
-              <div className="relative h-12 flex items-center">
-                {/* 그라데이션 화살표 배경 */}
-                <div className="absolute inset-y-0 left-0 right-8 bg-gradient-to-r from-warm-tan/40 to-warm-tan/20 rounded-l-full" />
-                {/* 화살표 끝 */}
-                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-0 border-t-[24px] border-t-transparent border-b-[24px] border-b-transparent border-l-[32px] border-l-warm-tan/20" />
+            <div className="relative mb-16">
+              {/* 화살표 전체 컨테이너 */}
+              <div className="relative flex items-center h-20">
+                {/* 화살표 몸통 (그라데이션 배경) */}
+                <div className="absolute inset-y-0 left-0 right-6 bg-gradient-to-r from-warm-tan/50 via-warm-tan/30 to-warm-tan/20" />
+                {/* 화살표 끝 삼각형 */}
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-0 h-0 border-t-[40px] border-t-transparent border-b-[40px] border-b-transparent border-l-[24px] border-l-warm-tan/20" />
                 
-                {/* 타임라인 마커들 */}
-                <div className="relative z-10 flex w-full justify-between px-8">
+                {/* 처음 3단계 강조 점선 테두리 (화살표 내부) */}
+                <div className="absolute top-2 bottom-2 left-2 w-[42%] border-2 border-dashed border-gold/60 rounded-lg z-10" />
+                
+                {/* 타임라인 마커들 (화살표 내부) */}
+                <div className="relative z-20 flex w-full items-center justify-between px-6">
                   {TIMELINE_STAGES.map((stage) => (
                     <div key={stage.label} className="flex flex-col items-center">
                       {/* 원형 마커 */}
-                      <div className={`w-6 h-6 rounded-full border-2 ${stage.highlighted ? 'border-gold bg-dark' : 'border-warm-tan/50 bg-dark'}`} />
+                      <div className={`w-5 h-5 rounded-full border-2 ${stage.highlighted ? 'border-gold bg-dark' : 'border-warm-tan/60 bg-dark'}`} />
                       {/* 라벨 */}
-                      <span className={`mt-2 text-xs whitespace-nowrap ${stage.highlighted ? 'text-gold font-medium' : 'text-text-tertiary'}`}>
+                      <span className={`mt-1 text-[11px] whitespace-nowrap ${stage.highlighted ? 'text-gold font-semibold' : 'text-text-tertiary'}`}>
                         {stage.label}
                       </span>
                     </div>
                   ))}
                 </div>
               </div>
-              
-              {/* 처음 3단계 강조 점선 테두리 */}
-              <div className="absolute top-0 left-4 w-[40%] h-12 border-2 border-dashed border-gold/50 rounded-lg -translate-y-1" />
             </div>
 
             {/* 중앙 블록 다이어그램 */}
