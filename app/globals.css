@@ -118,3 +118,19 @@ html[data-scroll-behavior="smooth"] {
 .animate-border-beam {
   animation: border-beam linear infinite;
 }
+
+/* Portfolio card grid - 모든 카드 높이 동일하게 */
+.portfolio-grid {
+  display: grid;
+  gap: 1px;
+  background: var(--warm-tan);
+}
+
+.portfolio-grid > * {
+  height: 320px !important;
+  min-height: 320px !important;
+}
+
+.portfolio-grid > * > * {
+  height: 100% !important;
+}
