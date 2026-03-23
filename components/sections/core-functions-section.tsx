@@ -25,26 +25,25 @@ const EXTERNAL_NETWORK = [
 ]
 
 const PORTFOLIO_COMPANIES = [
-  { name: "HEM파마",      src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-lpszLl0NGvMMe7r7GHdmcsLrNaflGe.png" },
-  { name: "Impactive AI", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-hEpm4hGVKMJdJNLrF1IAqUynTRwFJ3.png" },
-  { name: "MIDBAR",       src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-zhKV0KhPM9QawpZ71DPRS53Rh2pnTO.png" },
-  { name: "deep visions", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-ueMrPquQsTjuepDuXMdPXt5yXmVJ7p.png" },
+  { name: "HEM파마",      src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image%201-l90atQ3Mq3n9e9Pzo7e898Ma37xKJH.png" },
+  { name: "Impactive AI", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Impactive_AI_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-63XPQG0DuzorwF4HiMH9d2sHX7laM4.svg" },
+  { name: "MIDBAR",       src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/MIDBAR_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-VTtxhnWkT0lkNPatvqcC6xX3ga4sla.png" },
+  { name: "deep visions", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image%202%20%281%29-jqJoGl5iItFBAgkKWCQiYh23UdFHVG.png" },
 ]
 
 const LOCAL_GOVERNMENTS = [
-  { name: "경상북도", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-iFegBh7VyvxoPhRiSGeM5QPfpR4N6F.png" },
-  { name: "포항시",   src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-JWCIEV9GZks9XhIA5DzTAEl0GxThwg.png" },
-  { name: "영덕군",   src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-3KbKz1jefLxFrY48LTpAX1OI38J1l3.png" },
-  { name: "안동시",   src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-Kp8e6BfPFz7umQwSjDgwCfLSbdti20.png" },
+  { name: "경상북도", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-vU26IRzJJ4kKcaskgj7rSaM3kdCcvW.png", height: "h-12", width: "w-48" },
+  { name: "포항시",   src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%91%E1%85%A9%E1%84%92%E1%85%A1%E1%86%BC%E1%84%89%E1%85%B5_%E1%84%89%E1%85%B5%E1%86%B7%E1%84%87%E1%85%A5%E1%86%AF%E1%84%86%E1%85%A1%E1%84%8F%E1%85%B3-RtbRvsaGUZ6vMr2I3UNyB4gS6ZdM2v.png", height: "h-12", width: "w-32" },
+  { name: "영덕군",   src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-AJ08NsEDJN4DhAMh1aDXCKhiXlvhTH.png", height: "h-12", width: "w-32" },
+  { name: "안동시",   src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%8B%E1%85%A1%E1%86%AB%E1%84%83%E1%85%A9%E1%86%BC%E1%84%89%E1%85%B5_%E1%84%89%E1%85%B5%E1%86%B7%E1%84%87%E1%85%A5%E1%86%AF%E1%84%86%E1%85%A1%E1%84%8F%E1%85%B3-g9cwmiJZ7cngWjO49gYBwS9cPk2qos.png", height: "h-12", width: "w-20" },
 ]
 
 const RELATED_ORGANIZATIONS = [
-  { name: "포항테크노파크",         src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-WEHXO0v9ZMA1gNSBjAnt9iGY7A56sf.png" },
-  { name: "경북창조경제혁신센터",   src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-tcKR7EOy3jhY4s10JLmZnqPU7Fs8Eh.png" },
-  { name: "Y&ARCHER",              src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-7Ye9ddTOIPoaKRd9UwguZjFFxcMybP.png" },
-  { name: "KOSME 청년창업사관학교", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-lfGehbwPLxuIujpMhIUiBb2RiriqQs.png" },
-  { name: "경북콘텐츠기업지원센터", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-02rGemct5mMtBJmpIgGj3J8DR6dmcI.png" },
-  { name: "대경지역대학공동기술지주", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-6AkA7EVwXXnH21QNWv0uajbsMcSuPC.png" },
+  { name: "포항테크노파크",         src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%91%E1%85%A9%E1%84%92%E1%85%A1%E1%86%BC%E1%84%90%E1%85%A6%E1%84%8F%E1%85%B3%E1%84%82%E1%85%A9%E1%84%91%E1%85%A1%E1%84%8F%E1%85%B3_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-KYY9EfhPyxhtWAW9eEvhxglAhkC65T.png",  width: "w-36" },
+  { name: "경북창조경제혁신센터",   src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%80%E1%85%A7%E1%86%BC%E1%84%87%E1%85%AE%E1%86%A8%E1%84%8E%E1%85%A1%E1%86%BC%E1%84%8C%E1%85%A9%E1%84%80%E1%85%A7%E1%86%BC%E1%84%8C%E1%85%A6%E1%84%92%E1%85%A7%E1%86%A8%E1%84%89%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A6%E1%86%AB%E1%84%90%E1%85%A5_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-we2uo0tpDzF3DqJVXR7oA19yG4hwXn.png", width: "w-36" },
+  { name: "Y&ARCHER",              src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-removebg-preview%202-5BczWRddAklErGk7RVOC3Uj55TjE0n.png",                                                                                                                                                                                                                                                          width: "w-36" },
+  { name: "경북콘텐츠기업지원센터", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%80%E1%85%A7%E1%86%BC%E1%84%87%E1%85%AE%E1%86%A8%E1%84%8F%E1%85%A9%E1%86%AB%E1%84%90%E1%85%A6%E1%86%AB%E1%84%8E%E1%85%B3%E1%84%80%E1%85%B5%E1%84%8B%E1%85%A5%E1%86%B8%E1%84%8C%E1%85%B5%E1%84%8B%E1%85%AF%E1%86%AB%E1%84%89%E1%85%A6%E1%86%AB%E1%84%90%E1%85%A5_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-Vrn2WSg3scOaJu02kaEDCkVzLX3BAE.png", width: "w-36" },
+  { name: "대경기술지주",           src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%83%E1%85%A2%E1%84%80%E1%85%A7%E1%86%BC%E1%84%80%E1%85%B5%E1%84%89%E1%85%AE%E1%86%AF%E1%84%8C%E1%85%B5%E1%84%8C%E1%85%AE%20%281%29%201-vcayQBUc9dta5qDF26xwlrTkwOYdgF.png",                                                                                                                                                 width: "w-44" },
 ]
 
 export function CoreFunctionsSection() {
@@ -149,13 +148,13 @@ export function CoreFunctionsSection() {
                   </div>
                   {/* 로고 영역과 높이 맞추기: h-12 + mb-2 = 왼쪽 로고 영역과 동일 */}
                   <div className="flex justify-center items-center h-12 mb-2">
-                    <p className="text-base font-bold text-foreground text-center whitespace-nowrap">
+                    <p className="text-sm font-bold text-foreground text-center whitespace-nowrap">
                       동문, 대기업, 해외 대학 등
                     </p>
                   </div>
-                  <div className="flex flex-col gap-3 flex-1">
+                  <div className="flex flex-col gap-2 flex-1 mt-4">
                     {EXTERNAL_NETWORK.map((item) => (
-                      <div key={item} className="flex-1 border border-warm-tan bg-warm-beige flex items-center justify-center px-4 py-2.5 min-h-[42px]">
+                      <div key={item} className="flex-1 border border-warm-tan bg-warm-beige flex items-center justify-center px-4 py-2 min-h-[36px]">
                         <span className="text-xs text-foreground text-center leading-tight whitespace-nowrap">{item}</span>
                       </div>
                     ))}
@@ -170,7 +169,7 @@ export function CoreFunctionsSection() {
                 </div>
                 <div className="border border-warm-tan bg-warm-beige/50 px-10 py-6 flex items-center justify-around gap-6">
                   {LOCAL_GOVERNMENTS.map((gov) => (
-                    <div key={gov.name} className="relative h-10 w-28">
+                    <div key={gov.name} className={`relative ${gov.height} ${gov.width}`}>
                       <Image
                         src={gov.src}
                         alt={gov.name}
@@ -189,7 +188,7 @@ export function CoreFunctionsSection() {
                 </div>
                 <div className="border border-warm-tan bg-warm-beige/50 px-10 py-6 flex items-center justify-around gap-6">
                   {RELATED_ORGANIZATIONS.map((org) => (
-                    <div key={org.name} className="relative h-10 w-32">
+                    <div key={org.name} className={`relative h-14 ${org.width}`}>
                       <Image
                         src={org.src}
                         alt={org.name}
@@ -203,16 +202,30 @@ export function CoreFunctionsSection() {
             </div>
 
             {/* Right: Portfolio Companies — stretches full height including 지자체 row */}
-            <div className="w-44 border border-gold/20 bg-gold/5 p-6 flex flex-col justify-center gap-8">
+            <div className="w-52 border border-gold/20 bg-gold/5 p-6 flex flex-col justify-center gap-8">
               {PORTFOLIO_COMPANIES.map((company) => (
-                <div key={company.name} className="relative h-10 w-full">
-                  <Image
-                    src={company.src}
-                    alt={company.name}
-                    fill
-                    className="object-contain"
-                  />
-                </div>
+                company.cropTop ? (
+                  // CI 디자인 페이지 이미지의 상단 절반(로고 영역)만 표시
+                  <div key={company.name} className="relative w-full overflow-hidden" style={{ height: 52 }}>
+                    <div className="absolute inset-0" style={{ height: '200%' }}>
+                      <Image
+                        src={company.src}
+                        alt={company.name}
+                        fill
+                        className="object-contain object-top"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div key={company.name} className="relative h-14 w-full">
+                    <Image
+                      src={company.src}
+                      alt={company.name}
+                      fill
+                      className="object-contain"
+                    />
+                  </div>
+                )
               ))}
             </div>
           </div>
