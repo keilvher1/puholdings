@@ -104,13 +104,12 @@ export function PortfolioSection({ companies }: { companies: Company[] }) {
         </BlurFade>
 
         {/* Grid */}
-        <div className="grid gap-[1px] bg-warm-tan sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-[1px] bg-warm-tan sm:grid-cols-2 lg:grid-cols-3" style={{ gridAutoRows: '320px' }}>
           {filtered.map((company, i) => (
-            <BlurFade key={company.id} delay={0.03 + i * 0.025}>
+            <BlurFade key={company.id} delay={0.03 + i * 0.025} className="h-full">
               <Link
                 href={company.slug ? `/portfolio/${company.slug}` : "/portfolio"}
-                className="group flex flex-col justify-between bg-card p-8 transition-all duration-300 hover:bg-warm-beige lg:p-10"
-                style={{ height: '320px' }}
+                className="group flex flex-col justify-between bg-card p-8 transition-all duration-300 hover:bg-warm-beige lg:p-10 h-full"
               >
                 <div>
                   <div className="flex items-center justify-between">
