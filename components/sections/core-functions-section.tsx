@@ -25,7 +25,7 @@ const EXTERNAL_NETWORK = [
 ]
 
 const PORTFOLIO_COMPANIES = [
-  { name: "HEM파마",      src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/HEM%E1%84%91%E1%85%A1%E1%84%86%E1%85%A1_CI-1-fYz4G5Ld5rfaFhdppQPaawBcivPYA2.png", cropTop: true },
+  { name: "HEM파마",      src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image%201-l90atQ3Mq3n9e9Pzo7e898Ma37xKJH.png" },
   { name: "Impactive AI", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Impactive_AI_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-63XPQG0DuzorwF4HiMH9d2sHX7laM4.svg" },
   { name: "MIDBAR",       src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/MIDBAR_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-VTtxhnWkT0lkNPatvqcC6xX3ga4sla.png" },
   { name: "deep visions", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/deep_visions_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-ohjOSZUffMN9CqIwYpaZy1jcwni4bR.jpg" },
