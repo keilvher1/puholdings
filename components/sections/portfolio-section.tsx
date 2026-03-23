@@ -107,10 +107,11 @@ export function PortfolioSection({ companies }: { companies: Company[] }) {
         <div className="grid gap-[1px] bg-warm-tan sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((company, i) => (
             <BlurFade key={company.id} delay={0.03 + i * 0.025}>
-              <Link
-                href={company.slug ? `/portfolio/${company.slug}` : "/portfolio"}
-                className="group flex flex-col justify-between bg-card p-8 transition-all duration-300 hover:bg-warm-beige lg:p-10 h-80"
-              >
+              <div style={{ height: '320px' }}>
+                <Link
+                  href={company.slug ? `/portfolio/${company.slug}` : "/portfolio"}
+                  className="group flex flex-col justify-between bg-card p-8 transition-all duration-300 hover:bg-warm-beige lg:p-10 h-full"
+                >
                 <div>
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-medium tracking-[0.2em] text-gold">
@@ -153,6 +154,7 @@ export function PortfolioSection({ companies }: { companies: Company[] }) {
                   </span>
                 </div>
               </Link>
+              </div>
             </BlurFade>
           ))}
         </div>
