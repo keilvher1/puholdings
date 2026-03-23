@@ -103,10 +103,10 @@ export function PortfolioSection({ companies }: { companies: Company[] }) {
           </div>
         </BlurFade>
 
-        {/* Grid */}
-        <div className="grid gap-[1px] bg-warm-tan sm:grid-cols-2 lg:grid-cols-3">
+        {/* Grid - grid-auto-rows:1fr로 모든 행 높이 동일하게 */}
+        <div className="grid gap-[1px] bg-warm-tan sm:grid-cols-2 lg:grid-cols-3 [grid-auto-rows:1fr]">
           {filtered.map((company, i) => (
-            <BlurFade key={company.id} delay={0.03 + i * 0.025}>
+            <BlurFade key={company.id} delay={0.03 + i * 0.025} className="h-full">
               <Link
                 href={company.slug ? `/portfolio/${company.slug}` : "/portfolio"}
                 className="group h-full min-h-[280px] flex flex-col bg-card p-8 transition-all duration-300 hover:bg-warm-beige lg:p-10"
@@ -132,8 +132,8 @@ export function PortfolioSection({ companies }: { companies: Company[] }) {
                   </p>
                 )}
                 
-                {/* 설명 영역 - flex-grow로 남는 공간 채움 */}
-                <div className="mt-3 flex-grow">
+                {/* 설명 영역 - flex-1로 남는 공간 채움 */}
+                <div className="mt-3 flex-1">
                   {company.description && (
                     <p className="text-sm leading-relaxed text-text-secondary line-clamp-2">
                       {company.description}
@@ -141,7 +141,7 @@ export function PortfolioSection({ companies }: { companies: Company[] }) {
                   )}
                 </div>
 
-                {/* 투자년도 - 항상 하단에 고정 */}
+                {/* 투자년도 - mt-auto로 항상 하단에 고정 */}
                 <div className="mt-auto pt-6 border-t border-warm-tan/30 flex items-center justify-between">
                   {company.investment_year && (
                     <span className="text-[10px] font-medium tabular-nums tracking-[0.15em] text-warm-tan">
