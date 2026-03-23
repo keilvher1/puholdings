@@ -307,8 +307,8 @@ export function EcosystemSection() {
                     민간의 영역 (이윤 극대화)
                   </div>
                   
-                  {/* 포항연합기술지주 - 좌상단 (공공 + 예비창업) */}
-                  <div className="absolute top-12 left-8 w-36 h-36 rounded-full border-2 border-dashed border-[#c53d3d] flex items-center justify-center bg-[#c53d3d]/5">
+                  {/* 포항연합기술지주 - 좌상단 (공공 + 예비창업) - Y축에 가깝게 */}
+                  <div className="absolute top-12 left-[20%] w-36 h-36 rounded-full border-2 border-dashed border-[#c53d3d] flex items-center justify-center bg-[#c53d3d]/5">
                     <div className="relative h-12 w-32">
                       <Image
                         src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-9Oe9fZGsMZf8zKbK5Ir5yJB6UySdZb.png"
@@ -331,8 +331,8 @@ export function EcosystemSection() {
                     </div>
                   </div>
                   
-                  {/* POSCO 포스코기술투자 - 우하단 (민간 + 창업중기) */}
-                  <div className="absolute bottom-16 right-8 w-32 h-28 rounded-full bg-gradient-to-br from-warm-tan/30 to-warm-tan/10 flex items-center justify-center">
+                  {/* POSCO 포스코기술투자 - 우하단 (민간 + 창업중기) - 더 아래로 */}
+                  <div className="absolute bottom-8 right-8 w-32 h-28 rounded-full bg-gradient-to-br from-warm-tan/30 to-warm-tan/10 flex items-center justify-center">
                     <div className="relative h-10 w-28">
                       <Image
                         src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-fQmiNl8hX6fRS5gtsYenUwm9kVMJMB.png"
