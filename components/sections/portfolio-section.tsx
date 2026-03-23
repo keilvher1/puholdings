@@ -104,45 +104,45 @@ export function PortfolioSection({ companies }: { companies: Company[] }) {
         </BlurFade>
 
         {/* Grid */}
-        <div className="portfolio-grid sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-[1px] bg-warm-tan sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((company, i) => (
             <BlurFade key={company.id} delay={0.03 + i * 0.025}>
               <Link
                 href={company.slug ? `/portfolio/${company.slug}` : "/portfolio"}
-                className="group flex flex-col justify-between bg-card p-8 transition-all duration-300 hover:bg-warm-beige lg:p-10"
+                className="group h-full min-h-[280px] flex flex-col bg-card p-8 transition-all duration-300 hover:bg-warm-beige lg:p-10"
               >
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-medium tracking-[0.2em] text-gold">
-                      {company.category.toUpperCase().replace("/", " / ")}
-                    </span>
-                    {company.exited && (
-                      <div className="flex items-center gap-1 rounded-full bg-gold/10 px-2 py-0.5">
-                        <CheckCircle size={10} className="text-gold" />
-                        <span className="text-[9px] font-medium text-gold">EXIT</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <h3 className="mt-4 text-base font-bold text-foreground transition-colors group-hover:text-gold lg:text-lg">
-                    {company.name}
-                  </h3>
-                  {company.name_en && (
-                    <p className="mt-1 text-[11px] font-light tracking-wide text-text-secondary">
-                      {company.name_en}
-                    </p>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-medium tracking-[0.2em] text-gold">
+                    {company.category.toUpperCase().replace("/", " / ")}
+                  </span>
+                  {company.exited && (
+                    <div className="flex items-center gap-1 rounded-full bg-gold/10 px-2 py-0.5">
+                      <CheckCircle size={10} className="text-gold" />
+                      <span className="text-[9px] font-medium text-gold">EXIT</span>
+                    </div>
                   )}
-                  {/* 설명: 항상 2줄 높이 고정 */}
-                  <div className="mt-3" style={{ minHeight: '2.8rem' }}>
-                    {company.description && (
-                      <p className="text-sm leading-relaxed text-text-secondary line-clamp-2">
-                        {company.description}
-                      </p>
-                    )}
-                  </div>
                 </div>
 
-                <div className="mt-8 flex items-center justify-between">
+                <h3 className="mt-4 text-base font-bold text-foreground transition-colors group-hover:text-gold lg:text-lg">
+                  {company.name}
+                </h3>
+                {company.name_en && (
+                  <p className="mt-1 text-[11px] font-light tracking-wide text-text-secondary">
+                    {company.name_en}
+                  </p>
+                )}
+                
+                {/* 설명 영역 - flex-grow로 남는 공간 채움 */}
+                <div className="mt-3 flex-grow">
+                  {company.description && (
+                    <p className="text-sm leading-relaxed text-text-secondary line-clamp-2">
+                      {company.description}
+                    </p>
+                  )}
+                </div>
+
+                {/* 투자년도 - 항상 하단에 고정 */}
+                <div className="mt-auto pt-6 border-t border-warm-tan/30 flex items-center justify-between">
                   {company.investment_year && (
                     <span className="text-[10px] font-medium tabular-nums tracking-[0.15em] text-warm-tan">
                       {company.investment_year}년 투자
