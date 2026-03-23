@@ -148,13 +148,13 @@ export function CoreFunctionsSection() {
                   </div>
                   {/* 로고 영역과 높이 맞추기: h-12 + mb-2 = 왼쪽 로고 영역과 동일 */}
                   <div className="flex justify-center items-center h-12 mb-2">
-                    <p className="text-base font-bold text-foreground text-center whitespace-nowrap">
+                    <p className="text-sm font-bold text-foreground text-center whitespace-nowrap">
                       동문, 대기업, 해외 대학 등
                     </p>
                   </div>
-                  <div className="flex flex-col gap-3 flex-1">
+                  <div className="flex flex-col gap-2 flex-1 mt-4">
                     {EXTERNAL_NETWORK.map((item) => (
-                      <div key={item} className="flex-1 border border-warm-tan bg-warm-beige flex items-center justify-center px-4 py-2.5 min-h-[42px]">
+                      <div key={item} className="flex-1 border border-warm-tan bg-warm-beige flex items-center justify-center px-4 py-2 min-h-[36px]">
                         <span className="text-xs text-foreground text-center leading-tight whitespace-nowrap">{item}</span>
                       </div>
                     ))}
