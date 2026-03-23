@@ -35,7 +35,7 @@ export const FALLBACK_PORTFOLIO = [
   },
   { 
     id: 2, 
-    name: "에이치디에스바이오", 
+    name: "(주)에이치디에스바이오", 
     name_en: "HDS Bio", 
     category: "바이오/헬스케어", 
     description: "프로바이오틱스, 의약외품, 임상실험수탁사업(CRO), 미생물 스크리닝 약리평가(항생제, 내성유전자)", 
@@ -44,14 +44,14 @@ export const FALLBACK_PORTFOLIO = [
     status: "active",
     ceo: "곽진환",
     founded: "2018.09.01",
-    achievements: "벤처기업인증",
+    achievements: "벤처기업인증, U-TECH밸리 선정 등",
     website: null,
     exited: true,
     slug: "hds-bio"
   },
   { 
     id: 3, 
-    name: "이롭로보틱스", 
+    name: "(주)이롭로보틱스", 
     name_en: "IROP Robotics", 
     category: "AI/로봇", 
     description: "인공지능 화재감시 초기진압 솔루션", 
@@ -67,7 +67,7 @@ export const FALLBACK_PORTFOLIO = [
   },
   { 
     id: 4, 
-    name: "오픈인", 
+    name: "(주)오픈인", 
     name_en: "OpenIn", 
     category: "AI/로봇", 
     description: "산업 현장의 자동화를 위한 스마트 팩토리 솔루션", 
