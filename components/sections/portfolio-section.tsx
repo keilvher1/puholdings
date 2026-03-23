@@ -110,7 +110,7 @@ export function PortfolioSection({ companies }: { companies: Company[] }) {
               <Link
                 href={company.slug ? `/portfolio/${company.slug}` : "/portfolio"}
                 className="group flex flex-col justify-between bg-card p-8 transition-all duration-300 hover:bg-warm-beige lg:p-10"
-                style={{ minHeight: '260px' }}
+                style={{ height: '280px' }}
               >
                 <div>
                   <div className="flex items-center justify-between">
