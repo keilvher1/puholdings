@@ -82,6 +82,22 @@ const VALUE_CHAIN_CARDS = [
   },
 ]
 
+// 액셀러레이팅 사업 운영 현황 데이터
+const ACCELERATING_PROGRAMS = [
+  { id: 1, name: "기업밀착 보육 및 사업화 지원 프로그램", client: "한동대학교(RISE)", content: "지역 창업기업 발굴 및 사업화 지원", period: "'25.12. ~ '26.02." },
+  { id: 2, name: "AI 연계 임팩트 비즈니스(그린, 소셜벤처) 발굴·유치 프로그램", client: "한동대학교(글로컬)", content: "지역 창업기업 발굴 및 사업화 지원", period: "'25.10. ~ '25.12." },
+  { id: 3, name: "청년크리에이터 양성 문제해결 성장 지원 프로그램", client: "경북문화재단", content: "지역 로컬크리에이터 발굴 및 육성", period: "'25.07. ~ '25.11." },
+  { id: 4, name: "2025 특화역량 창업보육센터 지원사업", client: "중소벤처기업부", content: "지역 창업기업 발굴 및 사업화 지원", period: "'25.04. ~ '25.12." },
+  { id: 5, name: "지역기업 글로벌 진출 지원사업", client: "한동대학교(글로컬)", content: "지역 창업기업 글로벌 진출 지원", period: "'25.02. ~ '25.04." },
+  { id: 6, name: "창업 및 스타트업 이전 활성화 지원사업", client: "영덕군", content: "지역 예비창업자 발굴 및 육성", period: "'24.07. ~ '26.02." },
+  { id: 7, name: "2024 아이디어 사업화 지원사업", client: "문화체육관광부", content: "지역 예비창업자 발굴 및 육성", period: "'24.04. ~ '24.11." },
+  { id: 8, name: "2024 콘텐츠기업 투자유치 지원사업", client: "경북문화재단", content: "지역 콘텐츠기업 투자 역량 강화", period: "'24.04. ~ '24.09." },
+  { id: 9, name: "2024 창업보육센터 보육역량강화사업", client: "중소벤처기업부", content: "창업보육센터 역량 강화", period: "'24.04. ~ '24.12." },
+  { id: 10, name: "2024 창업보육센터 운영지원사업", client: "포항시", content: "지역 창업기업 사업화 지원", period: "'24.01. ~ '24.12." },
+  { id: 11, name: "2023 지역기술 창업육성 지원사업", client: "중소벤처기업부", content: "지역 창업기업 발굴 및 사업화 지원", period: "'23.04. ~ '23.12." },
+  { id: 12, name: "2023 창업보육센터 운영지원사업", client: "포항시", content: "지역 창업기업 사업화 지원", period: "'23.01. ~ '23.12." },
+]
+
 // 하단 기관 로고 데이터
 const VALUE_CHAIN_PARTNERS = [
   { 
@@ -419,21 +435,12 @@ export function EcosystemSection() {
           <div className="mt-16">
             {/* 포항시 타이틀 */}
             <div className="flex items-center justify-center gap-4 mb-6">
-              <div className="relative h-10 w-32 flex-shrink-0">
+              <div className="relative h-12 w-32 flex-shrink-0">
                 <Image
-                  src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/pohang-logo-9Wq3ZKpX2nVwYmT5rLkJdFhGcEuBsA.png"
+                  src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%91%E1%85%A9%E1%84%92%E1%85%A1%E1%86%BC%E1%84%89%E1%85%B5_%E1%84%89%E1%85%B5%E1%86%B7%E1%84%87%E1%85%A5%E1%86%AF%E1%84%86%E1%85%A1%E1%84%8F%E1%85%B3-RtbRvsaGUZ6vMr2I3UNyB4gS6ZdM2v.png"
                   alt="포항시"
                   fill
                   className="object-contain"
-                  onError={(e) => {
-                    const target = e.currentTarget as HTMLImageElement
-                    target.style.display = 'none'
-                    const span = document.createElement('span')
-                    span.className = 'text-2xl font-light tracking-wider text-primary-foreground'
-                    span.style.fontFamily = 'serif'
-                    span.textContent = 'pohang'
-                    target.parentElement?.appendChild(span)
-                  }}
                 />
               </div>
               <h4 className="text-xl font-bold text-gold">포항시 창업 Value Chain완성</h4>
@@ -453,7 +460,7 @@ export function EcosystemSection() {
               ))}
             </div>
             
-            {/* 그라디언트 화살표 바 */}
+            {/* 그라디��트 화살표 바 */}
             <div className="relative h-16 flex overflow-hidden">
               {/* 공공의 영역 (골드) */}
               <div className="flex-1 bg-gradient-to-r from-gold/40 to-gold/20 flex items-center px-6 relative">
@@ -468,6 +475,53 @@ export function EcosystemSection() {
                 <div className="absolute left-0 top-0 bottom-0 w-0 h-0 border-t-[32px] border-t-warm-tan/30 border-b-[32px] border-b-warm-tan/30 border-l-[24px] border-l-transparent" />
                 <p className="text-sm font-medium text-text-tertiary whitespace-nowrap">민간의 영역(이익증대)</p>
               </div>
+            </div>
+          </div>
+        </BlurFade>
+
+        {/* 구분선 */}
+        <div className="my-20 border-t border-warm-tan/20" />
+
+        {/* 액셀러레이팅 사업 운영 현황 */}
+        <BlurFade delay={0.5}>
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <span className="text-gold">◆</span>
+              <h3 className="text-xl font-bold text-gold">액셀러레이팅 사업 운영 현황</h3>
+            </div>
+            
+            <div className="mb-8 text-sm text-text-tertiary space-y-1">
+              <p>• 한동대학교 글로컬, RISE, 창업보육센터 지원사업을 중심으로 포항 지역 창업기업 발굴 및 육성</p>
+              <p>• 그 외 정부부처 및 지자체, 창업 유관기관 등으로부터 다양한 창업지원사업 수주를 통해 경북 지역 창업기업 발굴 및 육성</p>
+            </div>
+
+            {/* 테이블 */}
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-gold/20">
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gold border border-warm-tan/30 w-16">순번</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gold border border-warm-tan/30">사업명</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gold border border-warm-tan/30 w-32">발주처</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gold border border-warm-tan/30">사업 내용</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gold border border-warm-tan/30 w-32">사업 기간</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ACCELERATING_PROGRAMS.map((program, index) => (
+                    <tr 
+                      key={program.id} 
+                      className={`${index % 2 === 0 ? 'bg-dark-muted' : 'bg-dark'} hover:bg-gold/5 transition-colors`}
+                    >
+                      <td className="px-4 py-3 text-center text-xs text-text-tertiary border border-warm-tan/20">{program.id}</td>
+                      <td className="px-4 py-3 text-xs text-primary-foreground border border-warm-tan/20">{program.name}</td>
+                      <td className="px-4 py-3 text-center text-xs text-text-tertiary border border-warm-tan/20">{program.client}</td>
+                      <td className="px-4 py-3 text-xs text-text-tertiary border border-warm-tan/20">{program.content}</td>
+                      <td className="px-4 py-3 text-center text-xs text-text-tertiary border border-warm-tan/20">{program.period}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </BlurFade>
