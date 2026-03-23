@@ -87,7 +87,7 @@ const VALUE_CHAIN_CARDS = [
 const VALUE_CHAIN_PARTNERS = [
   { 
     name: "㈜포항연합기술지주", 
-    src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-5SMkRAzZQ5MANmKw9kknm38UuBSgc1.png",
+    src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-9Oe9fZGsMZf8zKbK5Ir5yJB6UySdZb.png",
     isPublic: true 
   },
   { 
@@ -174,7 +174,7 @@ export function EcosystemSection() {
                         </div>
                         <div className="relative h-10 w-36">
                           <Image
-                            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-5SMkRAzZQ5MANmKw9kknm38UuBSgc1.png"
+                            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-9Oe9fZGsMZf8zKbK5Ir5yJB6UySdZb.png"
                             alt="포항연합기술지주"
                             fill
                             className="object-contain"
@@ -278,7 +278,7 @@ export function EcosystemSection() {
                   <div className="absolute top-4 left-4 w-32 h-32 rounded-full border-2 border-dashed border-gold/50 flex items-center justify-center">
                     <div className="relative h-10 w-28">
                       <Image
-                        src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-5SMkRAzZQ5MANmKw9kknm38UuBSgc1.png"
+                        src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-9Oe9fZGsMZf8zKbK5Ir5yJB6UySdZb.png"
                         alt="포항연합기술지주"
                         fill
                         className="object-contain"
