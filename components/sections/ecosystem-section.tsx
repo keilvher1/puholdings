@@ -435,21 +435,12 @@ export function EcosystemSection() {
           <div className="mt-16">
             {/* 포항시 타이틀 */}
             <div className="flex items-center justify-center gap-4 mb-6">
-              <div className="relative h-10 w-32 flex-shrink-0">
+              <div className="relative h-12 w-36 flex-shrink-0">
                 <Image
-                  src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/pohang-logo-9Wq3ZKpX2nVwYmT5rLkJdFhGcEuBsA.png"
+                  src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%91%E1%85%A9%E1%84%92%E1%85%A1%E1%86%BC%E1%84%90%E1%85%A6%E1%84%8F%E1%85%B3%E1%84%82%E1%85%A9%E1%84%91%E1%85%A1%E1%84%8F%E1%85%B3_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-KYY9EfhPyxhtWAW9eEvhxglAhkC65T.png"
                   alt="포항시"
                   fill
                   className="object-contain"
-                  onError={(e) => {
-                    const target = e.currentTarget as HTMLImageElement
-                    target.style.display = 'none'
-                    const span = document.createElement('span')
-                    span.className = 'text-2xl font-light tracking-wider text-primary-foreground'
-                    span.style.fontFamily = 'serif'
-                    span.textContent = 'pohang'
-                    target.parentElement?.appendChild(span)
-                  }}
                 />
               </div>
               <h4 className="text-xl font-bold text-gold">포항시 창업 Value Chain완성</h4>
@@ -508,12 +499,12 @@ export function EcosystemSection() {
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead>
-                  <tr className="bg-[#4A6FA5] text-white">
-                    <th className="px-4 py-3 text-center text-xs font-semibold border border-[#3A5A8A] w-16">순번</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold border border-[#3A5A8A]">사업명</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold border border-[#3A5A8A] w-32">발주처</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold border border-[#3A5A8A]">사업 내용</th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold border border-[#3A5A8A] w-32">사업 기간</th>
+                  <tr className="bg-gold/20">
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gold border border-warm-tan/30 w-16">순번</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gold border border-warm-tan/30">사업명</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gold border border-warm-tan/30 w-32">발주처</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gold border border-warm-tan/30">사업 내용</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gold border border-warm-tan/30 w-32">사업 기간</th>
                   </tr>
                 </thead>
                 <tbody>
