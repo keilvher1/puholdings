@@ -63,9 +63,8 @@ const VALUE_CHAIN_CARDS = [
     ],
   },
   {
-    icon: "기업\n지원",
-    subIcon: "사업화\n지원기관",
-    label: "",
+    icon: "기업 지원\n사업화\n지원기관",
+    label: "사업화 지원\n(기업 지원기관)",
     highlighted: false,
     items: [
       "공공기술 이전",
@@ -380,17 +379,7 @@ export function EcosystemSection() {
                         </span>
                       </div>
                       
-                      {/* 추가 육각형 (기업지원 카드) */}
-                      {card.subIcon && (
-                        <div 
-                          className="w-16 h-16 flex-shrink-0 flex items-center justify-center bg-warm-tan/10"
-                          style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }}
-                        >
-                          <span className="text-[10px] font-bold text-center leading-tight whitespace-pre-line text-primary-foreground">
-                            {card.subIcon}
-                          </span>
-                        </div>
-                      )}
+
                     </div>
                     
                     {/* 라벨 */}
