@@ -419,9 +419,22 @@ export function EcosystemSection() {
           <div className="mt-16">
             {/* 포항시 타이틀 */}
             <div className="flex items-center justify-center gap-4 mb-6">
-              <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-light tracking-wider text-primary-foreground" style={{ fontFamily: 'serif' }}>pohang</span>
-                <span className="text-sm text-text-tertiary">포항시</span>
+              <div className="relative h-10 w-32 flex-shrink-0">
+                <Image
+                  src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/pohang-logo-9Wq3ZKpX2nVwYmT5rLkJdFhGcEuBsA.png"
+                  alt="포항시"
+                  fill
+                  className="object-contain"
+                  onError={(e) => {
+                    const target = e.currentTarget as HTMLImageElement
+                    target.style.display = 'none'
+                    const span = document.createElement('span')
+                    span.className = 'text-2xl font-light tracking-wider text-primary-foreground'
+                    span.style.fontFamily = 'serif'
+                    span.textContent = 'pohang'
+                    target.parentElement?.appendChild(span)
+                  }}
+                />
               </div>
               <h4 className="text-xl font-bold text-gold">포항시 창업 Value Chain완성</h4>
             </div>
