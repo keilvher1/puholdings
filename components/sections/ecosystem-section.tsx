@@ -63,7 +63,7 @@ const VALUE_CHAIN_CARDS = [
     ],
   },
   {
-    icon: "기업 지원\n사업화\n지원기관",
+    icon: "기업\n지원",
     label: "사업화 지원\n(기업 지원기관)",
     highlighted: false,
     items: [
