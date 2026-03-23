@@ -104,12 +104,13 @@ export function PortfolioSection({ companies }: { companies: Company[] }) {
         </BlurFade>
 
         {/* Grid */}
-        <div className="grid gap-[1px] bg-warm-tan sm:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
+        <div className="grid gap-[1px] bg-warm-tan sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((company, i) => (
-            <BlurFade key={company.id} delay={0.03 + i * 0.025} className="h-full">
+            <BlurFade key={company.id} delay={0.03 + i * 0.025}>
               <Link
                 href={company.slug ? `/portfolio/${company.slug}` : "/portfolio"}
-                className="group flex h-full flex-col justify-between bg-card p-8 transition-all duration-300 hover:bg-warm-beige lg:p-10"
+                className="group flex flex-col justify-between bg-card p-8 transition-all duration-300 hover:bg-warm-beige lg:p-10"
+                style={{ minHeight: '260px' }}
               >
                 <div>
                   <div className="flex items-center justify-between">
@@ -132,11 +133,14 @@ export function PortfolioSection({ companies }: { companies: Company[] }) {
                       {company.name_en}
                     </p>
                   )}
-                  {company.description && (
-                    <p className="mt-3 text-sm leading-relaxed text-text-secondary line-clamp-2">
-                      {company.description}
-                    </p>
-                  )}
+                  {/* 설명: 항상 2줄 높이 고정 */}
+                  <div className="mt-3" style={{ minHeight: '2.8rem' }}>
+                    {company.description && (
+                      <p className="text-sm leading-relaxed text-text-secondary line-clamp-2">
+                        {company.description}
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 <div className="mt-8 flex items-center justify-between">
