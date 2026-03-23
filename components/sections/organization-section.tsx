@@ -96,7 +96,7 @@ const VENTURE_PARTNERS = [
 const PARTNER_ORGANIZATIONS = [
   {
     name: "경북창조경제혁신센터",
-    logo: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-u38ZbQsP95bwhyJFc2JffYWy2xPHky.png",
+    logo: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%80%E1%85%A7%E1%86%BC%E1%84%87%E1%85%AE%E1%86%A8%E1%84%8E%E1%85%A1%E1%86%BC%E1%84%8C%E1%85%A9%E1%84%80%E1%85%A7%E1%86%BC%E1%84%8C%E1%85%A6%E1%84%92%E1%85%A7%E1%86%A8%E1%84%89%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A6%E1%86%AB%E1%84%90%E1%85%A5-%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-oeTPZGJbOFZuMntdW7JGcmO3dF9eJi.jpg",
     description: "경북 지역의 혁신창업 어브로서 창업기업 발굴부터 육성, 성장까지 지원하고 있으며, 특히 다양한 엑셀러레이팅 프로그램을 운영 중으로 본 사업 참여기업 공동 발굴 및 후속 연계 지원 등이 가능함.",
   },
   {
