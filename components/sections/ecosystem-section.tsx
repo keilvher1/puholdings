@@ -151,6 +151,173 @@ export function EcosystemSection() {
         {/* 구분선 */}
         <div className="my-20 border-t border-warm-tan/20" />
 
+        {/* 주요 역할 - 2컬럼 레이아웃 */}
+        <BlurFade delay={0.25}>
+          <div className="mb-8">
+            <h3 className="text-xl font-bold text-primary-foreground mb-10">주요 역할</h3>
+            
+            <div className="grid gap-12 lg:grid-cols-2">
+              {/* 왼쪽: 포항 창업 단계별 주요 투자사 역할 */}
+              <div>
+                <h4 className="text-base font-semibold text-primary-foreground mb-6 flex items-center gap-2">
+                  <span className="w-4 h-4 border border-warm-tan/50" />
+                  포항 창업 단계별 주요 투자사 역할
+                </h4>
+                
+                <div className="space-y-0">
+                  {/* 예비창업 */}
+                  <div className="relative">
+                    <div className="border-2 border-dashed border-gold/50 p-5">
+                      <div className="flex items-start justify-between gap-4 mb-4">
+                        <div className="bg-gold/20 px-4 py-2">
+                          <span className="text-sm font-bold text-gold">예비창업</span>
+                        </div>
+                        <div className="relative h-10 w-36">
+                          <Image
+                            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-5SMkRAzZQ5MANmKw9kknm38UuBSgc1.png"
+                            alt="포항연합기술지주"
+                            fill
+                            className="object-contain"
+                          />
+                        </div>
+                      </div>
+                      <ul className="text-xs text-text-tertiary space-y-1">
+                        <li>- 포항시 대학 창업경진대회 개최, 전략산업 분야 기업 배치 프로그램 운영, 창업 관련 행사 개최 등</li>
+                        <li>- 전략산업 분야 발굴, 씨앗투자(~1억원) 육성 등</li>
+                      </ul>
+                    </div>
+                    {/* 화살표 */}
+                    <div className="flex justify-center py-2">
+                      <svg className="w-6 h-6 text-gold/50" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
+                      </svg>
+                    </div>
+                  </div>
+                  
+                  {/* 창업초기 */}
+                  <div className="relative">
+                    <div className="border border-warm-tan/30 p-5 bg-dark-muted">
+                      <div className="flex items-start justify-between gap-4 mb-4">
+                        <div className="bg-warm-tan/20 px-4 py-2">
+                          <span className="text-sm font-bold text-primary-foreground">창업초기</span>
+                        </div>
+                        <div className="relative h-10 w-36">
+                          <Image
+                            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image%203%20%281%29-vj8TaaRHbljXhF1leCxLPGIgV5CVNY.png"
+                            alt="POSTECH Holdings"
+                            fill
+                            className="object-contain"
+                          />
+                        </div>
+                      </div>
+                      <ul className="text-xs text-text-tertiary space-y-1">
+                        <li>- 포스코 IMP(Idea Market Place) 개최 (전국단위)</li>
+                        <li>- 포스텍 중심 집중투자, 포스코 유관 집중투자</li>
+                        <li>- 기술사업화를 위한 초기투자(2~10억원), TIPS 등</li>
+                      </ul>
+                    </div>
+                    {/* 화살표 */}
+                    <div className="flex justify-center py-2">
+                      <svg className="w-6 h-6 text-warm-tan/50" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
+                      </svg>
+                    </div>
+                  </div>
+                  
+                  {/* 창업중기 */}
+                  <div className="relative">
+                    <div className="border border-warm-tan/30 p-5 bg-dark-muted">
+                      <div className="flex items-start justify-between gap-4 mb-4">
+                        <div className="bg-warm-tan/20 px-4 py-2">
+                          <span className="text-sm font-bold text-primary-foreground">창업중기</span>
+                        </div>
+                        <div className="relative h-10 w-36">
+                          <Image
+                            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-fQmiNl8hX6fRS5gtsYenUwm9kVMJMB.png"
+                            alt="POSCO 포스코기술투자"
+                            fill
+                            className="object-contain"
+                          />
+                        </div>
+                      </div>
+                      <ul className="text-xs text-text-tertiary space-y-1">
+                        <li>- 포스코 유관 집중 투자</li>
+                        <li>- 대규모 시설투자를 위한 후속투자(~30억원) 등</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* 오른쪽: 포항 창업 투자 생태계 매트릭스 */}
+              <div>
+                <h4 className="text-base font-semibold text-primary-foreground mb-2 flex items-center gap-2">
+                  <span className="w-4 h-4 border border-warm-tan/50" />
+                  포항 창업 투자 생태계 매트릭스
+                </h4>
+                <p className="text-xs text-text-tertiary mb-6">- 공공·민간, 창업단계로 나누어 2X2 매트릭스로 구성</p>
+                
+                {/* 2x2 매트릭스 좌표계 */}
+                <div className="relative h-80 border-l-2 border-b-2 border-warm-tan/30">
+                  {/* Y축 레이블 */}
+                  <div className="absolute -left-20 top-0 h-full flex flex-col justify-between py-4">
+                    <span className="text-[10px] text-text-tertiary">공공의 영역 (주력 산업분야 연관성, 전략적 투자)</span>
+                  </div>
+                  <div className="absolute -left-12 bottom-4 text-xs text-text-tertiary writing-mode-vertical rotate-180" style={{ writingMode: 'vertical-rl' }}>
+                    민간의 영역 (이윤 극대화)
+                  </div>
+                  
+                  {/* X축 레이블 */}
+                  <div className="absolute bottom-[-24px] left-0 w-full flex justify-around text-[10px] text-text-tertiary">
+                    <span>예비<br/>창업</span>
+                    <span>창업<br/>초기</span>
+                    <span>창업<br/>중기</span>
+                  </div>
+                  
+                  {/* 점선 원 - 포항연합기술지주 (좌상단) */}
+                  <div className="absolute top-4 left-4 w-32 h-32 rounded-full border-2 border-dashed border-gold/50 flex items-center justify-center">
+                    <div className="relative h-10 w-28">
+                      <Image
+                        src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-5SMkRAzZQ5MANmKw9kknm38UuBSgc1.png"
+                        alt="포항연합기술지주"
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* POSTECH Holdings (중앙 하단) */}
+                  <div className="absolute bottom-16 left-1/2 -translate-x-1/2 w-28 h-28 rounded-full bg-gradient-to-br from-[#8B1E3F]/20 to-[#8B1E3F]/5 flex items-center justify-center">
+                    <div className="relative h-8 w-24">
+                      <Image
+                        src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image%203%20%281%29-vj8TaaRHbljXhF1leCxLPGIgV5CVNY.png"
+                        alt="POSTECH Holdings"
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* POSCO 포스코기술투자 (우하단) */}
+                  <div className="absolute bottom-4 right-4 w-28 h-28 rounded-full bg-gradient-to-br from-[#00529C]/20 to-[#00529C]/5 flex items-center justify-center">
+                    <div className="relative h-8 w-24">
+                      <Image
+                        src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-fQmiNl8hX6fRS5gtsYenUwm9kVMJMB.png"
+                        alt="POSCO 포스코기술투자"
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </BlurFade>
+
+        {/* 구분선 */}
+        <div className="my-16 border-t border-warm-tan/20" />
+
         {/* 포항 창업 단계별 주요 투자사 역할 */}
         <BlurFade delay={0.3}>
           <div>
