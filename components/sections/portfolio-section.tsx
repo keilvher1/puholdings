@@ -132,8 +132,8 @@ export function PortfolioSection({ companies }: { companies: Company[] }) {
                   </p>
                 )}
                 
-                {/* 설명 영역 - flex-1로 남는 공간 채움 */}
-                <div className="mt-3 flex-1">
+                {/* 설명 영역 - 항상 2줄 높이 고정 (min-h-[3rem] = 약 2줄) */}
+                <div className="mt-3 flex-1 min-h-[3rem]">
                   {company.description && (
                     <p className="text-sm leading-relaxed text-text-secondary line-clamp-2">
                       {company.description}
