@@ -188,7 +188,7 @@ export function CoreFunctionsSection() {
                 </div>
                 <div className="border border-warm-tan bg-warm-beige/50 px-10 py-6 flex items-center justify-around gap-6">
                   {RELATED_ORGANIZATIONS.map((org) => (
-                    <div key={org.name} className="relative h-10 w-32">
+                    <div key={org.name} className="relative h-14 w-36">
                       <Image
                         src={org.src}
                         alt={org.name}
@@ -202,11 +202,11 @@ export function CoreFunctionsSection() {
             </div>
 
             {/* Right: Portfolio Companies — stretches full height including 지자체 row */}
-            <div className="w-44 border border-gold/20 bg-gold/5 p-6 flex flex-col justify-center gap-8">
+            <div className="w-52 border border-gold/20 bg-gold/5 p-6 flex flex-col justify-center gap-8">
               {PORTFOLIO_COMPANIES.map((company) => (
                 company.cropTop ? (
                   // CI 디자인 페이지 이미지의 상단 절반(로고 영역)만 표시
-                  <div key={company.name} className="relative w-full overflow-hidden" style={{ height: 40 }}>
+                  <div key={company.name} className="relative w-full overflow-hidden" style={{ height: 52 }}>
                     <div className="absolute inset-0" style={{ height: '200%' }}>
                       <Image
                         src={company.src}
@@ -217,7 +217,7 @@ export function CoreFunctionsSection() {
                     </div>
                   </div>
                 ) : (
-                  <div key={company.name} className="relative h-10 w-full">
+                  <div key={company.name} className="relative h-14 w-full">
                     <Image
                       src={company.src}
                       alt={company.name}
