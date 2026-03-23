@@ -308,7 +308,7 @@ export function EcosystemSection() {
                   </div>
                   
                   {/* 포항연합기술지주 - 좌상단 (공공 + 예비창업) - Y축에 가깝게 */}
-                  <div className="absolute top-12 left-[20%] w-36 h-36 rounded-full border-2 border-dashed border-[#c53d3d] flex items-center justify-center bg-[#c53d3d]/5">
+                  <div className="absolute top-12 left-[20%] w-36 h-36 rounded-full border-2 border-dashed border-[#c53d3d] flex items-center justify-center bg-white">
                     <div className="relative h-12 w-32">
                       <Image
                         src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-9Oe9fZGsMZf8zKbK5Ir5yJB6UySdZb.png"
