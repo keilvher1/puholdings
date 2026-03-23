@@ -1,7 +1,42 @@
 "use client"
 
 import { BlurFade } from "@/components/magicui/blur-fade"
+import { Building2, Lightbulb, Rocket, Users, TrendingUp, Network } from "lucide-react"
 import Image from "next/image"
+
+// 기존 생태계 아이콘 데이터
+const ECOSYSTEM_ITEMS = [
+  {
+    icon: Lightbulb,
+    title: "발굴",
+    description: "혁신적인 아이디어와 기술을 가진 스타트업 발굴",
+  },
+  {
+    icon: Users,
+    title: "육성",
+    description: "체계적인 액셀러레이팅 프로그램을 통한 성장 지원",
+  },
+  {
+    icon: TrendingUp,
+    title: "투자",
+    description: "시드 투자부터 후속 투자까지 단계별 자금 지원",
+  },
+  {
+    icon: Network,
+    title: "네트워크",
+    description: "대기업, 투자사, 해외 파트너와의 연결",
+  },
+  {
+    icon: Building2,
+    title: "인프라",
+    description: "창업보육센터 및 공유 오피스 공간 제공",
+  },
+  {
+    icon: Rocket,
+    title: "성장",
+    description: "IPO, M&A 등 성공적인 Exit 지원",
+  },
+]
 
 // 타임라인 단계 데이터
 const TIMELINE_STAGES = [
@@ -61,7 +96,7 @@ const VALUE_CHAIN_PARTNERS = [
     isPublic: true 
   },
   { 
-    name: "POSTECH 기술지주㈜", 
+    name: "POSTECH Holdings", 
     src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image%203%20%281%29-vj8TaaRHbljXhF1leCxLPGIgV5CVNY.png",
     isPublic: false 
   },
@@ -87,11 +122,38 @@ export function EcosystemSection() {
           <h2 className="text-3xl font-bold leading-tight tracking-tight text-primary-foreground lg:text-4xl">
             포항창업투자 생태계
           </h2>
+          <p className="mt-4 max-w-2xl text-base text-text-tertiary leading-relaxed">
+            포항연합기술지주는 지역 창업 생태계의 중심에서 스타트업의 성장을 위한 
+            종합적인 지원 체계를 구축하고 있습니다.
+          </p>
         </BlurFade>
 
-        {/* 포항 창업 단계별 주요 투자사 역할 */}
+        {/* 기존 생태계 아이콘 그리드 */}
         <BlurFade delay={0.2}>
-          <div className="mt-16">
+          <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {ECOSYSTEM_ITEMS.map((item, index) => (
+              <div
+                key={item.title}
+                className="group relative border border-warm-tan/20 bg-dark-muted p-8 transition-all duration-300 hover:border-gold/40 hover:bg-gold/5"
+              >
+                <item.icon className="h-10 w-10 text-gold mb-4" strokeWidth={1.5} />
+                <h3 className="text-lg font-semibold text-primary-foreground mb-2">
+                  {item.title}
+                </h3>
+                <p className="text-sm text-text-tertiary leading-relaxed">
+                  {item.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </BlurFade>
+
+        {/* 구분선 */}
+        <div className="my-20 border-t border-warm-tan/20" />
+
+        {/* 포항 창업 단계별 주요 투자사 역할 */}
+        <BlurFade delay={0.3}>
+          <div>
             <h3 className="text-lg font-bold text-primary-foreground mb-8">
               포항 창업 단계별 주요 투자사 역할
             </h3>
@@ -107,7 +169,7 @@ export function EcosystemSection() {
                 
                 {/* 타임라인 마커들 */}
                 <div className="relative z-10 flex w-full justify-between px-8">
-                  {TIMELINE_STAGES.map((stage, index) => (
+                  {TIMELINE_STAGES.map((stage) => (
                     <div key={stage.label} className="flex flex-col items-center">
                       {/* 원형 마커 */}
                       <div className={`w-6 h-6 rounded-full border-2 ${stage.highlighted ? 'border-gold bg-dark' : 'border-warm-tan/50 bg-dark'}`} />
@@ -188,7 +250,7 @@ export function EcosystemSection() {
         </BlurFade>
 
         {/* 하단 "포항시 창업 Value Chain 완성" 배너 */}
-        <BlurFade delay={0.3}>
+        <BlurFade delay={0.4}>
           <div className="mt-16">
             {/* 포항시 타이틀 */}
             <div className="flex items-center justify-center gap-4 mb-6">
@@ -201,7 +263,7 @@ export function EcosystemSection() {
             
             {/* 4개 기관 로고 */}
             <div className="flex items-center justify-center gap-8 mb-6 py-4">
-              {VALUE_CHAIN_PARTNERS.map((partner, index) => (
+              {VALUE_CHAIN_PARTNERS.map((partner) => (
                 <div key={partner.name} className="relative h-12 w-40">
                   <Image
                     src={partner.src}
@@ -215,7 +277,7 @@ export function EcosystemSection() {
             
             {/* 그라디언트 화살표 바 */}
             <div className="relative h-16 flex overflow-hidden">
-              {/* 공공의 영역 (빨간/골드) */}
+              {/* 공공의 영역 (골드) */}
               <div className="flex-1 bg-gradient-to-r from-gold/40 to-gold/20 flex items-center px-6 relative">
                 <p className="text-sm font-medium text-gold whitespace-nowrap">공공의 영역(지역 전략 발전)</p>
                 {/* 화살표 끝 */}
