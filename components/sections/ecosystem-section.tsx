@@ -435,9 +435,9 @@ export function EcosystemSection() {
           <div className="mt-16">
             {/* 포항시 타이틀 */}
             <div className="flex items-center justify-center gap-4 mb-6">
-              <div className="relative h-12 w-36 flex-shrink-0">
+              <div className="relative h-12 w-32 flex-shrink-0">
                 <Image
-                  src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%91%E1%85%A9%E1%84%92%E1%85%A1%E1%86%BC%E1%84%90%E1%85%A6%E1%84%8F%E1%85%B3%E1%84%82%E1%85%A9%E1%84%91%E1%85%A1%E1%84%8F%E1%85%B3_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-KYY9EfhPyxhtWAW9eEvhxglAhkC65T.png"
+                  src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%91%E1%85%A9%E1%84%92%E1%85%A1%E1%86%BC%E1%84%89%E1%85%B5_%E1%84%89%E1%85%B5%E1%86%B7%E1%84%87%E1%85%A5%E1%86%AF%E1%84%86%E1%85%A1%E1%84%8F%E1%85%B3-RtbRvsaGUZ6vMr2I3UNyB4gS6ZdM2v.png"
                   alt="포항시"
                   fill
                   className="object-contain"
@@ -460,7 +460,7 @@ export function EcosystemSection() {
               ))}
             </div>
             
-            {/* 그라디언트 화살표 바 */}
+            {/* 그라디��트 화살표 바 */}
             <div className="relative h-16 flex overflow-hidden">
               {/* 공공의 영역 (골드) */}
               <div className="flex-1 bg-gradient-to-r from-gold/40 to-gold/20 flex items-center px-6 relative">
