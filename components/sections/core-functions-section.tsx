@@ -39,11 +39,11 @@ const LOCAL_GOVERNMENTS = [
 ]
 
 const RELATED_ORGANIZATIONS = [
-  { name: "포항테크노파크",         src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%91%E1%85%A9%E1%84%92%E1%85%A1%E1%86%BC%E1%84%90%E1%85%A6%E1%84%8F%E1%85%B3%E1%84%82%E1%85%A9%E1%84%91%E1%85%A1%E1%84%8F%E1%85%B3_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-KYY9EfhPyxhtWAW9eEvhxglAhkC65T.png" },
-  { name: "경북창조경제혁신센터",   src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%80%E1%85%A7%E1%86%BC%E1%84%87%E1%85%AE%E1%86%A8%E1%84%8E%E1%85%A1%E1%86%BC%E1%84%8C%E1%85%A9%E1%84%80%E1%85%A7%E1%86%BC%E1%84%8C%E1%85%A6%E1%84%92%E1%85%A7%E1%86%A8%E1%84%89%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A6%E1%86%AB%E1%84%90%E1%85%A5_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-we2uo0tpDzF3DqJVXR7oA19yG4hwXn.png" },
-  { name: "Y&ARCHER",              src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Y%26ARCHER_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-ev97r2lvSbWl3AORjo7HDgtH0Ug0tt.svg" },
-  { name: "경북콘텐츠기업지원센터", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%80%E1%85%A7%E1%86%BC%E1%84%87%E1%85%AE%E1%86%A8%E1%84%8F%E1%85%A9%E1%86%AB%E1%84%90%E1%85%A6%E1%86%AB%E1%84%8E%E1%85%B3%E1%84%80%E1%85%B5%E1%84%8B%E1%85%A5%E1%86%B8%E1%84%8C%E1%85%B5%E1%84%8B%E1%85%AF%E1%86%AB%E1%84%89%E1%85%A6%E1%86%AB%E1%84%90%E1%85%A5_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-Vrn2WSg3scOaJu02kaEDCkVzLX3BAE.png" },
-  { name: "대경기술지주", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%83%E1%85%A2%E1%84%80%E1%85%A7%E1%86%BC%E1%84%80%E1%85%B5%E1%84%89%E1%85%AE%E1%86%AF%E1%84%8C%E1%85%B5%E1%84%8C%E1%85%AE__1_-removebg-preview-KgVQlK1S7F9yBq8M9meixvYNqLBWyW.png" },
+  { name: "포항테크노파크",         src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%91%E1%85%A9%E1%84%92%E1%85%A1%E1%86%BC%E1%84%90%E1%85%A6%E1%84%8F%E1%85%B3%E1%84%82%E1%85%A9%E1%84%91%E1%85%A1%E1%84%8F%E1%85%B3_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-KYY9EfhPyxhtWAW9eEvhxglAhkC65T.png",  width: "w-36" },
+  { name: "경북창조경제혁신센터",   src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%80%E1%85%A7%E1%86%BC%E1%84%87%E1%85%AE%E1%86%A8%E1%84%8E%E1%85%A1%E1%86%BC%E1%84%8C%E1%85%A9%E1%84%80%E1%85%A7%E1%86%BC%E1%84%8C%E1%85%A6%E1%84%92%E1%85%A7%E1%86%A8%E1%84%89%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A6%E1%86%AB%E1%84%90%E1%85%A5_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-we2uo0tpDzF3DqJVXR7oA19yG4hwXn.png", width: "w-36" },
+  { name: "Y&ARCHER",              src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Y%26ARCHER_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-ev97r2lvSbWl3AORjo7HDgtH0Ug0tt.svg",                                                                                                                                                                                                                                         width: "w-36" },
+  { name: "경북콘텐츠기업지원센터", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%80%E1%85%A7%E1%86%BC%E1%84%87%E1%85%AE%E1%86%A8%E1%84%8F%E1%85%A9%E1%86%AB%E1%84%90%E1%85%A6%E1%86%AB%E1%84%8E%E1%85%B3%E1%84%80%E1%85%B5%E1%84%8B%E1%85%A5%E1%86%B8%E1%84%8C%E1%85%B5%E1%84%8B%E1%85%AF%E1%86%AB%E1%84%89%E1%85%A6%E1%86%AB%E1%84%90%E1%85%A5_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-Vrn2WSg3scOaJu02kaEDCkVzLX3BAE.png", width: "w-36" },
+  { name: "대경기술지주",           src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%83%E1%85%A2%E1%84%80%E1%85%A7%E1%86%BC%E1%84%80%E1%85%B5%E1%84%89%E1%85%AE%E1%86%AF%E1%84%8C%E1%85%B5%E1%84%8C%E1%85%AE__1_-removebg-preview-KgVQlK1S7F9yBq8M9meixvYNqLBWyW.png",                                                                                                                                     width: "w-44" },
 ]
 
 export function CoreFunctionsSection() {
@@ -188,7 +188,7 @@ export function CoreFunctionsSection() {
                 </div>
                 <div className="border border-warm-tan bg-warm-beige/50 px-10 py-6 flex items-center justify-around gap-6">
                   {RELATED_ORGANIZATIONS.map((org) => (
-                    <div key={org.name} className="relative h-14 w-36">
+                    <div key={org.name} className={`relative h-14 ${org.width}`}>
                       <Image
                         src={org.src}
                         alt={org.name}
