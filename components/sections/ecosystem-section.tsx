@@ -272,66 +272,74 @@ export function EcosystemSection() {
                 </h4>
                 <p className="text-xs text-text-tertiary mb-8">- 공공·민간, 창업단계로 나누어 2X2 매트릭스로 구성</p>
                 
-                {/* 2x2 매트릭스 */}
-                <div className="relative">
+                {/* 십자 좌표 그래프 */}
+                <div className="relative" style={{ height: '400px' }}>
                   {/* Y축 상단 레이블 */}
-                  <div className="text-[10px] text-text-tertiary mb-4 text-center">
+                  <div className="absolute top-0 left-1/2 -translate-x-1/2 text-[10px] text-text-tertiary text-center whitespace-nowrap">
                     공공의 영역 (주력 산업분야 연관성, 전략적 투자)
                   </div>
                   
-                  {/* 매트릭스 본문 */}
-                  <div className="flex">
-                    {/* 좌표계 영역 */}
-                    <div className="flex-1 relative border-l-2 border-b-2 border-warm-tan/30" style={{ height: '320px' }}>
-                      
-                      {/* 포항연합기술지주 - 좌상단 (공공 + 예비창업) */}
-                      <div className="absolute top-6 left-6 w-36 h-36 rounded-full border-2 border-dashed border-gold/50 flex items-center justify-center bg-gold/5">
-                        <div className="relative h-12 w-32">
-                          <Image
-                            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-9Oe9fZGsMZf8zKbK5Ir5yJB6UySdZb.png"
-                            alt="포항연합기술지주"
-                            fill
-                            className="object-contain"
-                          />
-                        </div>
-                      </div>
-                      
-                      {/* POSTECH Holdings - 중앙 하단 (민간 + 창업초기) */}
-                      <div className="absolute bottom-12 left-1/2 -translate-x-1/4 w-32 h-32 rounded-full bg-gradient-to-br from-[#8B1E3F]/30 to-[#8B1E3F]/10 flex items-center justify-center">
-                        <div className="relative h-10 w-28">
-                          <Image
-                            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image%203%20%281%29-vj8TaaRHbljXhF1leCxLPGIgV5CVNY.png"
-                            alt="POSTECH Holdings"
-                            fill
-                            className="object-contain"
-                          />
-                        </div>
-                      </div>
-                      
-                      {/* POSCO 포스코기술투자 - 우하단 (민간 + 창업중기) */}
-                      <div className="absolute bottom-4 right-4 w-32 h-32 rounded-full bg-gradient-to-br from-[#00529C]/30 to-[#00529C]/10 flex items-center justify-center">
-                        <div className="relative h-10 w-28">
-                          <Image
-                            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-fQmiNl8hX6fRS5gtsYenUwm9kVMJMB.png"
-                            alt="POSCO 포스코기술투자"
-                            fill
-                            className="object-contain"
-                          />
-                        </div>
-                      </div>
-                    </div>
+                  {/* Y축 (세로선) */}
+                  <div className="absolute left-1/2 top-6 bottom-6 w-0.5 bg-warm-tan/50">
+                    {/* 위쪽 화살표 */}
+                    <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[8px] border-b-warm-tan/50" />
                   </div>
                   
-                  {/* X축 레이블 */}
-                  <div className="flex justify-around mt-3 ml-4 text-[11px] text-text-tertiary">
-                    <span className="text-center">예비창업</span>
-                    <span className="text-center">창업초기</span>
-                    <span className="text-center">창업중기</span>
+                  {/* X축 (가로선) */}
+                  <div className="absolute top-1/2 left-6 right-6 h-0.5 bg-warm-tan/50">
+                    {/* 오른쪽 화살표 */}
+                    <div className="absolute -right-2 top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[8px] border-l-warm-tan/50" />
+                  </div>
+                  
+                  {/* X축 레이블들 */}
+                  <div className="absolute top-1/2 left-2 translate-y-2 text-[10px] text-text-tertiary">
+                    <span>예비</span><br /><span>창업</span>
+                  </div>
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-2 text-[10px] text-text-tertiary text-center">
+                    <span>창업</span><br /><span>초기</span>
+                  </div>
+                  <div className="absolute top-1/2 right-2 translate-y-2 text-[10px] text-text-tertiary text-right">
+                    <span>창업</span><br /><span>중기</span>
                   </div>
                   
                   {/* Y축 하단 레이블 */}
-                  <div className="text-[10px] text-text-tertiary mt-6 text-center">
+                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-[10px] text-text-tertiary text-center whitespace-nowrap">
                     민간의 영역 (이윤 극대화)
+                  </div>
+                  
+                  {/* 포항연합기술지주 - 좌상단 (공공 + 예비창업) - Y축에 가깝게 */}
+                  <div className="absolute top-12 left-[20%] w-36 h-36 rounded-full border-2 border-dashed border-[#c53d3d] flex items-center justify-center bg-white">
+                    <Image
+                      src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-9Oe9fZGsMZf8zKbK5Ir5yJB6UySdZb.png"
+                      alt="포항연합기술지주"
+                      width={100}
+                      height={40}
+                      className="object-contain"
+                    />
+                  </div>
+                  
+                  {/* POSTECH Holdings - 중앙 하단 (민간 + 창업초기) */}
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/4 translate-y-4 w-32 h-32 rounded-full bg-gradient-to-br from-warm-tan/30 to-warm-tan/10 flex items-center justify-center">
+                    <div className="relative h-10 w-28">
+                      <Image
+                        src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image%203%20%281%29-vj8TaaRHbljXhF1leCxLPGIgV5CVNY.png"
+                        alt="POSTECH Holdings"
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* POSCO 포스코기술투자 - 우하단 (민간 + 창업중기) - 더 아래로 */}
+                  <div className="absolute bottom-8 right-8 w-32 h-28 rounded-full bg-gradient-to-br from-warm-tan/30 to-warm-tan/10 flex items-center justify-center">
+                    <div className="relative h-10 w-28">
+                      <Image
+                        src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-fQmiNl8hX6fRS5gtsYenUwm9kVMJMB.png"
+                        alt="POSCO 포스코기술투자"
+                        fill
+                        className="object-contain"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
