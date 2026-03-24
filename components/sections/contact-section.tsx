@@ -75,10 +75,10 @@ export function ContactSection() {
                 <div className="flex items-start gap-4">
                   <MapPin size={15} className="mt-0.5 shrink-0 text-gold/70" />
                   <div>
-                    <p className="text-sm text-primary-foreground/90 [word-break:keep-all]">
-                      경북 포항시 북구 흥해읍 한동로 558, 302호
+                    <p className="text-sm font-semibold text-primary-foreground/90">포항연합기술지주</p>
+                    <p className="mt-0.5 text-xs text-text-tertiary [word-break:keep-all]">
+                      경북 포항시 북구 흥해읍 한동로 558, 302호 (남송리, 창업보육센터)
                     </p>
-                    <p className="mt-0.5 text-xs text-text-tertiary">(남송리, 창업보육센터) 포항연합기술지주</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
