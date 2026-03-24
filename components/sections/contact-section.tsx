@@ -76,9 +76,9 @@ export function ContactSection() {
                   <MapPin size={15} className="mt-0.5 shrink-0 text-gold/70" />
                   <div>
                     <p className="text-sm text-primary-foreground/90 [word-break:keep-all]">
-                      경상북도 포항시 남구 청암로 77
+                      경북 포항시 북구 흥해읍 한동로 558, 302호
                     </p>
-                    <p className="mt-0.5 text-xs text-text-tertiary">POSTECH 창업보육센터</p>
+                    <p className="mt-0.5 text-xs text-text-tertiary">(남송리, 창업보육센터) 포항연합기술지주</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
