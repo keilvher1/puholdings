@@ -18,9 +18,9 @@ export function Footer() {
 
           <div className="lg:col-span-4">
             <p className="text-xs leading-[2.2] text-text-tertiary">
-              {"경상북도 포항시 남구 청암로 77"}
+              {"경북 포항시 북구 흥해읍 한동로 558, 302호"}
               <br />
-              {"POSTECH C5빌딩"}
+              {"(남송리, 창업보육센터)"}
             </p>
           </div>
 
