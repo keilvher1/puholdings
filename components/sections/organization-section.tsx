@@ -164,25 +164,17 @@ export function OrganizationSection() {
               </div>
 
               {/* Middle Row */}
-              <div className="flex items-start justify-center gap-3 mb-6">
-                {/* 부대표 + 심규진 교수 (vertical stack) */}
-                <div className="flex flex-col items-center gap-0">
-                  <div className="bg-dark-muted border border-warm-tan/20 px-5 py-2.5 text-center w-full">
-                    <p className="text-sm text-primary-foreground">부대표</p>
-                  </div>
-                  {/* vertical connector */}
-                  <div className="w-px h-4 bg-warm-tan/30" />
-                  <div className="bg-dark-muted border border-warm-tan/20 px-5 py-2.5 text-center w-full">
-                    <p className="text-[10px] tracking-wider text-gold mb-0.5">이사</p>
-                    <p className="text-sm text-primary-foreground whitespace-nowrap">한동대 심규진 교수</p>
-                  </div>
+              <div className="flex items-center justify-center gap-3 mb-6">
+                <div className="bg-dark-muted border border-warm-tan/20 px-5 py-3 text-center">
+                  <p className="text-[10px] tracking-wider text-gold mb-0.5">부대표</p>
+                  <p className="text-sm font-medium text-primary-foreground whitespace-nowrap">한동대 심규진 교수</p>
                 </div>
 
-                <div className="w-4 h-px bg-warm-tan/30 mt-[18px]" />
-                <div className="bg-dark-muted border border-warm-tan/20 px-5 py-2.5 text-center">
+                <div className="w-4 h-px bg-warm-tan/30" />
+              <div className="bg-dark-muted border border-warm-tan/20 px-5 py-2.5 text-center">
                   <p className="text-sm text-primary-foreground">이사</p>
                 </div>
-                <div className="w-4 h-px bg-warm-tan/30 mt-[18px]" />
+                <div className="w-4 h-px bg-warm-tan/30" />
                 <div className="bg-gold/10 border border-gold/40 px-5 py-2.5 text-center">
                   <p className="text-sm font-medium text-gold">전략기획실</p>
                 </div>
