@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { ImageUpload } from "./image-upload"
 
 interface NewsFormProps {
   initialData?: {
@@ -13,6 +14,7 @@ interface NewsFormProps {
     category: string
     is_visible: boolean
     published_at: string
+    image_url?: string
   } | null
 }
 
@@ -30,6 +32,7 @@ export function NewsForm({ initialData }: NewsFormProps) {
     published_at: initialData?.published_at
       ? new Date(initialData.published_at).toISOString().split("T")[0]
       : new Date().toISOString().split("T")[0],
+    image_url: initialData?.image_url || "",
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -68,6 +71,14 @@ export function NewsForm({ initialData }: NewsFormProps) {
       )}
 
       <div className="space-y-4 rounded-lg border border-warm-tan bg-card p-6">
+        {/* 이미지 업로드 */}
+        <ImageUpload
+          value={form.image_url}
+          onChange={(url) => setForm({ ...form, image_url: url })}
+          folder="news"
+          label="썸네일 이미지"
+        />
+
         <div>
           <label className="mb-1.5 block text-sm font-medium text-dark">제목</label>
           <input

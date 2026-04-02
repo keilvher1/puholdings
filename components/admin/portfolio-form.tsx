@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { ImageUpload } from "./image-upload"
 
 interface PortfolioFormProps {
   initialData?: {
@@ -15,6 +16,8 @@ interface PortfolioFormProps {
     investment_year: number
     status: string
     sort_order: number
+    logo_url?: string
+    image_url?: string
   } | null
 }
 
@@ -32,6 +35,8 @@ export function PortfolioForm({ initialData }: PortfolioFormProps) {
     investment_year: initialData?.investment_year || new Date().getFullYear(),
     status: initialData?.status || "active",
     sort_order: initialData?.sort_order || 0,
+    logo_url: initialData?.logo_url || "",
+    image_url: initialData?.image_url || "",
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -70,6 +75,22 @@ export function PortfolioForm({ initialData }: PortfolioFormProps) {
       )}
 
       <div className="space-y-4 rounded-lg border border-warm-tan bg-card p-6">
+        {/* 이미지 업로드 */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <ImageUpload
+            value={form.logo_url}
+            onChange={(url) => setForm({ ...form, logo_url: url })}
+            folder="portfolio/logos"
+            label="기업 로고"
+          />
+          <ImageUpload
+            value={form.image_url}
+            onChange={(url) => setForm({ ...form, image_url: url })}
+            folder="portfolio/images"
+            label="기업 이미지"
+          />
+        </div>
+
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label className="mb-1.5 block text-sm font-medium text-dark">기업명 (한글)</label>
