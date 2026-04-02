@@ -59,24 +59,6 @@ export default function AdminSetupPage() {
           </p>
         </div>
 
-        <div className="mb-4 rounded-lg border border-gold/30 bg-gold/5 px-4 py-3">
-          <p className="text-sm font-medium text-dark">데모 모드</p>
-          <p className="mt-1 text-xs text-text-secondary">
-            DATABASE_URL이 설정되지 않아 데모 모드로 실행 중입니다.<br />
-            아래 계정으로 바로 로그인하세요:
-          </p>
-          <p className="mt-2 font-mono text-xs text-gold">
-            이메일: admin@puholdings.com<br />
-            비밀번호: admin1234
-          </p>
-          <a 
-            href="/admin/login" 
-            className="mt-3 inline-block rounded bg-dark px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-dark-muted transition-colors"
-          >
-            로그인 페이지로 이동
-          </a>
-        </div>
-
         <form onSubmit={handleSubmit} className="rounded-lg border border-warm-tan bg-card p-6">
           {error && (
             <div className="mb-4 rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive">

@@ -50,14 +50,6 @@ export default function AdminLoginPage() {
           </p>
         </div>
 
-        <div className="mb-4 rounded-lg border border-gold/30 bg-gold/5 px-4 py-3">
-          <p className="text-sm font-medium text-dark">데모 계정</p>
-          <p className="mt-1 font-mono text-xs text-text-secondary">
-            이메일: admin@puholdings.com<br />
-            비밀번호: admin1234
-          </p>
-        </div>
-
         <form onSubmit={handleSubmit} className="rounded-lg border border-warm-tan bg-card p-6">
           {error && (
             <div className="mb-4 rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive">

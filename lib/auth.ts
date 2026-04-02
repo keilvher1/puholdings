@@ -12,7 +12,7 @@ const DEMO_ADMIN = {
   id: 1,
   email: "admin@puholdings.com",
   name: "관리자",
-  password: "admin1234"
+  password: "pong1234"
 }
 
 export function isDemoMode(): boolean {
