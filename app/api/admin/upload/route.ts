@@ -38,9 +38,9 @@ export async function POST(request: NextRequest) {
     const timestamp = Date.now()
     const filename = `${folder}/${timestamp}-${file.name}`
 
-    // Upload to Vercel Blob (public access for images)
+    // Upload to Vercel Blob
     const blob = await put(filename, file, {
-      access: 'public',
+      access: 'private',
     })
 
     return NextResponse.json({ 
