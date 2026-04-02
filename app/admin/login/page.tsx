@@ -16,21 +16,27 @@ export default function AdminLoginPage() {
     setLoading(true)
 
     try {
+      console.log("[v0] Attempting login with email:", email)
       const res = await fetch("/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       })
 
+      console.log("[v0] Login response status:", res.status)
       const data = await res.json()
+      console.log("[v0] Login response data:", data)
 
       if (data.success) {
+        console.log("[v0] Login successful, redirecting to /admin")
         router.push("/admin")
         router.refresh()
       } else {
+        console.log("[v0] Login failed:", data.error)
         setError(data.error || "로그인에 실패했습니다")
       }
-    } catch {
+    } catch (err) {
+      console.error("[v0] Login error:", err)
       setError("서버 오류가 발생했습니다")
     } finally {
       setLoading(false)
