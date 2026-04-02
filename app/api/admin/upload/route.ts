@@ -1,12 +1,11 @@
 import { put, del } from '@vercel/blob'
 import { type NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
+import { getSession } from '@/lib/auth'
 
-// Check admin session
+// Check admin session using JWT token
 async function isAuthenticated() {
-  const cookieStore = await cookies()
-  const session = cookieStore.get('admin_session')
-  return session?.value === 'authenticated'
+  const session = await getSession()
+  return session !== null
 }
 
 export async function POST(request: NextRequest) {
