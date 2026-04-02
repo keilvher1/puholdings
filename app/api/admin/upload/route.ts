@@ -40,13 +40,13 @@ export async function POST(request: NextRequest) {
 
     // Upload to Vercel Blob
     const blob = await put(filename, file, {
-      access: 'private',
+      access: 'public',
     })
 
+    // For public blobs, return the URL directly
     return NextResponse.json({ 
       success: true,
       url: blob.url,
-      pathname: blob.pathname 
     })
   } catch (error) {
     console.error('Upload error:', error)

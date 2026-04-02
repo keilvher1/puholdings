@@ -31,13 +31,14 @@ export function ImageUpload({ value, onChange, folder = "uploads", label = "이�
       const res = await fetch("/api/admin/upload", {
         method: "POST",
         body: formData,
+        credentials: "include",
       })
 
       const data = await res.json()
 
       if (data.success) {
-        // For private blobs, use pathname to construct the URL
-        onChange(data.pathname)
+        // For public blobs, use the URL directly
+        onChange(data.url)
       } else {
         setError(data.error || "업로드에 실패했습니다")
       }
@@ -81,7 +82,7 @@ export function ImageUpload({ value, onChange, folder = "uploads", label = "이�
         <div className="relative inline-block">
           <div className="relative h-32 w-32 overflow-hidden rounded-lg border border-warm-tan">
             <Image
-              src={`/api/file?pathname=${encodeURIComponent(value)}`}
+              src={value}
               alt="Uploaded image"
               fill
               className="object-cover"
