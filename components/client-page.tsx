@@ -6,6 +6,7 @@ import { StatsSection } from "@/components/sections/stats-section"
 import { PhilosophySection } from "@/components/sections/philosophy-section"
 import { AboutSection } from "@/components/sections/about-section"
 import { PortfolioPreviewSection } from "@/components/sections/portfolio-preview-section"
+import { NewsSection } from "@/components/sections/news-section"
 import { ContactSection } from "@/components/sections/contact-section"
 import { Footer } from "@/components/sections/footer"
 
@@ -24,6 +25,7 @@ export function ClientPage({ stats, portfolio, news }: Props) {
       <PhilosophySection />
       <AboutSection />
       <PortfolioPreviewSection companies={portfolio} />
+      <NewsSection news={news} />
       <ContactSection />
       <Footer />
     </main>
