@@ -24,8 +24,8 @@ export function ClientPage({ stats, portfolio, news }: Props) {
       <StatsSection stats={stats} />
       <PhilosophySection />
       <AboutSection />
-      <PortfolioPreviewSection companies={portfolio} />
       <NewsSection news={news} />
+      <PortfolioPreviewSection companies={portfolio} />
       <ContactSection />
       <Footer />
     </main>
