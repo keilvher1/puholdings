@@ -14,11 +14,11 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { title, summary, content, category, is_visible, published_at } = await request.json()
+    const { title, summary, content, category, is_visible, published_at, image_url } = await request.json()
 
     await sql`
-      INSERT INTO news (title, summary, content, category, is_visible, published_at)
-      VALUES (${title}, ${summary}, ${content || ""}, ${category}, ${is_visible}, ${published_at})
+      INSERT INTO news (title, summary, content, category, is_visible, published_at, image_url)
+      VALUES (${title}, ${summary}, ${content || ""}, ${category}, ${is_visible}, ${published_at}, ${image_url || null})
     `
 
     return NextResponse.json({ success: true })
@@ -40,7 +40,7 @@ export async function PUT(request: Request) {
   }
 
   try {
-    const { id, title, summary, content, category, is_visible, published_at } = await request.json()
+    const { id, title, summary, content, category, is_visible, published_at, image_url } = await request.json()
 
     await sql`
       UPDATE news SET
@@ -49,7 +49,8 @@ export async function PUT(request: Request) {
         content = ${content || ""},
         category = ${category},
         is_visible = ${is_visible},
-        published_at = ${published_at}
+        published_at = ${published_at},
+        image_url = ${image_url || null}
       WHERE id = ${id}
     `
 
