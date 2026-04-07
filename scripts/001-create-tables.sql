@@ -8,10 +8,10 @@ CREATE TABLE IF NOT EXISTS portfolio_companies (
   category VARCHAR(100) NOT NULL,
   description TEXT,
   logo_url VARCHAR(500),
-  website_url VARCHAR(500),
-  founded_year INTEGER,
-  investment_stage VARCHAR(100),
-  is_featured BOOLEAN DEFAULT false,
+  image_url VARCHAR(500),
+  website VARCHAR(500),
+  investment_year INTEGER,
+  status VARCHAR(50) DEFAULT 'active',
   sort_order INTEGER DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -21,10 +21,12 @@ CREATE TABLE IF NOT EXISTS portfolio_companies (
 CREATE TABLE IF NOT EXISTS news (
   id SERIAL PRIMARY KEY,
   title VARCHAR(500) NOT NULL,
+  summary TEXT,
   content TEXT,
-  category VARCHAR(100) DEFAULT 'notice',
+  category VARCHAR(100) DEFAULT '일반',
+  image_url VARCHAR(500),
   published_at DATE NOT NULL DEFAULT CURRENT_DATE,
-  is_published BOOLEAN DEFAULT true,
+  is_visible BOOLEAN DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

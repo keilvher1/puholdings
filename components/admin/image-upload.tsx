@@ -31,12 +31,13 @@ export function ImageUpload({ value, onChange, folder = "uploads", label = "이�
       const res = await fetch("/api/admin/upload", {
         method: "POST",
         body: formData,
+        credentials: "include",
       })
 
       const data = await res.json()
 
       if (data.success) {
-        // For private blobs, use pathname to construct the URL
+        // For private blobs, store the pathname
         onChange(data.pathname)
       } else {
         setError(data.error || "업로드에 실패했습니다")
@@ -58,7 +59,8 @@ export function ImageUpload({ value, onChange, folder = "uploads", label = "이�
       await fetch("/api/admin/upload", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: value }),
+        body: JSON.stringify({ pathname: value }),
+        credentials: "include",
       })
     } catch {
       // Ignore delete errors

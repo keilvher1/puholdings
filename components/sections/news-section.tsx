@@ -2,6 +2,7 @@
 
 import { BlurFade } from "@/components/magicui/blur-fade"
 import { ArrowUpRight } from "lucide-react"
+import Image from "next/image"
 
 interface NewsItem {
   id: number
@@ -9,6 +10,7 @@ interface NewsItem {
   summary: string | null
   category: string
   published_at: string
+  image_url?: string | null
 }
 
 function formatDate(dateStr: string) {
@@ -42,35 +44,49 @@ export function NewsSection({ news }: { news: NewsItem[] }) {
           </div>
         </BlurFade>
 
-        {/* News list */}
-        <div className="space-y-0">
-          {news.map((item, i) => (
+        {/* News Grid with Images */}
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+          {news.slice(0, 6).map((item, i) => (
             <BlurFade key={item.id} delay={0.1 + i * 0.05}>
-              <article className="group grid cursor-pointer grid-cols-12 items-start gap-4 border-t border-warm-tan py-7 transition-colors hover:border-gold/40 lg:items-center lg:py-8">
-                <div className="col-span-12 lg:col-span-2">
-                  <span className="text-[10px] font-medium tracking-[0.15em] text-gold">
-                    {item.category.toUpperCase()}
-                  </span>
+              <article className="group cursor-pointer overflow-hidden rounded-lg border border-warm-tan bg-white transition-all hover:border-gold/40 hover:shadow-lg">
+                {/* Image */}
+                <div className="relative aspect-[16/10] overflow-hidden bg-warm-tan/20">
+                  {item.image_url ? (
+                    <Image
+                      src={`/api/file?pathname=${encodeURIComponent(item.image_url)}`}
+                      alt={item.title}
+                      fill
+                      className="object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-gold/10 to-warm-tan/30">
+                      <span className="text-3xl font-bold text-gold/30">NEWS</span>
+                    </div>
+                  )}
                 </div>
-                <div className="col-span-10 lg:col-span-7">
-                  <h3 className="text-sm font-bold leading-snug text-foreground transition-colors group-hover:text-gold lg:text-[15px] text-balance">
+                
+                {/* Content */}
+                <div className="p-5">
+                  <div className="mb-3 flex items-center justify-between">
+                    <span className="text-[10px] font-medium tracking-[0.15em] text-gold">
+                      {item.category.toUpperCase()}
+                    </span>
+                    <span className="text-[11px] tabular-nums text-text-secondary">
+                      {formatDate(item.published_at)}
+                    </span>
+                  </div>
+                  <h3 className="text-sm font-bold leading-snug text-foreground transition-colors group-hover:text-gold lg:text-[15px] line-clamp-2">
                     {item.title}
                   </h3>
                   {item.summary && (
-                    <p className="mt-2 hidden text-sm leading-relaxed text-text-secondary line-clamp-1 lg:block">
+                    <p className="mt-2 text-xs leading-relaxed text-text-secondary line-clamp-2">
                       {item.summary}
                     </p>
                   )}
                 </div>
-                <div className="col-span-2 flex items-start justify-end lg:col-span-3">
-                  <span className="text-[11px] tabular-nums text-text-secondary">
-                    {formatDate(item.published_at)}
-                  </span>
-                </div>
               </article>
             </BlurFade>
           ))}
-          <div className="border-t border-warm-tan" />
         </div>
       </div>
     </section>
