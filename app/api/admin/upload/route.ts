@@ -38,15 +38,15 @@ export async function POST(request: NextRequest) {
     const timestamp = Date.now()
     const filename = `${folder}/${timestamp}-${file.name}`
 
-    // Upload to Vercel Blob
+    // Upload to Vercel Blob (private store)
     const blob = await put(filename, file, {
-      access: 'public',
+      access: 'private',
     })
 
-    // For public blobs, return the URL directly
+    // For private blobs, return the pathname to use with /api/file route
     return NextResponse.json({ 
       success: true,
-      url: blob.url,
+      pathname: blob.pathname,
     })
   } catch (error) {
     console.error('Upload error:', error)
@@ -61,13 +61,14 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
-    const { url } = await request.json()
+    const { pathname } = await request.json()
 
-    if (!url) {
-      return NextResponse.json({ error: 'URL이 제공되지 않았습니다' }, { status: 400 })
+    if (!pathname) {
+      return NextResponse.json({ error: 'pathname이 제공되지 않았습니다' }, { status: 400 })
     }
 
-    await del(url)
+    // For private blobs, we need to delete by pathname
+    await del(pathname)
 
     return NextResponse.json({ success: true })
   } catch (error) {

@@ -37,8 +37,8 @@ export function ImageUpload({ value, onChange, folder = "uploads", label = "이�
       const data = await res.json()
 
       if (data.success) {
-        // For public blobs, use the URL directly
-        onChange(data.url)
+        // For private blobs, store the pathname
+        onChange(data.pathname)
       } else {
         setError(data.error || "업로드에 실패했습니다")
       }
@@ -59,7 +59,8 @@ export function ImageUpload({ value, onChange, folder = "uploads", label = "이�
       await fetch("/api/admin/upload", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: value }),
+        body: JSON.stringify({ pathname: value }),
+        credentials: "include",
       })
     } catch {
       // Ignore delete errors
@@ -82,7 +83,7 @@ export function ImageUpload({ value, onChange, folder = "uploads", label = "이�
         <div className="relative inline-block">
           <div className="relative h-32 w-32 overflow-hidden rounded-lg border border-warm-tan">
             <Image
-              src={value}
+              src={`/api/file?pathname=${encodeURIComponent(value)}`}
               alt="Uploaded image"
               fill
               className="object-cover"
