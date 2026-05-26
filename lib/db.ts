@@ -6,6 +6,24 @@ export function getDb() {
   return neon(url)
 }
 
+// ---------- Types ----------
+
+export interface Popup {
+  id: number
+  title: string
+  content: string | null
+  image_url: string | null
+  link_url: string | null
+  link_label: string | null
+  start_at: string
+  end_at: string
+  is_active: boolean
+  priority: number
+  related_news_id: number | null
+  created_at: string
+  updated_at: string
+}
+
 // ---------- Fallback static data (used when DATABASE_URL is absent) ----------
 
 export const FALLBACK_STATS = [

@@ -2,12 +2,13 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { 
-  LayoutDashboard, 
-  Newspaper, 
-  Briefcase, 
-  BarChart3, 
+import {
+  LayoutDashboard,
+  Newspaper,
+  Briefcase,
+  BarChart3,
   MessageSquare,
+  Megaphone,
   LogOut,
   Settings
 } from "lucide-react"
@@ -16,6 +17,7 @@ import type { AdminUser } from "@/lib/auth"
 const navItems = [
   { href: "/admin", label: "대시보드", icon: LayoutDashboard },
   { href: "/admin/news", label: "최신 소식", icon: Newspaper },
+  { href: "/admin/popups", label: "팝업", icon: Megaphone },
   { href: "/admin/portfolio", label: "포트폴리오", icon: Briefcase },
   { href: "/admin/stats", label: "통계", icon: BarChart3 },
   { href: "/admin/inquiries", label: "문의 관리", icon: MessageSquare },

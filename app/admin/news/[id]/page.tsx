@@ -5,13 +5,17 @@ import { NewsForm } from "@/components/admin/news-form"
 
 async function getNewsItem(id: string) {
   if (id === "new") return null
-  
+
   const sql = getDb()
   if (!sql) return null
-  
+
   try {
     const rows = await sql`SELECT * FROM news WHERE id = ${parseInt(id)}`
-    return rows[0] || null
+    const news = rows[0]
+    if (!news) return null
+    // Attach the linked popup (if any) so the form can prefill popup settings.
+    const popups = await sql`SELECT * FROM popups WHERE related_news_id = ${parseInt(id)} LIMIT 1`
+    return { ...news, popup: popups[0] || null } as any
   } catch {
     return null
   }

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Noto_Sans_KR, Geist } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { PopupModal } from '@/components/popup-modal'
 import './globals.css'
 
 const notoSansKR = Noto_Sans_KR({
@@ -38,6 +39,7 @@ export default function RootLayout({
     <html lang="ko" suppressHydrationWarning data-scroll-behavior="smooth">
       <body className={`${notoSansKR.className} antialiased`}>
         {children}
+        <PopupModal />
         <Analytics />
       </body>
     </html>
