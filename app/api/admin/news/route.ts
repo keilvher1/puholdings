@@ -29,15 +29,18 @@ export async function POST(request: Request) {
       is_visible,
       published_at,
       image_url,
+      attachments,
       popup_enabled,
       popup_start_at,
       popup_end_at,
       popup_priority,
     } = await request.json()
 
+    const attachmentsJson = JSON.stringify(Array.isArray(attachments) ? attachments : [])
+
     const inserted = await sql`
-      INSERT INTO news (title, summary, content, category, is_visible, published_at, image_url)
-      VALUES (${title}, ${summary}, ${content || ""}, ${category}, ${is_visible}, ${published_at}, ${image_url || null})
+      INSERT INTO news (title, summary, content, category, is_visible, published_at, image_url, attachments)
+      VALUES (${title}, ${summary}, ${content || ""}, ${category}, ${is_visible}, ${published_at}, ${image_url || null}, ${attachmentsJson}::jsonb)
       RETURNING id
     `
     const newsId = inserted[0].id
@@ -87,11 +90,14 @@ export async function PUT(request: Request) {
       is_visible,
       published_at,
       image_url,
+      attachments,
       popup_enabled,
       popup_start_at,
       popup_end_at,
       popup_priority,
     } = await request.json()
+
+    const attachmentsJson = JSON.stringify(Array.isArray(attachments) ? attachments : [])
 
     await sql`
       UPDATE news SET
@@ -101,7 +107,8 @@ export async function PUT(request: Request) {
         category = ${category},
         is_visible = ${is_visible},
         published_at = ${published_at},
-        image_url = ${image_url || null}
+        image_url = ${image_url || null},
+        attachments = ${attachmentsJson}::jsonb
       WHERE id = ${id}
     `
 

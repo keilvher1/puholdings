@@ -4,6 +4,8 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { ImageUpload } from "./image-upload"
+import { FileUpload } from "./file-upload"
+import type { Attachment } from "@/lib/db"
 
 interface LinkedPopup {
   id: number
@@ -23,6 +25,7 @@ interface NewsFormProps {
     is_visible: boolean
     published_at: string
     image_url?: string
+    attachments?: Attachment[] | null
     popup?: LinkedPopup | null
   } | null
 }
@@ -61,6 +64,10 @@ export function NewsForm({ initialData }: NewsFormProps) {
     image_url: initialData?.image_url || "",
   })
 
+  const [attachments, setAttachments] = useState<Attachment[]>(
+    Array.isArray(initialData?.attachments) ? initialData!.attachments! : []
+  )
+
   const [popupEnabled, setPopupEnabled] = useState<boolean>(
     !!linkedPopup && linkedPopup.is_active !== false
   )
@@ -90,6 +97,7 @@ export function NewsForm({ initialData }: NewsFormProps) {
     const payload = {
       ...form,
       ...(initialData ? { id: initialData.id } : {}),
+      attachments,
       popup_enabled: popupEnabled,
       // Send full ISO (with timezone) so the server stores an unambiguous instant.
       popup_start_at: popupEnabled ? new Date(popup.start_at).toISOString() : null,
@@ -206,6 +214,10 @@ export function NewsForm({ initialData }: NewsFormProps) {
           <label htmlFor="is_visible" className="text-sm text-dark">
             공개
           </label>
+        </div>
+
+        <div className="border-t border-warm-tan pt-4">
+          <FileUpload value={attachments} onChange={setAttachments} folder="news" label="첨부파일" />
         </div>
       </div>
 

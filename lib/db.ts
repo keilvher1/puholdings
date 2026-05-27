@@ -8,6 +8,13 @@ export function getDb() {
 
 // ---------- Types ----------
 
+export interface Attachment {
+  name: string
+  pathname: string
+  size: number
+  type: string
+}
+
 export interface Popup {
   id: number
   title: string
