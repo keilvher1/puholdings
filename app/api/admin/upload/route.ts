@@ -37,11 +37,11 @@ export async function POST(request: NextRequest) {
       'text/csv', // .csv
       'application/zip', 'application/x-zip-compressed', // .zip
       // HWP MIME types are inconsistent across browsers/OS:
-      'application/x-hwp', 'application/haansofthwp', 'application/vnd.hancom.hwp',
-      'application/hwp', 'application/octet-stream',
+      'application/x-hwp', 'application/haansofthwp', 'application/vnd.hancom.hwp', 'application/hwp',
     ]
-    // HWP / some docs often arrive as octet-stream or empty type, so fall back
-    // to an extension allowlist when the MIME type isn't recognized.
+    // HWP / some docs often arrive as application/octet-stream or an empty type.
+    // We deliberately do NOT allow octet-stream by MIME (it's a catch-all); instead
+    // we fall back to an extension allowlist so only known document types pass.
     const allowedExtensions = [
       '.jpg', '.jpeg', '.png', '.gif', '.webp',
       '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
