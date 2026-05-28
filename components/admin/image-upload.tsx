@@ -122,7 +122,7 @@ export function ImageUpload({ value, onChange, folder = "uploads", label = "이�
       />
       
       <p className="mt-1.5 text-xs text-text-tertiary">
-        JPG, PNG, GIF, WebP (최대 10MB)
+        JPG, PNG, GIF, WebP (최대 20MB)
       </p>
     </div>
   )
