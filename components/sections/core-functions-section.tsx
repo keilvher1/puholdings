@@ -46,7 +46,27 @@ const RELATED_ORGANIZATIONS = [
   { name: "대경기술지주",           src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%83%E1%85%A2%E1%84%80%E1%85%A7%E1%86%BC%E1%84%80%E1%85%B5%E1%84%89%E1%85%AE%E1%86%AF%E1%84%8C%E1%85%B5%E1%84%8C%E1%85%AE%20%281%29%201-vcayQBUc9dta5qDF26xwlrTkwOYdgF.png",                                                                                                                                                 width: "w-44" },
 ]
 
-export function CoreFunctionsSection() {
+export type CoreActivities = { handong: string[]; puholdings: string[]; external: string[] }
+
+export function CoreFunctionsSection({
+  activities,
+  intro,
+}: {
+  activities?: CoreActivities
+  intro?: string[]
+}) {
+  const act: CoreActivities = activities ?? {
+    handong: HANDONG_ACTIVITIES,
+    puholdings: PUHOLDINGS_ACTIVITIES,
+    external: EXTERNAL_NETWORK,
+  }
+  const introParagraphs =
+    intro && intro.length > 0
+      ? intro
+      : [
+          "대학 기술지주회사이자 지역 액셀러레이터로서 대학 창업 활성화 및 대학 공동 사업 확대(글로컬, RISE 연계)를 통한 지산학연 창업 생태계 구축 추진",
+          "창업보육센터 운영, 벤처투자 및 창업지원 사업 등을 통해 우수 (예비)창업자 발굴, 육성, 투자 등의 업무 진행",
+        ]
   return (
     <section className="relative bg-warm-ivory py-28 lg:py-40 border-t border-warm-tan">
       <div className="mx-auto max-w-7xl px-8 lg:px-12">
@@ -66,12 +86,11 @@ export function CoreFunctionsSection() {
         {/* Description */}
         <BlurFade delay={0.2}>
           <div className="mt-8 max-w-4xl space-y-4">
-            <p className="text-base leading-[1.9] text-text-secondary [word-break:keep-all]">
-              대학 기술지주회사이자 지역 액셀러레이터로서 대학 창업 활성화 및 대학 공동 사업 확대(글로컬, RISE 연계)를 통한 지산학연 창업 생태계 구축 추진
-            </p>
-            <p className="text-base leading-[1.9] text-text-secondary [word-break:keep-all]">
-              창업보육센터 운영, 벤처투자 및 창업지원 사업 등을 통해 우수 (예비)창업자 발굴, 육성, 투자 등의 업무 진행
-            </p>
+            {introParagraphs.map((p, i) => (
+              <p key={i} className="text-base leading-[1.9] text-text-secondary [word-break:keep-all]">
+                {p}
+              </p>
+            ))}
           </div>
         </BlurFade>
 
@@ -109,7 +128,7 @@ export function CoreFunctionsSection() {
                           />
                         </div>
                       </div>
-                      {HANDONG_ACTIVITIES.map((item) => (
+                      {act.handong.map((item) => (
                         <div key={item} className="flex-1 border border-warm-tan bg-warm-beige flex items-center justify-center px-3 py-2.5 min-h-[42px]">
                           <span className="text-xs text-foreground text-center leading-tight">{item}</span>
                         </div>
@@ -127,7 +146,7 @@ export function CoreFunctionsSection() {
                           />
                         </div>
                       </div>
-                      {PUHOLDINGS_ACTIVITIES.map((item) => (
+                      {act.puholdings.map((item) => (
                         <div key={item} className="flex-1 border border-gold/30 bg-gold/5 flex items-center justify-center px-3 py-2.5 min-h-[42px]">
                           <span className="text-xs text-foreground text-center leading-tight">{item}</span>
                         </div>
@@ -153,7 +172,7 @@ export function CoreFunctionsSection() {
                     </p>
                   </div>
                   <div className="flex flex-col gap-2 flex-1 mt-4">
-                    {EXTERNAL_NETWORK.map((item) => (
+                    {act.external.map((item) => (
                       <div key={item} className="flex-1 border border-warm-tan bg-warm-beige flex items-center justify-center px-4 py-2 min-h-[36px]">
                         <span className="text-xs text-foreground text-center leading-tight whitespace-nowrap">{item}</span>
                       </div>

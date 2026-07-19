@@ -5,7 +5,14 @@ import { BlurFade } from "@/components/magicui/blur-fade"
 import { Particles } from "@/components/magicui/particles"
 import { MapPin, Phone, Mail, CheckCircle, ArrowRight } from "lucide-react"
 
-export function ContactSection() {
+interface ContactInfo {
+  address?: string
+  phone?: string
+}
+
+export function ContactSection({ contact }: { contact?: ContactInfo } = {}) {
+  const address = contact?.address || "경북 포항시 북구 흥해읍 한동로 558, 302호 (남송리, 창업보육센터)"
+  const phone = contact?.phone || "054-279-8710"
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -78,13 +85,13 @@ export function ContactSection() {
                   <div>
                     <p className="text-sm font-semibold text-primary-foreground/90">포항연합기술지주</p>
                     <p className="mt-0.5 text-xs text-text-tertiary [word-break:keep-all]">
-                      경북 포항시 북구 흥해읍 한동로 558, 302호 (남송리, 창업보육센터)
+                      {address}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
                   <Phone size={15} className="shrink-0 text-gold/70" />
-                  <p className="text-sm text-primary-foreground/90">054-279-8710</p>
+                  <p className="text-sm text-primary-foreground/90">{phone}</p>
                 </div>
               </div>
             </BlurFade>

@@ -1,5 +1,7 @@
 import { getDb, FALLBACK_PORTFOLIO } from "@/lib/db"
 import { PortfolioDetailPage } from "@/components/portfolio-detail-page"
+import { getSiteContent } from "@/lib/site-content"
+import type { ContactInfo } from "@/components/sections/footer"
 
 export const dynamic = "force-dynamic"
 
@@ -20,6 +22,9 @@ async function getPortfolio() {
 }
 
 export default async function PortfolioPage() {
-  const portfolio = await getPortfolio()
-  return <PortfolioDetailPage companies={portfolio as any[]} />
+  const [portfolio, contact] = await Promise.all([
+    getPortfolio(),
+    getSiteContent<ContactInfo>("contact"),
+  ])
+  return <PortfolioDetailPage companies={portfolio as any[]} contact={contact ?? undefined} />
 }

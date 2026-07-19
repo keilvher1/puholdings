@@ -46,7 +46,10 @@ const HISTORY_DATA = [
   ]},
 ]
 
-export function HistorySection() {
+type HistoryGroup = { year: number; items: { date: string; text: string }[] }
+
+export function HistorySection({ groups }: { groups?: HistoryGroup[] }) {
+  const data = groups && groups.length > 0 ? groups : HISTORY_DATA
   return (
     <section id="history" className="relative bg-dark py-28 lg:py-40">
       <div className="mx-auto max-w-7xl px-8 lg:px-12">
@@ -76,7 +79,7 @@ export function HistorySection() {
           <div className="absolute left-4 top-0 hidden h-full w-px bg-gold/20 lg:left-32 lg:block" />
 
           <div className="space-y-12 lg:space-y-16">
-            {HISTORY_DATA.map((group, groupIndex) => (
+            {data.map((group, groupIndex) => (
               <BlurFade key={group.year} delay={0.1 + groupIndex * 0.05}>
                 <div className="relative">
                   {/* Year marker */}

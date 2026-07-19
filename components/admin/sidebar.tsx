@@ -13,6 +13,7 @@ import {
   Mail,
   Receipt,
   ClipboardList,
+  Layout,
   LogOut,
   Settings
 } from "lucide-react"
@@ -20,6 +21,7 @@ import type { AdminUser } from "@/lib/auth"
 
 const navItems = [
   { href: "/admin", label: "대시보드", icon: LayoutDashboard },
+  { href: "/admin/site", label: "사이트 콘텐츠", icon: Layout },
   { href: "/admin/news", label: "최신 소식", icon: Newspaper },
   { href: "/admin/popups", label: "팝업", icon: Megaphone },
   { href: "/admin/portfolio", label: "포트폴리오", icon: Briefcase },

@@ -1,6 +1,6 @@
 import { Navbar } from "@/components/sections/navbar"
 import { ContactSection } from "@/components/sections/contact-section"
-import { Footer } from "@/components/sections/footer"
+import { SiteFooter } from "@/components/site-footer"
 
 export const metadata = {
   title: "문의 | 포항연합기술지주",
@@ -29,7 +29,7 @@ export default function ContactPage() {
         </div>
       </section>
       <ContactSection />
-      <Footer />
+      <SiteFooter />
     </main>
   )
 }

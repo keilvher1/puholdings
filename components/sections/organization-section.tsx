@@ -174,9 +174,33 @@ function TeamSection({ title, members, startIndex }: { title: string; members: t
   )
 }
 
-export function OrganizationSection() {
+type Member = { name: string; position: string; role: string; details: string[] }
+type PartnerOrg = { name: string; logo: string; description: string }
+export type OrgTeams = {
+  management: Member[]
+  strategy: Member[]
+  investment: Member[]
+  incubation: Member[]
+  venture: Member[]
+}
+
+export function OrganizationSection({
+  teams,
+  partnerOrgs,
+}: {
+  teams?: OrgTeams
+  partnerOrgs?: PartnerOrg[]
+}) {
+  const t: OrgTeams = teams ?? {
+    management: MANAGEMENT,
+    strategy: STRATEGY,
+    investment: INVESTMENT_TEAM,
+    incubation: INCUBATION_TEAM,
+    venture: VENTURE_PARTNERS,
+  }
+  const orgs = partnerOrgs && partnerOrgs.length > 0 ? partnerOrgs : PARTNER_ORGANIZATIONS
   return (
-    <section id="organization" className="relative bg-dark py-24 lg:py-32">
+    <section id="organization" className="relative bg-dark py-28 lg:py-40">
       <div className="mx-auto max-w-7xl px-6 lg:px-12">
         {/* Section Header */}
         <BlurFade delay={0.1}>
@@ -270,10 +294,10 @@ export function OrganizationSection() {
               </div>
               
               {/* Table Rows */}
-              {PARTNER_ORGANIZATIONS.map((org, index) => (
-                <div 
-                  key={org.name} 
-                  className={`grid grid-cols-[240px_1fr] ${index !== PARTNER_ORGANIZATIONS.length - 1 ? 'border-b border-warm-tan/20' : ''}`}
+              {orgs.map((org, index) => (
+                <div
+                  key={org.name}
+                  className={`grid grid-cols-[240px_1fr] ${index !== orgs.length - 1 ? 'border-b border-warm-tan/20' : ''}`}
                 >
                   <div className="px-6 py-5 border-r border-warm-tan/20 flex items-center justify-center bg-white/[0.02]">
                     <img 
@@ -299,20 +323,20 @@ export function OrganizationSection() {
             <div className="grid lg:grid-cols-2 gap-x-12 gap-y-10">
               {/* Left Column */}
               <div className="space-y-10">
-                <TeamSection title="경영진" members={MANAGEMENT} startIndex={0} />
-                <TeamSection title="전략기획실" members={STRATEGY} startIndex={2} />
+                <TeamSection title="경영진" members={t.management} startIndex={0} />
+                <TeamSection title="전략기획실" members={t.strategy} startIndex={2} />
               </div>
-              
+
               {/* Right Column */}
               <div className="space-y-10">
-                <TeamSection title="투자사업팀" members={INVESTMENT_TEAM} startIndex={3} />
-                <TeamSection title="창업보육팀" members={INCUBATION_TEAM} startIndex={5} />
+                <TeamSection title="투자사업팀" members={t.investment} startIndex={3} />
+                <TeamSection title="창업보육팀" members={t.incubation} startIndex={5} />
               </div>
             </div>
-            
+
             {/* Venture Partners */}
             <div className="mt-10">
-              <TeamSection title="벤처파트너" members={VENTURE_PARTNERS} startIndex={7} />
+              <TeamSection title="벤처파트너" members={t.venture} startIndex={7} />
             </div>
           </div>
         </BlurFade>

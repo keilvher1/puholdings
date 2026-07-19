@@ -8,15 +8,16 @@ import { AboutSection } from "@/components/sections/about-section"
 import { PortfolioPreviewSection } from "@/components/sections/portfolio-preview-section"
 import { NewsSection } from "@/components/sections/news-section"
 import { ContactSection } from "@/components/sections/contact-section"
-import { Footer } from "@/components/sections/footer"
+import { Footer, type ContactInfo } from "@/components/sections/footer"
 
 interface Props {
   stats: any[]
   portfolio: any[]
   news: any[]
+  contact?: ContactInfo
 }
 
-export function ClientPage({ stats, portfolio, news }: Props) {
+export function ClientPage({ stats, portfolio, news, contact }: Props) {
   return (
     <main className="overflow-x-hidden">
       <Navbar />
@@ -26,8 +27,8 @@ export function ClientPage({ stats, portfolio, news }: Props) {
       <AboutSection />
       <NewsSection news={news} />
       <PortfolioPreviewSection companies={portfolio} />
-      <ContactSection />
-      <Footer />
+      <ContactSection contact={contact} />
+      <Footer contact={contact} />
     </main>
   )
 }

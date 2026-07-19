@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Noto_Sans_KR, Geist } from 'next/font/google'
+import { Noto_Sans_KR } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { PopupModal } from '@/components/popup-modal'
 import './globals.css'
@@ -9,8 +9,6 @@ const notoSansKR = Noto_Sans_KR({
   display: 'swap',
   preload: false,
 })
-
-const _geist = Geist({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: '(주)포항연합기술지주 | PU Holdings',

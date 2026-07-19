@@ -1,5 +1,7 @@
 import { getDb, FALLBACK_STATS, FALLBACK_PORTFOLIO, FALLBACK_NEWS } from "@/lib/db"
 import { ClientPage } from "@/components/client-page"
+import { getSiteContent } from "@/lib/site-content"
+import type { ContactInfo } from "@/components/sections/footer"
 
 export const dynamic = "force-dynamic"
 
@@ -37,10 +39,11 @@ async function getNews() {
 }
 
 export default async function Home() {
-  const [stats, portfolio, news] = await Promise.all([
+  const [stats, portfolio, news, contact] = await Promise.all([
     getStats(),
     getPortfolio(),
     getNews(),
+    getSiteContent<ContactInfo>("contact"),
   ])
 
   return (
@@ -48,6 +51,7 @@ export default async function Home() {
       stats={stats as any[]}
       portfolio={portfolio as any[]}
       news={news as any[]}
+      contact={contact ?? undefined}
     />
   )
 }

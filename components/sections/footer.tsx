@@ -1,6 +1,22 @@
 import Image from "next/image"
 
-export function Footer() {
+export interface ContactInfo {
+  address?: string
+  address2?: string
+  phone?: string
+  email?: string
+}
+
+const DEFAULT_CONTACT: Required<Pick<ContactInfo, "address" | "address2" | "phone">> = {
+  address: "경북 포항시 북구 흥해읍 한동로 558, 302호",
+  address2: "(남송리, 창업보육센터)",
+  phone: "054-279-8710",
+}
+
+export function Footer({ contact }: { contact?: ContactInfo }) {
+  const address = contact?.address || DEFAULT_CONTACT.address
+  const address2 = contact?.address2 ?? DEFAULT_CONTACT.address2
+  const phone = contact?.phone || DEFAULT_CONTACT.phone
   return (
     <footer className="bg-dark border-t border-dark-muted/20">
       <div className="mx-auto max-w-7xl px-8 lg:px-12">
@@ -18,15 +34,19 @@ export function Footer() {
 
           <div className="lg:col-span-4">
             <p className="text-xs leading-[2.2] text-text-tertiary">
-              {"경북 포항시 북구 흥해읍 한동로 558, 302호"}
-              <br />
-              {"(남송리, 창업보육센터)"}
+              {address}
+              {address2 && (
+                <>
+                  <br />
+                  {address2}
+                </>
+              )}
             </p>
           </div>
 
           <div className="lg:col-span-4 lg:text-right">
             <p className="text-xs leading-[2.2] text-text-tertiary">
-              TEL  054-279-8710
+              TEL  {phone}
             </p>
           </div>
         </div>

@@ -1,6 +1,6 @@
 import { Navbar } from "@/components/sections/navbar"
 import { NewsSection } from "@/components/sections/news-section"
-import { Footer } from "@/components/sections/footer"
+import { SiteFooter } from "@/components/site-footer"
 import { getDb, FALLBACK_NEWS } from "@/lib/db"
 
 export const metadata = {
@@ -43,7 +43,7 @@ export default async function NewsPage() {
         </div>
       </section>
       <NewsSection news={news as any[]} />
-      <Footer />
+      <SiteFooter />
     </main>
   )
 }

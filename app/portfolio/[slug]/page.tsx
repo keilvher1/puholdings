@@ -5,7 +5,7 @@ import { getDb, FALLBACK_PORTFOLIO } from "@/lib/db"
 import { BlurFade } from "@/components/magicui/blur-fade"
 import { Particles } from "@/components/magicui/particles"
 import { Navbar } from "@/components/sections/navbar"
-import { Footer } from "@/components/sections/footer"
+import { SiteFooter } from "@/components/site-footer"
 
 export const dynamic = "force-dynamic"
 
@@ -369,7 +369,7 @@ export default async function PortfolioDetailPage({ params }: { params: Promise<
         </div>
       </section>
 
-      <Footer />
+      <SiteFooter />
     </main>
   )
 }

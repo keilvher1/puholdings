@@ -6,7 +6,7 @@ import { ArrowLeft, ExternalLink, Building2, User, Calendar, Award, CheckCircle 
 import { BlurFade } from "@/components/magicui/blur-fade"
 import { Particles } from "@/components/magicui/particles"
 import { Navbar } from "@/components/sections/navbar"
-import { Footer } from "@/components/sections/footer"
+import { Footer, type ContactInfo } from "@/components/sections/footer"
 import { cn } from "@/lib/utils"
 
 interface Company {
@@ -49,7 +49,7 @@ const EXCELLENT_TECHNOLOGIES = [
   { id: 20, category: "NT", name: "친수성이향상된이산화티타늄광촉매",                             inventor: "박영춘교수", trl: 4 },
 ]
 
-export function PortfolioDetailPage({ companies }: { companies: Company[] }) {
+export function PortfolioDetailPage({ companies, contact }: { companies: Company[]; contact?: ContactInfo }) {
   const [activeCategory, setActiveCategory] = useState("전체")
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null)
 
@@ -420,7 +420,7 @@ export function PortfolioDetailPage({ companies }: { companies: Company[] }) {
         </div>
       </section>
 
-      <Footer />
+      <Footer contact={contact} />
     </main>
   )
 }
