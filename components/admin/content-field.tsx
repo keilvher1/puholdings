@@ -63,10 +63,11 @@ export function ContentField({
           placeholder={field.placeholder}
         />
       ) : field.type === "stringlist" ? (
+        // 입력 중에는 원본 그대로 배열로 보관(줄바꿈 유지). 빈 줄 정리는 저장 시점에 수행.
         <Textarea
           rows={4}
           value={Array.isArray(value) ? value.join("\n") : ""}
-          onChange={(e) => onChange(e.target.value.split("\n").map((s) => s.trim()).filter(Boolean))}
+          onChange={(e) => onChange(e.target.value.split("\n"))}
           placeholder={field.placeholder || "한 줄에 하나씩 입력"}
         />
       ) : field.type === "number" ? (

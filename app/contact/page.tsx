@@ -1,13 +1,16 @@
 import { Navbar } from "@/components/sections/navbar"
 import { ContactSection } from "@/components/sections/contact-section"
 import { SiteFooter } from "@/components/site-footer"
+import { getSiteContent } from "@/lib/site-content"
+import type { ContactInfo } from "@/components/sections/footer"
 
 export const metadata = {
   title: "문의 | 포항연합기술지주",
   description: "포항연합기술지주에 투자 문의, 제휴 제안 등 문의하세요.",
 }
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const contact = await getSiteContent<ContactInfo>("contact")
   return (
     <main className="overflow-x-hidden">
       <Navbar />
@@ -28,7 +31,7 @@ export default function ContactPage() {
           </p>
         </div>
       </section>
-      <ContactSection />
+      <ContactSection contact={contact ?? undefined} />
       <SiteFooter />
     </main>
   )

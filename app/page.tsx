@@ -2,6 +2,7 @@ import { getDb, FALLBACK_STATS, FALLBACK_PORTFOLIO, FALLBACK_NEWS } from "@/lib/
 import { ClientPage } from "@/components/client-page"
 import { getSiteContent } from "@/lib/site-content"
 import type { ContactInfo } from "@/components/sections/footer"
+import type { HeroContent } from "@/components/sections/hero-section"
 
 export const dynamic = "force-dynamic"
 
@@ -39,11 +40,12 @@ async function getNews() {
 }
 
 export default async function Home() {
-  const [stats, portfolio, news, contact] = await Promise.all([
+  const [stats, portfolio, news, contact, hero] = await Promise.all([
     getStats(),
     getPortfolio(),
     getNews(),
     getSiteContent<ContactInfo>("contact"),
+    getSiteContent<HeroContent>("hero"),
   ])
 
   return (
@@ -52,6 +54,7 @@ export default async function Home() {
       portfolio={portfolio as any[]}
       news={news as any[]}
       contact={contact ?? undefined}
+      hero={hero ?? undefined}
     />
   )
 }

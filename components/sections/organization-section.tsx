@@ -299,11 +299,11 @@ export function OrganizationSection({
                   key={org.name}
                   className={`grid grid-cols-[240px_1fr] ${index !== orgs.length - 1 ? 'border-b border-warm-tan/20' : ''}`}
                 >
-                  <div className="px-6 py-5 border-r border-warm-tan/20 flex items-center justify-center bg-white/[0.02]">
-                    <img 
-                      src={org.logo} 
+                  <div className="flex items-center justify-center border-r border-warm-tan/20 bg-white px-6 py-5">
+                    <img
+                      src={org.logo}
                       alt={org.name}
-                      className="max-w-[180px] max-h-[60px] object-contain"
+                      className="max-h-[60px] max-w-[180px] object-contain"
                     />
                   </div>
                   <div className="px-6 py-5 flex items-center">

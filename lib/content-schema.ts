@@ -107,8 +107,6 @@ export const SETTINGS: {
     fields: [
       { key: "address", label: "주소", type: "text" },
       { key: "phone", label: "전화", type: "text" },
-      { key: "email", label: "이메일", type: "text" },
-      { key: "map_label", label: "지도 라벨", type: "text" },
     ],
   },
   {

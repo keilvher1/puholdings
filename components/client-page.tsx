@@ -1,7 +1,7 @@
 "use client"
 
 import { Navbar } from "@/components/sections/navbar"
-import { HeroSection } from "@/components/sections/hero-section"
+import { HeroSection, type HeroContent } from "@/components/sections/hero-section"
 import { StatsSection } from "@/components/sections/stats-section"
 import { PhilosophySection } from "@/components/sections/philosophy-section"
 import { AboutSection } from "@/components/sections/about-section"
@@ -15,13 +15,14 @@ interface Props {
   portfolio: any[]
   news: any[]
   contact?: ContactInfo
+  hero?: HeroContent
 }
 
-export function ClientPage({ stats, portfolio, news, contact }: Props) {
+export function ClientPage({ stats, portfolio, news, contact, hero }: Props) {
   return (
     <main className="overflow-x-hidden">
       <Navbar />
-      <HeroSection />
+      <HeroSection hero={hero} />
       <StatsSection stats={stats} />
       <PhilosophySection />
       <AboutSection />

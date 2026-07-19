@@ -4,7 +4,23 @@ import { useEffect, useState } from "react"
 import { ArrowDown } from "lucide-react"
 import { Particles } from "@/components/magicui/particles"
 
-export function HeroSection() {
+export interface HeroContent {
+  label?: string
+  title?: string
+  subtitle?: string
+}
+
+const DEFAULT_HERO = {
+  label: "POHANG TECHNOLOGY HOLDINGS",
+  title: "기술의 가능성을\n미래의 가치로",
+  subtitle:
+    "대학 기술지주회사이자 지역 액셀러레이터로서, 창업보육센터 운영과 벤처투자를 통해 지산학연 창업생태계를 구축합니다.",
+}
+
+export function HeroSection({ hero }: { hero?: HeroContent } = {}) {
+  const label = hero?.label || DEFAULT_HERO.label
+  const titleLines = (hero?.title || DEFAULT_HERO.title).split("\n")
+  const subtitle = hero?.subtitle || DEFAULT_HERO.subtitle
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
@@ -50,7 +66,7 @@ export function HeroSection() {
             >
               <div className="editorial-rule" />
               <span className="text-[11px] font-medium tracking-[0.3em] text-gold/80">
-                POHANG TECHNOLOGY HOLDINGS
+                {label}
               </span>
             </div>
 
@@ -63,14 +79,26 @@ export function HeroSection() {
                 transform: loaded ? "translateY(0)" : "translateY(24px)",
               }}
             >
-              <span suppressHydrationWarning className="block text-4xl font-[900] leading-[1.1] tracking-tight text-primary-foreground sm:text-5xl lg:text-[4.5rem]">
-                기술의 가능성을
-              </span>
-              <span className="mt-2 block text-4xl font-[900] leading-[1.1] tracking-tight sm:text-5xl lg:text-[4.5rem]">
-                <span suppressHydrationWarning className="bg-gradient-to-r from-gold to-gold-light bg-clip-text text-transparent">
-                  미래의 가치로
-                </span>
-              </span>
+              {titleLines.map((line, i) => {
+                const isLast = i === titleLines.length - 1
+                return (
+                  <span
+                    key={i}
+                    suppressHydrationWarning
+                    className={`block text-4xl font-[900] leading-[1.1] tracking-tight sm:text-5xl lg:text-[4.5rem] ${
+                      i === 0 ? "text-primary-foreground" : "mt-2"
+                    }`}
+                  >
+                    {isLast && titleLines.length > 1 ? (
+                      <span className="bg-gradient-to-r from-gold to-gold-light bg-clip-text text-transparent">
+                        {line}
+                      </span>
+                    ) : (
+                      line
+                    )}
+                  </span>
+                )
+              })}
             </h1>
 
             {/* Subtext */}
@@ -84,7 +112,7 @@ export function HeroSection() {
                 overflowWrap: "break-word",
               }}
             >
-              대학 기술지주회사이자 지역 액셀러레이터로서, 창업보육센터 운영과 벤처투자를 통해 지산학연 창업생태계를 구축합니다.
+              {subtitle}
             </p>
 
             {/* CTA buttons */}

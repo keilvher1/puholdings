@@ -23,11 +23,11 @@ CREATE INDEX IF NOT EXISTS idx_content_items_collection ON content_items (collec
 -- ---------- 싱글턴 텍스트 시드 ----------
 
 INSERT INTO site_content (key, value) VALUES
-  ('contact', $j${"address":"경북 포항시 북구 흥해읍 한동로 558 IT융합관 302호","phone":"054-279-8710","email":"","map_label":"한동대학교 IT융합관"}$j$::jsonb)
+  ('contact', $j${"address":"경북 포항시 북구 흥해읍 한동로 558, 302호 (남송리, 창업보육센터)","phone":"054-279-8710","email":""}$j$::jsonb)
   ON CONFLICT (key) DO NOTHING;
 
 INSERT INTO site_content (key, value) VALUES
-  ('hero', $j${"label":"POHANG UNITED HOLDINGS","title":"기술의 가능성을\n미래의 가치로","subtitle":"POSTECH·한동대 기술사업화를 선도하는 포항연합기술지주"}$j$::jsonb)
+  ('hero', $j${"label":"POHANG TECHNOLOGY HOLDINGS","title":"기술의 가능성을\n미래의 가치로","subtitle":"대학 기술지주회사이자 지역 액셀러레이터로서, 창업보육센터 운영과 벤처투자를 통해 지산학연 창업생태계를 구축합니다."}$j$::jsonb)
   ON CONFLICT (key) DO NOTHING;
 
 INSERT INTO site_content (key, value) VALUES

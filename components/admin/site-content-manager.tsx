@@ -34,6 +34,17 @@ function fieldLabel(def: CollectionDef, key: string): string {
   return def.fields.find((x) => x.key === key)?.label ?? key
 }
 
+// 저장 직전 정리: stringlist 필드의 빈 줄/공백 제거
+function normalizeForm(fields: FieldDef[], form: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = { ...form }
+  for (const f of fields) {
+    if (f.type === "stringlist" && Array.isArray(out[f.key])) {
+      out[f.key] = (out[f.key] as unknown[]).map((s) => String(s).trim()).filter(Boolean)
+    }
+  }
+  return out
+}
+
 function displayValue(def: CollectionDef, key: string, data: Record<string, unknown>): string {
   const f = def.fields.find((x) => x.key === key)
   const raw = data[key]
@@ -88,20 +99,24 @@ function CollectionEditor({ def }: { def: CollectionDef }) {
   const handleSave = async () => {
     setSaving(true)
     try {
+      // sort_order는 data가 아닌 최상위 컬럼으로 분리해 전송
+      const { sort_order, ...rest } = form
+      const dataPayload = normalizeForm(def.fields, rest)
+      const body = editing
+        ? { id: editing.id, data: dataPayload, sort_order: Number.isFinite(Number(sort_order)) ? Number(sort_order) : undefined }
+        : { collection: def.collection, data: dataPayload }
       const res = await fetch("/api/admin/content-items", {
         method: editing ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(
-          editing ? { id: editing.id, data: form } : { collection: def.collection, data: form }
-        ),
+        body: JSON.stringify(body),
       })
-      const data = await res.json()
-      if (data.success) {
+      const result = await res.json()
+      if (result.success) {
         setOpen(false)
         load()
       } else {
-        alert(data.error || "저장에 실패했습니다")
+        alert(result.error || "저장에 실패했습니다")
       }
     } catch {
       alert("서버 오류가 발생했습니다")
@@ -268,7 +283,7 @@ function SettingsEditor({ settingKey, label, fields }: { settingKey: string; lab
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ key: settingKey, value: form }),
+        body: JSON.stringify({ key: settingKey, value: normalizeForm(fields, form) }),
       })
       const data = await res.json()
       setMessage(data.success ? "저장되었습니다" : data.error || "저장 실패")
