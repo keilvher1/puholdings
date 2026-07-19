@@ -12,6 +12,7 @@ export function ContactSection() {
     phone: "",
     company: "",
     message: "",
+    website: "", // honeypot — 실제 사용자는 채우지 않는 숨김 필드
   })
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
 
@@ -26,7 +27,7 @@ export function ContactSection() {
       })
       if (res.ok) {
         setStatus("success")
-        setForm({ name: "", email: "", phone: "", company: "", message: "" })
+        setForm({ name: "", email: "", phone: "", company: "", message: "", website: "" })
       } else {
         setStatus("error")
       }
@@ -104,6 +105,17 @@ export function ContactSection() {
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-0">
+                  {/* honeypot (스팸 봇 방어) — 화면에 보이지 않음 */}
+                  <input
+                    type="text"
+                    name="website"
+                    value={form.website}
+                    onChange={(e) => setForm({ ...form, website: e.target.value })}
+                    className="hidden"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    aria-hidden="true"
+                  />
                   <div className="grid gap-x-10 sm:grid-cols-2">
                     <input
                       type="text"

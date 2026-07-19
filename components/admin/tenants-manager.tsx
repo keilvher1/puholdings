@@ -85,7 +85,7 @@ export function TenantsManager() {
   const [accountName, setAccountName] = useState("")
   const [issuing, setIssuing] = useState(false)
   const [accountError, setAccountError] = useState("")
-  const [issued, setIssued] = useState<{ email: string; password: string } | null>(null)
+  const [issued, setIssued] = useState<{ email: string; password: string; mailSent: boolean } | null>(null)
   const [copied, setCopied] = useState(false)
 
   const fetchTenants = useCallback(async (status: string) => {
@@ -205,7 +205,7 @@ export function TenantsManager() {
       })
       const data = await res.json()
       if (data.success) {
-        setIssued({ email: data.email, password: data.temp_password })
+        setIssued({ email: data.email, password: data.temp_password, mailSent: data.mail_sent === true })
         fetchTenants(statusFilter)
       } else {
         setAccountError(data.error || "계정 발급에 실패했습니다")
@@ -489,6 +489,11 @@ export function TenantsManager() {
               </Button>
               <p className="text-xs text-text-secondary">
                 입주기업이 처음 로그인하면 비밀번호 변경이 강제됩니다.
+              </p>
+              <p className={`text-xs ${issued.mailSent ? "text-text-secondary" : "text-destructive"}`}>
+                {issued.mailSent
+                  ? "계정 안내 메일이 발송되었습니다."
+                  : "계정 안내 메일 발송에 실패했습니다. 위 정보를 지금 직접 전달해주세요. 창을 닫은 뒤에는 비밀번호 초기화로만 다시 발급할 수 있습니다."}
               </p>
             </div>
           ) : (

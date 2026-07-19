@@ -10,6 +10,7 @@ import {
   MessageSquare,
   Megaphone,
   Building2,
+  Mail,
   LogOut,
   Settings
 } from "lucide-react"
@@ -23,6 +24,7 @@ const navItems = [
   { href: "/admin/stats", label: "통계", icon: BarChart3 },
   { href: "/admin/inquiries", label: "문의 관리", icon: MessageSquare },
   { href: "/admin/tenants", label: "입주기업", icon: Building2 },
+  { href: "/admin/emails", label: "메일", icon: Mail },
 ]
 
 export function AdminSidebar({ user }: { user: AdminUser }) {
