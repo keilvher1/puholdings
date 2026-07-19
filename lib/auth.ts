@@ -3,13 +3,11 @@ import { getDb } from "./db"
 import bcrypt from "bcryptjs"
 import { SignJWT, jwtVerify } from "jose"
 import { randomInt } from "node:crypto"
+import { resolveJwtSecret } from "./jwt-secret"
 
+// 서명키는 JWT_SECRET이 없으면 기존 DB 비밀 env에서 자동 파생된다(별도 설정 불필요).
 function getJwtSecret(): Uint8Array {
-  const secret = process.env.JWT_SECRET
-  if (!secret) {
-    throw new Error("JWT_SECRET 환경 변수가 설정되지 않았습니다. Vercel 프로젝트 설정 또는 .env.local에 JWT_SECRET을 추가하세요.")
-  }
-  return new TextEncoder().encode(secret)
+  return resolveJwtSecret()
 }
 
 // Demo mode credentials (used when DATABASE_URL is not set)

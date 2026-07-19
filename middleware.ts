@@ -1,22 +1,20 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { jwtVerify } from "jose"
+import { resolveJwtSecret } from "@/lib/jwt-secret"
 
 // /portal/* 보호: portal_token(JWT, role=tenant) 없거나 유효하지 않으면 /portal/login으로.
 // must_change_password인 세션은 /portal/settings 외 접근을 차단해 비밀번호 변경을 강제한다.
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
   const token = request.cookies.get("portal_token")?.value
-
-  const secret = process.env.JWT_SECRET
-  if (!secret) {
-    throw new Error("JWT_SECRET 환경 변수가 설정되지 않았습니다. Vercel 프로젝트 설정 또는 .env.local에 JWT_SECRET을 추가하세요.")
-  }
+  // 서명키는 JWT_SECRET이 없으면 기존 DB 비밀 env에서 자동 파생된다(별도 설정 불필요).
+  const secret = resolveJwtSecret()
 
   if (pathname === "/portal/login") {
     // 이미 로그인된 입주기업은 로그인 페이지 대신 대시보드로
     if (token) {
       try {
-        const { payload } = await jwtVerify(token, new TextEncoder().encode(secret))
+        const { payload } = await jwtVerify(token, secret)
         if (payload.role === "tenant") {
           return NextResponse.redirect(new URL("/portal", request.url))
         }
@@ -33,7 +31,7 @@ export async function middleware(request: NextRequest) {
   }
 
   try {
-    const { payload } = await jwtVerify(token, new TextEncoder().encode(secret))
+    const { payload } = await jwtVerify(token, secret)
     if (payload.role !== "tenant") {
       return NextResponse.redirect(loginUrl)
     }
