@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react"
 import { Paperclip, FileText, X, Loader2, Download } from "lucide-react"
+import { AttachmentPreviewButton } from "@/components/attachment-list"
 import type { Attachment } from "@/lib/db"
 
 interface FileUploadProps {
@@ -54,6 +55,7 @@ export function FileUpload({ value, onChange, folder = "attachments", label = "�
             pathname: data.pathname,
             size: file.size,
             type: file.type || "",
+            ...(data.preview_status ? { preview_status: data.preview_status } : {}),
           })
         } else {
           setError(`${file.name}: ${data.error || "업로드 실패"}`)
@@ -103,6 +105,7 @@ export function FileUpload({ value, onChange, folder = "attachments", label = "�
                 <span className="shrink-0 text-xs text-text-tertiary">({formatBytes(file.size)})</span>
               </div>
               <div className="flex shrink-0 items-center gap-1">
+                <AttachmentPreviewButton attachment={file} />
                 <a
                   href={`/api/file?pathname=${encodeURIComponent(file.pathname)}&download=1&name=${encodeURIComponent(file.name)}`}
                   className="rounded p-1.5 text-text-secondary transition-colors hover:bg-warm-beige hover:text-dark"

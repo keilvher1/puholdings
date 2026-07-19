@@ -13,6 +13,9 @@ export interface Attachment {
   pathname: string
   size: number
   type: string
+  // 문서 미리보기(PDF 변환) 상태 — hwp/doc 등 변환 대상 파일에만 존재
+  preview_pathname?: string
+  preview_status?: "pending" | "processing" | "done" | "failed"
 }
 
 export interface Popup {

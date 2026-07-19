@@ -1,4 +1,7 @@
-// 파일 업로드 검증 공용 로직 (admin/portal 업로드 라우트에서 공유).
+import { put } from "@vercel/blob"
+import { needsConversion, enqueueConversion } from "./convert"
+
+// 파일 업로드 검증·저장 공용 로직 (admin/portal 업로드 라우트에서 공유).
 // Vercel Blob(access: private) + /api/file 프록시 패턴을 따른다.
 
 export const MAX_UPLOAD_SIZE = 20 * 1024 * 1024 // 20MB
@@ -52,4 +55,32 @@ export function validateUploadFile(file: File): { ok: true } | { ok: false; erro
     return { ok: false, error: "파일 크기는 20MB 이하여야 합니다" }
   }
   return { ok: true }
+}
+
+// 검증 → Blob(private) 저장 → 변환 대상(hwp/doc 등)이면 PDF 변환 큐 등록.
+// 변환 등록 실패는 업로드 성공에 영향을 주지 않는다.
+export async function storeUpload(
+  file: File,
+  folder: string
+): Promise<
+  | { ok: true; pathname: string; preview_status?: "pending" | "failed" }
+  | { ok: false; error: string }
+> {
+  const validation = validateUploadFile(file)
+  if (!validation.ok) return validation
+
+  const timestamp = Date.now()
+  const filename = `${folder}/${timestamp}-${file.name}`
+  const blob = await put(filename, file, { access: "private" })
+
+  if (!needsConversion(file.name)) {
+    return { ok: true, pathname: blob.pathname }
+  }
+
+  const result = await enqueueConversion(blob.pathname)
+  return {
+    ok: true,
+    pathname: blob.pathname,
+    preview_status: result.success ? "pending" : "failed",
+  }
 }

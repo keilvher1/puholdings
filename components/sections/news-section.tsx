@@ -1,8 +1,9 @@
 "use client"
 
 import { BlurFade } from "@/components/magicui/blur-fade"
-import { ArrowUpRight, Download } from "lucide-react"
+import { ArrowUpRight } from "lucide-react"
 import Image from "next/image"
+import { AttachmentList } from "@/components/attachment-list"
 import type { Attachment } from "@/lib/db"
 
 interface NewsItem {
@@ -87,18 +88,11 @@ export function NewsSection({ news }: { news: NewsItem[] }) {
                   )}
 
                   {Array.isArray(item.attachments) && item.attachments.length > 0 && (
-                    <div className="mt-3 space-y-1.5 border-t border-warm-tan/60 pt-3">
-                      {item.attachments.map((file) => (
-                        <a
-                          key={file.pathname}
-                          href={`/api/file?pathname=${encodeURIComponent(file.pathname)}&download=1&name=${encodeURIComponent(file.name)}`}
-                          onClick={(e) => e.stopPropagation()}
-                          className="flex items-center gap-1.5 text-[11px] text-text-secondary transition-colors hover:text-gold"
-                        >
-                          <Download size={12} className="shrink-0" />
-                          <span className="truncate">{file.name}</span>
-                        </a>
-                      ))}
+                    <div
+                      className="mt-3 border-t border-warm-tan/60 pt-3"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <AttachmentList attachments={item.attachments} />
                     </div>
                   )}
                 </div>
