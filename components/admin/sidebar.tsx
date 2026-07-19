@@ -9,6 +9,7 @@ import {
   BarChart3,
   MessageSquare,
   Megaphone,
+  Building2,
   LogOut,
   Settings
 } from "lucide-react"
@@ -21,6 +22,7 @@ const navItems = [
   { href: "/admin/portfolio", label: "포트폴리오", icon: Briefcase },
   { href: "/admin/stats", label: "통계", icon: BarChart3 },
   { href: "/admin/inquiries", label: "문의 관리", icon: MessageSquare },
+  { href: "/admin/tenants", label: "입주기업", icon: Building2 },
 ]
 
 export function AdminSidebar({ user }: { user: AdminUser }) {
