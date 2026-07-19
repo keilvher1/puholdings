@@ -26,6 +26,9 @@ export interface SendMailOptions {
   // 여기 나열된 변수는 email_logs에 저장되는 본문에서 ********로 마스킹된다
   // (임시 비밀번호 등 민감 값이 DB 로그에 평문으로 남지 않도록).
   redactVarsInLog?: string[]
+  // 여기 나열된 변수는 HTML 이스케이프 없이 본문에 삽입된다.
+  // 사용자 입력이 아닌, 서버 코드가 직접 조립한 HTML에만 사용할 것.
+  rawHtmlVars?: string[]
 }
 
 export interface SendMailResult {
@@ -50,7 +53,8 @@ function renderTemplate(
   text: string,
   vars: Record<string, string | number | null | undefined>,
   context: string,
-  escape = true
+  escape = true,
+  rawKeys?: Set<string>
 ): string {
   return text.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_, key: string) => {
     const value = vars[key]
@@ -59,6 +63,8 @@ function renderTemplate(
       return ""
     }
     const str = String(value)
+    // rawKeys: 서버가 직접 조립한 신뢰된 HTML 조각(예: 청구 내역 표)은 이스케이프 없이 삽입
+    if (rawKeys?.has(key)) return str
     return escape ? escapeHtml(str) : str.replace(/[\r\n]+/g, " ")
   })
 }
@@ -124,7 +130,8 @@ function getMailEnv(): { resend: Resend; from: string } | { error: string } {
 }
 
 export async function sendMail(options: SendMailOptions): Promise<SendMailResult> {
-  const { to, templateCode, vars = {}, tenantId = null, related, overrides, redactVarsInLog } = options
+  const { to, templateCode, vars = {}, tenantId = null, related, overrides, redactVarsInLog, rawHtmlVars } = options
+  const rawKeys = rawHtmlVars ? new Set(rawHtmlVars) : undefined
 
   try {
     // 1. 제목/본문 결정 (템플릿 로드 또는 overrides)
@@ -150,7 +157,7 @@ export async function sendMail(options: SendMailOptions): Promise<SendMailResult
     // 2. {{key}} 치환 (로그 저장용은 민감 변수 마스킹)
     const context = `${templateCode} → ${to}`
     const subject = renderTemplate(rawSubject, vars, context, false)
-    const html = renderTemplate(rawHtml, vars, context)
+    const html = renderTemplate(rawHtml, vars, context, true, rawKeys)
     let logSubject = subject
     let logHtml = html
     if (redactVarsInLog && redactVarsInLog.length > 0) {
@@ -159,7 +166,7 @@ export async function sendMail(options: SendMailOptions): Promise<SendMailResult
         if (key in redacted) redacted[key] = "********"
       }
       logSubject = renderTemplate(rawSubject, redacted, context, false)
-      logHtml = renderTemplate(rawHtml, redacted, context)
+      logHtml = renderTemplate(rawHtml, redacted, context, true, rawKeys)
     }
 
     // 3. 환경 확인 (미설정 시 스킵 + failed 로그)
@@ -217,9 +224,11 @@ const BATCH_CHUNK_SIZE = 100
 export async function sendBatch(
   recipients: BatchRecipient[],
   templateCode: string,
-  overrides?: { subject: string; html: string }
+  overrides?: { subject: string; html: string },
+  options?: { rawHtmlVars?: string[] }
 ): Promise<SendBatchResult> {
   if (recipients.length === 0) return { success: true, sent: 0, failed: 0 }
+  const rawKeys = options?.rawHtmlVars ? new Set(options.rawHtmlVars) : undefined
 
   try {
     let rawSubject: string
@@ -246,7 +255,7 @@ export async function sendBatch(
     const rendered = recipients.map((r) => ({
       ...r,
       subject: renderTemplate(rawSubject, r.vars ?? {}, `${templateCode} → ${r.to}`, false),
-      html: renderTemplate(rawHtml, r.vars ?? {}, `${templateCode} → ${r.to}`),
+      html: renderTemplate(rawHtml, r.vars ?? {}, `${templateCode} → ${r.to}`, true, rawKeys),
     }))
 
     const env = getMailEnv()
