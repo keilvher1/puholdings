@@ -12,6 +12,7 @@ import {
   Building2,
   Mail,
   Receipt,
+  ClipboardList,
   LogOut,
   Settings
 } from "lucide-react"
@@ -26,6 +27,7 @@ const navItems = [
   { href: "/admin/inquiries", label: "문의 관리", icon: MessageSquare },
   { href: "/admin/tenants", label: "입주기업", icon: Building2 },
   { href: "/admin/billing", label: "관리비", icon: Receipt },
+  { href: "/admin/programs", label: "프로그램", icon: ClipboardList },
   { href: "/admin/emails", label: "메일", icon: Mail },
 ]
 

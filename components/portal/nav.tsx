@@ -2,10 +2,12 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LogOut, Settings, LayoutDashboard } from "lucide-react"
+import { LogOut, Settings, LayoutDashboard, Receipt, ClipboardList } from "lucide-react"
 
 const navItems = [
   { href: "/portal", label: "대시보드", icon: LayoutDashboard },
+  { href: "/portal/bills", label: "청구서", icon: Receipt },
+  { href: "/portal/programs", label: "프로그램", icon: ClipboardList },
   { href: "/portal/settings", label: "설정", icon: Settings },
 ]
 
@@ -24,7 +26,7 @@ export function PortalNav({
   }
 
   return (
-    <header className="sticky top-0 z-40 border-b border-warm-tan bg-card">
+    <header className="sticky top-0 z-40 border-b border-warm-tan bg-card print:hidden">
       <div className="mx-auto flex h-16 w-full max-w-5xl items-center justify-between px-4">
         <div className="flex items-center gap-6">
           <Link href="/portal" className="flex items-center gap-3">
