@@ -2,16 +2,19 @@ import { redirect, notFound } from "next/navigation"
 import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/db"
 import { PortfolioForm } from "@/components/admin/portfolio-form"
+import type { ComponentProps } from "react"
 
-async function getPortfolioItem(id: string) {
+type PortfolioInitialData = ComponentProps<typeof PortfolioForm>["initialData"]
+
+async function getPortfolioItem(id: string): Promise<PortfolioInitialData> {
   if (id === "new") return null
-  
+
   const sql = getDb()
   if (!sql) return null
-  
+
   try {
     const rows = await sql`SELECT * FROM portfolio_companies WHERE id = ${parseInt(id)}`
-    return rows[0] || null
+    return (rows[0] as NonNullable<PortfolioInitialData>) || null
   } catch {
     return null
   }

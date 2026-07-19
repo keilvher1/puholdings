@@ -3,9 +3,13 @@ import { getDb } from "./db"
 import bcrypt from "bcryptjs"
 import { SignJWT, jwtVerify } from "jose"
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "puholdings-cms-secret-key-change-in-production"
-)
+function getJwtSecret(): Uint8Array {
+  const secret = process.env.JWT_SECRET
+  if (!secret) {
+    throw new Error("JWT_SECRET 환경 변수가 설정되지 않았습니다. Vercel 프로젝트 설정 또는 .env.local에 JWT_SECRET을 추가하세요.")
+  }
+  return new TextEncoder().encode(secret)
+}
 
 // Demo mode credentials (used when DATABASE_URL is not set)
 const DEMO_ADMIN = {
@@ -37,12 +41,13 @@ export async function createToken(user: AdminUser): Promise<string> {
   return new SignJWT({ id: user.id, email: user.email, name: user.name })
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime("7d")
-    .sign(JWT_SECRET)
+    .sign(getJwtSecret())
 }
 
 export async function verifyToken(token: string): Promise<AdminUser | null> {
+  const secret = getJwtSecret()
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET)
+    const { payload } = await jwtVerify(token, secret)
     return payload as unknown as AdminUser
   } catch {
     return null

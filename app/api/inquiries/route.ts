@@ -14,6 +14,12 @@ export async function POST(request: Request) {
     }
 
     const sql = getDb()
+    if (!sql) {
+      return NextResponse.json(
+        { error: "데이터베이스 연결에 실패했습니다." },
+        { status: 500 }
+      )
+    }
     await sql`
       INSERT INTO inquiries (name, email, phone, company, message)
       VALUES (${name}, ${email}, ${phone || null}, ${company || null}, ${message})
