@@ -87,7 +87,7 @@ export async function POST(request: Request) {
             rent_unit_price, mgmt_fee, deposit_standard, deposit_actual, elec_method, status)
           VALUES (
             ${tenantId}, ${roomId}, ${t.contract_date},
-            ${(c.rent_unit_price ?? 0) >= 21000 ? "renewal" : "new"},
+            ${c.renewal_type ?? ((c.rent_unit_price ?? 0) >= 21000 ? "renewal" : "new")},
             ${c.pyeong_billed ?? 0}, ${pyeongActual},
             ${c.rent_unit_price ?? 0}, ${c.mgmt_fee ?? 15000},
             ${depStd}, ${c.deposit_actual}, ${c.elec_method}, 'active')

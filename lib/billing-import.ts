@@ -19,6 +19,7 @@ export interface ImportContract {
   deposit_standard: number | null
   deposit_actual: number | null
   elec_method: "area" | "metered"
+  renewal_type: "renewal" | "new" | null // 계약구분 열(갱신/비갱신), 없으면 null
 }
 export interface ImportTenant {
   name: string
@@ -84,6 +85,7 @@ function columnMap(rows: unknown[][], hdr: number): Record<string, number> {
   }
   return {
     no: find("순번"),
+    contract: find("계약번호"), // 2605 시트는 이 열에 갱신/비갱신이 들어 있음
     name: find("업체명"),
     biz: find("사업자"),
     date: find("계약기준일"),
@@ -106,8 +108,12 @@ function columnMap(rows: unknown[][], hdr: number): Record<string, number> {
 
 export function parseSettlement(buf: Uint8Array): ImportResult {
   const wb = XLSX.read(buf, { type: "array" })
-  // '임대료 면적'이 들어간 시트 우선, 없으면 첫 시트
-  const sheetName = wb.SheetNames.find((n) => n.includes("면적")) || wb.SheetNames[0]
+  // '면적' 시트 중 숫자 프리픽스(YYMM)가 가장 큰 = 최신 월 시트를 선택
+  // (예: "2501 임대료 면적"과 "2605 임대료 면적"이 공존하면 2605를 읽는다)
+  const areaSheets = wb.SheetNames.filter((n) => n.includes("면적"))
+  const sheetName =
+    areaSheets.sort((a, b) => (Number(b.match(/\d+/)?.[0] ?? 0)) - (Number(a.match(/\d+/)?.[0] ?? 0)))[0] ||
+    wb.SheetNames[0]
   const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1, blankrows: false, defval: "" }) as unknown[][]
 
   const hdr = findHeaderRow(rows)
@@ -121,21 +127,34 @@ export function parseSettlement(buf: Uint8Array): ImportResult {
 
   for (let i = hdr + 1; i < rows.length; i++) {
     const r = rows[i] || []
-    const room = toStr(r[col.room])
+    // 호실 정규화: 끝의 '호' 제거 ("301호" 소계 반복 행 → "301"로 통일)
+    const room = toStr(r[col.room]).replace(/호$/, "")
     const name = toStr(r[col.name])
 
-    // 소계/합계/집계 행 스킵: 호실에 쉼표(다중), '계', 빈 호실+빈 업체
-    if (room === "계" || room.includes(",") || room.includes("호 ")) continue
+    // 소계/합계/집계 행 스킵: 호실에 쉼표(다중), '계', 공백 구분 다중("204호 205호"), 빈 호실+빈 업체
+    if (room === "계" || room.includes(",") || room.includes("호 ") || /\s/.test(room)) continue
     if (!room && !name) continue
 
     const mgmtCol = col.mgmt >= 0 ? col.mgmt : 13
-    const elecMethod: "area" | "metered" = toStr(r[col.elec]).includes("실사용") ? "metered" : "area"
+    // 공장동(F*) 호실은 열 표기와 무관하게 항상 실사용료(metered).
+    // (원본 시트에서 F103이 '면적별'로 잘못 표기돼 있으나 실제 청구는 검침 기반)
+    const elecMethod: "area" | "metered" =
+      buildingOf(room) === "공장동" || toStr(r[col.elec]).includes("실사용") ? "metered" : "area"
+    const renewalRaw = toStr(r[col.contract])
+    const renewalType: "renewal" | "new" | null = renewalRaw.includes("비갱신")
+      ? "new"
+      : renewalRaw.includes("갱신")
+        ? "renewal"
+        : null
 
     // 공실 행 → 호실만
     if (name === "공실" || (name === "" && room && !current)) {
       if (room) vacantRooms.push({ code: room, building: buildingOf(room), area_m2: toNum(r[col.area]), pyeong: toNum(r[col.pyeongBilled]), elec_method: elecMethod })
       continue
     }
+
+    // 같은 기업 블록에서 동일 호실이 다시 나오면 소계 반복 행 → 스킵
+    if (!name && current && current.contracts.some((c) => c.room_code === room)) continue
 
     const contract: ImportContract = {
       room_code: room,
@@ -146,6 +165,13 @@ export function parseSettlement(buf: Uint8Array): ImportResult {
       deposit_standard: toNum(r[col.depStd]),
       deposit_actual: toNum(r[col.depActual]),
       elec_method: elecMethod,
+      renewal_type: renewalType,
+    }
+
+    // 호실 없는 이름 행은 계약 행이 아님 (하단 파라미터 블록의 텍스트 등) → 스킵
+    if (name && !room) {
+      current = null
+      continue
     }
 
     if (name) {
