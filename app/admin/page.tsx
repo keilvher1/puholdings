@@ -1,8 +1,30 @@
 import { redirect } from "next/navigation"
 import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/db"
-import { Newspaper, Briefcase, BarChart3, MessageSquare } from "lucide-react"
+import { Newspaper, Briefcase, BarChart3, MessageSquare, DoorOpen } from "lucide-react"
 import Link from "next/link"
+
+async function getRoomSummary() {
+  const sql = getDb()
+  if (!sql) return null
+  try {
+    const rows = await sql`
+      SELECT
+        COUNT(*)::int AS total,
+        COUNT(*) FILTER (WHERE c.id IS NOT NULL)::int AS occupied,
+        COUNT(*) FILTER (WHERE c.id IS NULL AND r.status = 'available')::int AS vacant
+      FROM rooms r
+      LEFT JOIN contracts c ON c.room_id = r.id AND c.status = 'active'
+      WHERE r.is_active = TRUE
+    `
+    const total = Number(rows[0]?.total) || 0
+    if (total === 0) return null
+    const occupied = Number(rows[0]?.occupied) || 0
+    return { total, occupied, vacant: Number(rows[0]?.vacant) || 0, rate: Math.round((occupied / total) * 100) }
+  } catch {
+    return null
+  }
+}
 
 async function getDashboardStats() {
   const sql = getDb()
@@ -33,7 +55,7 @@ export default async function AdminDashboardPage() {
   const session = await getSession()
   if (!session) redirect("/admin/login")
 
-  const stats = await getDashboardStats()
+  const [stats, roomSummary] = await Promise.all([getDashboardStats(), getRoomSummary()])
 
   const cards = [
     { label: "최신 소식", value: stats.news, icon: Newspaper, href: "/admin/news", color: "bg-blue-500" },
@@ -78,6 +100,23 @@ export default async function AdminDashboardPage() {
           )
         })}
       </div>
+
+      {roomSummary && (
+        <Link href="/admin/rooms" className="mt-6 block rounded-lg border border-warm-tan bg-card p-6 transition-all hover:shadow-md">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-blue-500 p-2.5"><DoorOpen className="h-5 w-5 text-white" /></div>
+              <div>
+                <p className="text-sm font-medium text-text-secondary">호실 현황</p>
+                <p className="mt-0.5 text-sm text-dark">
+                  전체 <b>{roomSummary.total}</b> · 입주 <b>{roomSummary.occupied}</b> · 공실 <b className={roomSummary.vacant > 0 ? "text-orange-600" : ""}>{roomSummary.vacant}</b>
+                </p>
+              </div>
+            </div>
+            <p className="text-3xl font-bold text-dark">{roomSummary.rate}<span className="text-lg">%</span></p>
+          </div>
+        </Link>
+      )}
 
       <div className="mt-8 rounded-lg border border-warm-tan bg-card p-6">
         <h2 className="mb-4 text-lg font-semibold text-dark">빠른 링크</h2>
