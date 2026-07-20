@@ -10,6 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
+import { Plus, Trash2 } from "lucide-react"
 import { formatWon, BILL_STATUS_LABELS } from "@/lib/billing"
 
 interface Bill {
@@ -39,6 +41,16 @@ export function BillsList() {
   const [lines, setLines] = useState<Line[]>([])
   const [payDate, setPayDate] = useState("")
 
+  // 수동 청구서 (퇴거 정산 등 정산표 밖 수기 청구)
+  const [manualOpen, setManualOpen] = useState(false)
+  const [tenants, setTenants] = useState<{ id: number; name: string }[]>([])
+  const [mTenant, setMTenant] = useState("")
+  const [mPeriod, setMPeriod] = useState(thisMonth())
+  const [mDue, setMDue] = useState("")
+  const [mMemo, setMMemo] = useState("")
+  const [mLines, setMLines] = useState<{ label: string; amount: string }[]>([{ label: "", amount: "" }])
+  const [mBusy, setMBusy] = useState(false)
+
   const load = useCallback(async () => {
     setLoading(true)
     try {
@@ -59,6 +71,30 @@ export function BillsList() {
     if (d.success) { setDetail(d.bill); setLines(d.lines) }
   }
 
+  const openManual = async () => {
+    setMTenant(""); setMPeriod(thisMonth()); setMDue(""); setMMemo(""); setMLines([{ label: "", amount: "" }])
+    setManualOpen(true)
+    const res = await fetch("/api/admin/tenants", { credentials: "include" })
+    const d = await res.json()
+    if (d.success) setTenants(d.tenants)
+  }
+
+  const submitManual = async () => {
+    const cleanLines = mLines.filter((l) => l.label.trim() && l.amount !== "").map((l) => ({ label: l.label.trim(), amount: Number(l.amount) }))
+    if (!mTenant) { alert("기업을 선택하세요"); return }
+    if (cleanLines.length === 0) { alert("청구 항목을 입력하세요"); return }
+    setMBusy(true)
+    try {
+      const res = await fetch("/api/admin/billing/bills/manual", {
+        method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include",
+        body: JSON.stringify({ tenant_id: Number(mTenant), period: mPeriod, due_date: mDue || undefined, memo: mMemo || undefined, lines: cleanLines }),
+      })
+      const d = await res.json()
+      if (d.success) { setManualOpen(false); setPeriod(mPeriod); load() }
+      else alert(d.error || "저장 실패")
+    } finally { setMBusy(false) }
+  }
+
   const markPaid = async () => {
     if (!detail) return
     const res = await fetch("/api/admin/billing/bills", {
@@ -71,18 +107,24 @@ export function BillsList() {
 
   return (
     <div>
-      <div className="mb-4 flex items-center gap-3">
-        <Input type="month" value={period} onChange={(e) => e.target.value && setPeriod(e.target.value)} className="w-40" />
-        <Select value={status} onValueChange={setStatus}>
-          <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">전체</SelectItem>
-            <SelectItem value="draft">작성 중</SelectItem>
-            <SelectItem value="issued">발행됨</SelectItem>
-            <SelectItem value="paid">납부 완료</SelectItem>
-            <SelectItem value="overdue">연체</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Input type="month" value={period} onChange={(e) => e.target.value && setPeriod(e.target.value)} className="w-40" />
+          <Select value={status} onValueChange={setStatus}>
+            <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">전체</SelectItem>
+              <SelectItem value="draft">작성 중</SelectItem>
+              <SelectItem value="issued">발행됨</SelectItem>
+              <SelectItem value="paid">납부 완료</SelectItem>
+              <SelectItem value="overdue">연체</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <Button variant="outline" onClick={openManual}>
+          <Plus className="h-4 w-4" />
+          수동 청구서 만들기
+        </Button>
       </div>
 
       <AdminCard>
@@ -155,6 +197,48 @@ export function BillsList() {
               </Button>
             )}
             <Button variant="outline" onClick={() => setDetail(null)}>닫기</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 수동 청구서 Dialog */}
+      <Dialog open={manualOpen} onOpenChange={setManualOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader><DialogTitle>수동 청구서 만들기</DialogTitle></DialogHeader>
+          <div className="grid gap-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5"><Label>기업</Label>
+                <Select value={mTenant} onValueChange={setMTenant}>
+                  <SelectTrigger><SelectValue placeholder="선택" /></SelectTrigger>
+                  <SelectContent>{tenants.map((t) => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-1.5"><Label>청구월</Label><Input type="month" value={mPeriod} onChange={(e) => e.target.value && setMPeriod(e.target.value)} /></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5"><Label>납부 기한</Label><Input type="date" value={mDue} onChange={(e) => setMDue(e.target.value)} /></div>
+              <div className="grid gap-1.5"><Label>메모</Label><Input value={mMemo} onChange={(e) => setMMemo(e.target.value)} placeholder="퇴거 정산 등" /></div>
+            </div>
+            <div className="grid gap-1.5">
+              <Label>청구 항목</Label>
+              {mLines.map((l, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <Input value={l.label} onChange={(e) => setMLines((p) => p.map((x, j) => j === i ? { ...x, label: e.target.value } : x))} placeholder="항목명" />
+                  <Input type="number" value={l.amount} onChange={(e) => setMLines((p) => p.map((x, j) => j === i ? { ...x, amount: e.target.value } : x))} placeholder="금액(원)" className="w-36" />
+                  <button onClick={() => setMLines((p) => p.filter((_, j) => j !== i))} className="shrink-0 text-text-secondary hover:text-destructive"><Trash2 className="h-4 w-4" /></button>
+                </div>
+              ))}
+              <Button variant="outline" size="sm" onClick={() => setMLines((p) => [...p, { label: "", amount: "" }])}>
+                <Plus className="h-3.5 w-3.5" />항목 추가
+              </Button>
+            </div>
+            <p className="text-right text-sm font-medium text-dark">
+              합계 {formatWon(mLines.reduce((s, l) => s + (Number(l.amount) || 0), 0))}원
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setManualOpen(false)} disabled={mBusy}>취소</Button>
+            <Button onClick={submitManual} disabled={mBusy}>{mBusy ? "저장 중..." : "청구서 생성"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
