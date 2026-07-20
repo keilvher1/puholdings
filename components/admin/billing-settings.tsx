@@ -32,11 +32,83 @@ export function BillingSettings() {
       </div>
       {tab === "rooms" && <RoomsManager />}
       {tab === "contracts" && <ContractsManager />}
-      {tab === "data" && (
-        <AdminCard className="p-6 text-sm text-text-secondary">
-          기존 정산 엑셀 가져오기와 월별 정산표 내려받기는 준비 중입니다. (참조 엑셀 업로드 후 연동 예정)
-        </AdminCard>
-      )}
+      {tab === "data" && <DataManager />}
+    </div>
+  )
+}
+
+function thisMonth(): string {
+  const n = new Date()
+  return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}`
+}
+
+function DataManager() {
+  const [preview, setPreview] = useState<{ tenants: unknown[]; vacant_rooms: unknown[]; warnings: string[]; summary: { tenants: number; matched: number; vacant: number } } | null>(null)
+  const [raw, setRaw] = useState<{ tenants: unknown[]; vacant_rooms: unknown[] } | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState("")
+  const [exportMonth, setExportMonth] = useState(thisMonth())
+
+  const upload = async (file: File) => {
+    setBusy(true); setMsg(""); setPreview(null)
+    try {
+      const fd = new FormData(); fd.append("file", file)
+      const res = await fetch("/api/admin/billing/import-master", { method: "POST", credentials: "include", body: fd })
+      const d = await res.json()
+      if (d.success) { setPreview(d); setRaw({ tenants: d.tenants, vacant_rooms: d.vacant_rooms }) }
+      else setMsg(d.error || "가져오기 실패")
+    } finally { setBusy(false) }
+  }
+
+  const confirm = async () => {
+    if (!raw) return
+    if (!window.confirm("미리보기 내용을 실제 기업·계약·호실로 반영할까요?")) return
+    setBusy(true); setMsg("")
+    try {
+      const res = await fetch("/api/admin/billing/import-master/confirm", {
+        method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify(raw),
+      })
+      const d = await res.json()
+      if (d.success) { setMsg(`반영 완료 — 기업 ${d.tenants_created} · 계약 ${d.contracts_created} · 호실 ${d.rooms_created}`); setPreview(null); setRaw(null) }
+      else setMsg(d.error || "반영 실패")
+    } finally { setBusy(false) }
+  }
+
+  return (
+    <div className="grid gap-4">
+      <AdminCard className="p-6">
+        <h3 className="mb-1 font-semibold text-dark">기존 정산 엑셀 가져오기</h3>
+        <p className="mb-3 text-xs text-text-secondary">정산 내역 xlsx를 올리면 기업·계약·호실을 추출해 미리보기 후 반영합니다.</p>
+        <input type="file" accept=".xlsx,.xls" disabled={busy} onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f) }}
+          className="text-sm" />
+        {msg && <div className="mt-3 rounded-md bg-warm-beige px-4 py-2 text-sm text-dark">{msg}</div>}
+        {preview && (
+          <div className="mt-4">
+            <p className="text-sm">기업 <b>{preview.summary.tenants}</b>개 (기존 매칭 {preview.summary.matched}) · 공실 호실 {preview.summary.vacant}개</p>
+            {preview.warnings.length > 0 && <p className="mt-1 text-xs text-destructive">{preview.warnings.join(" / ")}</p>}
+            <div className="mt-3 max-h-60 overflow-y-auto rounded-md border border-warm-tan text-xs">
+              {(preview.tenants as { name: string; matched_tenant_id: number | null; contracts: { room_code: string }[] }[]).map((t, i) => (
+                <div key={i} className="flex justify-between border-b border-warm-tan/50 px-3 py-1.5 last:border-0">
+                  <span>{t.name} {t.matched_tenant_id ? "(기존)" : "(신규)"}</span>
+                  <span className="text-text-secondary">{t.contracts.map((c) => c.room_code).join(", ")}</span>
+                </div>
+              ))}
+            </div>
+            <Button className="mt-3" onClick={confirm} disabled={busy}>{busy ? "반영 중..." : "이 내용으로 반영"}</Button>
+          </div>
+        )}
+      </AdminCard>
+
+      <AdminCard className="p-6">
+        <h3 className="mb-1 font-semibold text-dark">월별 정산표 내려받기</h3>
+        <p className="mb-3 text-xs text-text-secondary">선택한 청구월의 정산 내역을 엑셀로 내보냅니다.</p>
+        <div className="flex items-center gap-2">
+          <Input type="month" value={exportMonth} onChange={(e) => e.target.value && setExportMonth(e.target.value)} className="w-40" />
+          <Button variant="outline" asChild>
+            <a href={`/api/admin/billing/export?period=${exportMonth}`}>엑셀 다운로드</a>
+          </Button>
+        </div>
+      </AdminCard>
     </div>
   )
 }
