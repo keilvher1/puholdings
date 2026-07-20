@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server"
-import { createAdmin, initAdminTable } from "@/lib/auth"
+import { createAdmin, initAdminTable, getSession } from "@/lib/auth"
+import { getDb } from "@/lib/db"
 
+// 관리자 계정 생성.
+// 보안: 관리자가 하나도 없을 때(최초 설치)만 무인증 생성을 허용하고,
+// 이미 관리자가 존재하면 로그인된 관리자만 추가 계정을 만들 수 있다.
 export async function POST(request: Request) {
   try {
     const { name, email, password } = await request.json()
@@ -15,6 +19,20 @@ export async function POST(request: Request) {
 
     // Ensure table exists
     await initAdminTable()
+
+    const sql = getDb()
+    if (sql) {
+      const existing = await sql`SELECT COUNT(*)::int AS c FROM admins`
+      if (Number(existing[0]?.c) > 0) {
+        const session = await getSession()
+        if (!session) {
+          return NextResponse.json(
+            { success: false, error: "이미 관리자가 존재합니다. 기존 관리자로 로그인 후 추가할 수 있습니다" },
+            { status: 403 }
+          )
+        }
+      }
+    }
 
     const result = await createAdmin(email, password, name)
 
