@@ -26,6 +26,16 @@ async function canAccess(pathname: string): Promise<boolean> {
   if (pathname.startsWith('submissions/')) {
     return canAccessSubmission(pathname)
   }
+  // invoices/{period}/{tenant_id}.pdf — 관리자이거나 본인 기업만.
+  if (pathname.startsWith('invoices/')) {
+    const adminSession = await getSession()
+    if (adminSession) return true
+    const portalSession = await getPortalSession()
+    if (!portalSession) return false
+    const seg = pathname.split('/').pop() || ''
+    const ownerId = Number(seg.replace(/\.pdf$/, ''))
+    return Number.isInteger(ownerId) && ownerId === portalSession.tenant_id
+  }
   // 미리보기 PDF는 원본 파일의 접근 권한을 상속 — submissions 원본이면 동일하게 보호
   if (pathname.startsWith('previews/')) {
     const sql = getDb()

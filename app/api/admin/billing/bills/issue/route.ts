@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server"
 import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/db"
-import { sendBatch, type BatchRecipient } from "@/lib/mail"
+import { sendMail } from "@/lib/mail"
+import { generateAndStoreInvoice } from "@/lib/invoice-gen"
 import { isValidPeriod, prevPeriod, formatWon } from "@/lib/billing"
 
 function esc(v: string): string {
@@ -64,18 +65,23 @@ export async function POST(request: Request) {
     const tenantById = new Map(tenants.map((t) => [t.id, t]))
     const portalUrl = `${new URL(request.url).origin}/portal/login`
     const noEmail: string[] = []
-    const recipients: BatchRecipient[] = []
+    let sent = 0
+    let failed = 0
 
+    // 청구서 PDF는 batch API가 첨부를 지원하지 않아 기업별 개별 발송한다.
     for (const bill of issued) {
       const tenant = tenantById.get(bill.tenant_id)
       if (!tenant) continue
+      // 발행 시점에 PDF 생성·저장 (실패해도 발행/메일은 진행)
+      const pdf = await generateAndStoreInvoice(sql, bill.id)
       const email = tenant.tax_email || tenant.contact_email
       if (!email) {
         noEmail.push(tenant.name)
         continue
       }
-      recipients.push({
+      const result = await sendMail({
         to: email,
+        templateCode: "bill_issued",
         tenantId: tenant.id,
         related: { type: "bill", id: bill.id },
         vars: {
@@ -86,11 +92,14 @@ export async function POST(request: Request) {
           portal_url: portalUrl,
           lines_html: linesHtml(linesByBill.get(bill.id) ?? []),
         },
+        rawHtmlVars: ["lines_html"],
+        attachments: pdf ? [{ filename: `청구서_${bill.period}_${tenant.name}.pdf`, content: pdf.buffer }] : undefined,
       })
+      if (result.success) sent++
+      else failed++
     }
 
-    const mail = await sendBatch(recipients, "bill_issued", undefined, { rawHtmlVars: ["lines_html"] })
-    return NextResponse.json({ success: true, issued: issued.length, mail: { sent: mail.sent, failed: mail.failed }, no_email: noEmail, elec_month: prevPeriod(issued[0].period) })
+    return NextResponse.json({ success: true, issued: issued.length, mail: { sent, failed }, no_email: noEmail, elec_month: prevPeriod(issued[0].period) })
   } catch (error) {
     console.error("Issue bills error:", error)
     return NextResponse.json({ success: false, error: "발행에 실패했습니다" }, { status: 500 })

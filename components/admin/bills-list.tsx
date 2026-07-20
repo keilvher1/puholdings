@@ -148,7 +148,14 @@ export function BillsList() {
               )}
             </div>
           )}
-          <DialogFooter><Button variant="outline" onClick={() => setDetail(null)}>닫기</Button></DialogFooter>
+          <DialogFooter>
+            {detail && (
+              <Button variant="outline" asChild className="mr-auto">
+                <a href={`/api/admin/billing/bills/preview?id=${detail.id}`} target="_blank" rel="noreferrer">청구서 PDF 미리보기</a>
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => setDetail(null)}>닫기</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { ArrowLeft, Printer } from "lucide-react"
+import { ArrowLeft, Printer, Download } from "lucide-react"
 import { formatWon } from "@/lib/billing"
 
 interface BillDetail {
@@ -26,6 +26,7 @@ interface BillDetail {
   paid_at: string | null
   tenant_name: string
   room_no: string | null
+  invoice_pathname: string | null
 }
 
 interface BillLine {
@@ -100,10 +101,20 @@ export default function PortalBillDetailPage() {
           </Link>
           <h1 className="text-2xl font-bold text-dark">{bill.period} 청구서</h1>
         </div>
-        <Button variant="outline" onClick={() => window.print()}>
-          <Printer className="h-4 w-4" />
-          인쇄
-        </Button>
+        <div className="flex gap-2">
+          {bill.invoice_pathname && (
+            <Button variant="outline" asChild>
+              <a href={`/api/file?pathname=${encodeURIComponent(bill.invoice_pathname)}&download=1&name=${encodeURIComponent(`청구서_${bill.period}.pdf`)}`}>
+                <Download className="h-4 w-4" />
+                청구서 PDF
+              </a>
+            </Button>
+          )}
+          <Button variant="outline" onClick={() => window.print()}>
+            <Printer className="h-4 w-4" />
+            인쇄
+          </Button>
+        </div>
       </div>
 
       {/* 인쇄 영역 */}

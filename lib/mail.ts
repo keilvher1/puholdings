@@ -29,6 +29,8 @@ export interface SendMailOptions {
   // 여기 나열된 변수는 HTML 이스케이프 없이 본문에 삽입된다.
   // 사용자 입력이 아닌, 서버 코드가 직접 조립한 HTML에만 사용할 것.
   rawHtmlVars?: string[]
+  // 첨부파일 (청구서 PDF 등). content는 Buffer 또는 base64 문자열.
+  attachments?: { filename: string; content: Buffer | string }[]
 }
 
 export interface SendMailResult {
@@ -130,7 +132,7 @@ function getMailEnv(): { resend: Resend; from: string } | { error: string } {
 }
 
 export async function sendMail(options: SendMailOptions): Promise<SendMailResult> {
-  const { to, templateCode, vars = {}, tenantId = null, related, overrides, redactVarsInLog, rawHtmlVars } = options
+  const { to, templateCode, vars = {}, tenantId = null, related, overrides, redactVarsInLog, rawHtmlVars, attachments } = options
   const rawKeys = rawHtmlVars ? new Set(rawHtmlVars) : undefined
 
   try {
@@ -180,7 +182,12 @@ export async function sendMail(options: SendMailOptions): Promise<SendMailResult
     }
 
     // 4. 발송
-    const { data, error } = await env.resend.emails.send({ from: env.from, to, subject, html })
+    const { data, error } = await env.resend.emails.send({
+      from: env.from, to, subject, html,
+      ...(attachments && attachments.length > 0
+        ? { attachments: attachments.map((a) => ({ filename: a.filename, content: a.content })) }
+        : {}),
+    })
     if (error) {
       console.error(`[mail] 발송 실패: ${templateCode} → ${to}:`, error)
       const logId = await writeLog({
