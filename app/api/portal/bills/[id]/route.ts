@@ -24,8 +24,9 @@ export async function GET(
     }
 
     const bills = await sql`
-      SELECT b.id, b.period, b.total_amount, b.status, b.due_date::text AS due_date,
-             b.issued_at, b.paid_at, t.name AS tenant_name, t.room_no
+      SELECT b.id, b.period, b.rent_total, b.mgmt_total, b.supply_amount, b.vat_amount,
+             b.elec_amount, b.total_amount, b.status, b.due_date::text AS due_date,
+             b.issued_at, b.paid_at, b.invoice_pathname, t.name AS tenant_name, t.room_no
       FROM bills b JOIN tenants t ON t.id = b.tenant_id
       WHERE b.id = ${billId}
         AND b.tenant_id = ${session.tenant_id}
@@ -36,11 +37,10 @@ export async function GET(
     }
 
     const lines = await sql`
-      SELECT bl.id, bl.label, bl.quantity, bl.unit_price, bl.amount, bi.unit
-      FROM bill_lines bl
-      LEFT JOIN billing_items bi ON bi.id = bl.item_id
-      WHERE bl.bill_id = ${billId}
-      ORDER BY bl.id
+      SELECT id, room_code, line_type, label, quantity, unit_price, amount
+      FROM bill_lines
+      WHERE bill_id = ${billId}
+      ORDER BY id
     `
     return NextResponse.json({ success: true, bill: bills[0], lines })
   } catch (error) {

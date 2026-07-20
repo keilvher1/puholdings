@@ -12,6 +12,7 @@ import {
   Building2,
   Mail,
   Receipt,
+  DoorOpen,
   ClipboardList,
   Layout,
   LogOut,
@@ -28,7 +29,8 @@ const navItems = [
   { href: "/admin/stats", label: "통계", icon: BarChart3 },
   { href: "/admin/inquiries", label: "문의 관리", icon: MessageSquare },
   { href: "/admin/tenants", label: "입주기업", icon: Building2 },
-  { href: "/admin/billing", label: "관리비", icon: Receipt },
+  { href: "/admin/rooms", label: "호실 현황", icon: DoorOpen },
+  { href: "/admin/billing", label: "관리비 정산", icon: Receipt },
   { href: "/admin/programs", label: "프로그램", icon: ClipboardList },
   { href: "/admin/emails", label: "메일", icon: Mail },
 ]

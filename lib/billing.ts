@@ -182,3 +182,115 @@ export function calcElecAllocation(
     checkOk: factoryA + officeB + centerC === params.elec_total,
   }
 }
+
+// ---------- 기업 청구서 합성 (계약들 + 전기료 컨텍스트 → bills/bill_lines) ----------
+
+export interface BillContractInput extends ContractChargeInput {
+  id: number
+  room_code: string
+  elec_method: "area" | "metered"
+  metered_elec?: number // metered 방식일 때 이 호실의 공장동 검침 청구액
+  prorate?: ProrateOption // 첫달/마지막달 일할
+  skip_elec?: boolean // 전기료 제외(예: 첫 달 임대료만)
+}
+
+export interface BillLineData {
+  contract_id: number | null
+  room_code: string
+  line_type: "rent" | "mgmt" | "elec_area" | "elec_metered" | "manual"
+  label: string
+  quantity: number | null
+  unit_price: number | null
+  amount: number
+}
+
+export interface BillData {
+  rent_total: number
+  mgmt_total: number
+  supply_amount: number
+  vat_amount: number
+  elec_amount: number
+  total_amount: number
+  lines: BillLineData[]
+}
+
+// billMonth 임대료 + (전기료는 호출부에서 이미 M-1월분으로 해석해 넘긴 값) 합산.
+// per10Billed는 area 방식 전기료 단가.
+export function calcBill(
+  contracts: BillContractInput[],
+  per10Billed: number,
+  billMonthLabel: string, // 예: "6" (M월)
+  elecMonthLabel: string, // 예: "5" (M-1월)
+): BillData {
+  const lines: BillLineData[] = []
+  let rent_total = 0
+  let mgmt_total = 0
+  let supply_amount = 0
+  let vat_amount = 0
+  let elec_amount = 0
+
+  for (const c of contracts) {
+    const charge = calcContractCharge(c, c.prorate)
+    rent_total += charge.rent
+    mgmt_total += charge.mgmt
+    supply_amount += charge.supply
+    vat_amount += charge.vat
+
+    lines.push({
+      contract_id: c.id,
+      room_code: c.room_code,
+      line_type: "rent",
+      label: `${billMonthLabel}월 임대료 (${c.room_code})`,
+      quantity: c.pyeong_billed,
+      unit_price: c.rent_unit_price,
+      amount: charge.rent,
+    })
+    lines.push({
+      contract_id: c.id,
+      room_code: c.room_code,
+      line_type: "mgmt",
+      label: `${billMonthLabel}월 관리비 (${c.room_code})`,
+      quantity: null,
+      unit_price: null,
+      amount: charge.mgmt,
+    })
+
+    if (!c.skip_elec) {
+      if (c.elec_method === "area") {
+        const e = calcAreaElec(per10Billed, c.pyeong_billed)
+        elec_amount += e
+        lines.push({
+          contract_id: c.id,
+          room_code: c.room_code,
+          line_type: "elec_area",
+          label: `${elecMonthLabel}월 전기사용료 (${c.room_code}, 면적별)`,
+          quantity: c.pyeong_billed,
+          unit_price: per10Billed,
+          amount: e,
+        })
+      } else {
+        const e = Math.round(c.metered_elec ?? 0)
+        elec_amount += e
+        lines.push({
+          contract_id: c.id,
+          room_code: c.room_code,
+          line_type: "elec_metered",
+          label: `${elecMonthLabel}월 전기사용료 (${c.room_code}, 실사용)`,
+          quantity: null,
+          unit_price: null,
+          amount: e,
+        })
+      }
+    }
+  }
+
+  return {
+    rent_total,
+    mgmt_total,
+    supply_amount,
+    vat_amount,
+    elec_amount,
+    total_amount: rent_total + mgmt_total + elec_amount,
+    lines,
+  }
+}
