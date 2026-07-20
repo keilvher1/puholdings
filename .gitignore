@@ -11,3 +11,6 @@ node_modules/
 .vercel
 *.tsbuildinfo
 .env*
+
+# 참조 정산 엑셀 (사업자번호·재무 등 민감정보 — 로컬 전용)
+docs/reference/
