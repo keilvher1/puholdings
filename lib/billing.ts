@@ -172,6 +172,11 @@ export function calcElecAllocation(
   const per10Billed = params.per10_billed ?? per10Suggested
   const officeB = Math.round(per10Billed * (pyeongSumArea / 10))
   const centerC = params.elec_total - factoryA - officeB
+  // 검산: A+B+C=total은 C의 정의상 항등식이라 검증력이 없다.
+  // 대신 (확정단가 기반) B가 실계산 배분액(areaShare)에서 반올림 허용 범위를
+  // 벗어나지 않는지와 센터부담이 음수가 아닌지를 확인한다.
+  const deviation = officeB - areaShare
+  const tolerance = Math.max(1000, 5 * pyeongSumArea) // 확정단가 ±50원/10평 수준 허용
   return {
     areaShare,
     per10Calc,
@@ -179,7 +184,7 @@ export function calcElecAllocation(
     per10Billed,
     officeB,
     centerC,
-    checkOk: factoryA + officeB + centerC === params.elec_total,
+    checkOk: centerC >= 0 && Math.abs(deviation) <= tolerance,
   }
 }
 

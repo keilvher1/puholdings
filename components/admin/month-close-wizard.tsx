@@ -230,7 +230,8 @@ export function MonthCloseWizard() {
                 <p>사무실 기업부담 (B): <b>{formatWon(alloc.officeB)}</b>원</p>
                 <p>센터부담 (C): <b>{formatWon(alloc.centerC)}</b>원</p>
                 <p className={alloc.checkOk ? "text-green-700" : "text-destructive"}>
-                  검산 A+B+C = {formatWon((factory?.totalA ?? 0) + alloc.officeB + alloc.centerC)}원 {alloc.checkOk ? "✓ 일치" : "✗ 불일치"}
+                  검산 A+B+C = {formatWon((factory?.totalA ?? 0) + alloc.officeB + alloc.centerC)}원{" "}
+                  {alloc.checkOk ? "✓ 배분 정상" : "⚠ 확정단가가 실계산과 크게 다르거나 센터부담이 음수입니다"}
                 </p>
               </div>
             </div>

@@ -99,26 +99,26 @@ export async function POST(request: Request) {
 
       const bill = calcBill(inputs, per10Billed, billLabel, elecLabel)
 
-      if (status === "draft") {
-        await sql`DELETE FROM bills WHERE tenant_id = ${tenantId} AND period = ${billMonth} AND status = 'draft'`
-        regenerated++
-      } else {
-        created++
-      }
-
-      // 청구서 + 라인을 한 문장으로 원자 삽입
-      await sql`
-        WITH b AS (
-          INSERT INTO bills (tenant_id, period, rent_total, mgmt_total, supply_amount, vat_amount, elec_amount, total_amount, status)
-          VALUES (${tenantId}, ${billMonth}, ${bill.rent_total}, ${bill.mgmt_total}, ${bill.supply_amount},
-                  ${bill.vat_amount}, ${bill.elec_amount}, ${bill.total_amount}, 'draft')
-          RETURNING id
-        )
-        INSERT INTO bill_lines (bill_id, contract_id, room_code, line_type, label, quantity, unit_price, amount)
-        SELECT b.id, l.contract_id, l.room_code, l.line_type, l.label, l.quantity, l.unit_price, l.amount
-        FROM b, jsonb_to_recordset(${JSON.stringify(bill.lines)}::jsonb)
-          AS l(contract_id int, room_code text, line_type text, label text, quantity numeric, unit_price numeric, amount numeric)
-      `
+      // 삭제+삽입을 트랜잭션으로 원자화. 동시 generate가 스냅숏을 지나쳐 와도
+      // ON CONFLICT DO NOTHING이라 unique 충돌로 500이 나지 않는다(그 기업만 미생성).
+      await sql.transaction([
+        sql`DELETE FROM bills WHERE tenant_id = ${tenantId} AND period = ${billMonth} AND status = 'draft'`,
+        sql`
+          WITH b AS (
+            INSERT INTO bills (tenant_id, period, rent_total, mgmt_total, supply_amount, vat_amount, elec_amount, total_amount, status)
+            VALUES (${tenantId}, ${billMonth}, ${bill.rent_total}, ${bill.mgmt_total}, ${bill.supply_amount},
+                    ${bill.vat_amount}, ${bill.elec_amount}, ${bill.total_amount}, 'draft')
+            ON CONFLICT (tenant_id, period) DO NOTHING
+            RETURNING id
+          )
+          INSERT INTO bill_lines (bill_id, contract_id, room_code, line_type, label, quantity, unit_price, amount)
+          SELECT b.id, l.contract_id, l.room_code, l.line_type, l.label, l.quantity, l.unit_price, l.amount
+          FROM b, jsonb_to_recordset(${JSON.stringify(bill.lines)}::jsonb)
+            AS l(contract_id int, room_code text, line_type text, label text, quantity numeric, unit_price numeric, amount numeric)
+        `,
+      ])
+      if (status === "draft") regenerated++
+      else created++
     }
 
     return NextResponse.json({

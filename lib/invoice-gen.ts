@@ -8,7 +8,7 @@ type Sql = NeonQueryFunction<false, false>
 
 const DEFAULT_BANK = "예금주: ㈜포항연합기술지주 / 하나은행 910-910009-44304"
 
-interface LineRow { room_code: string | null; line_type: string; amount: string }
+interface LineRow { room_code: string | null; line_type: string; amount: string; unit_price: string | null }
 
 // 청구서 PDF 입력 데이터 구성 (bill → InvoicePdfInput). 미리보기·발행 공용.
 export async function buildInvoiceInput(sql: Sql, billId: number): Promise<InvoicePdfInput | null> {
@@ -19,7 +19,7 @@ export async function buildInvoiceInput(sql: Sql, billId: number): Promise<Invoi
   if (bills.length === 0) return null
   const bill = bills[0]
   const lines = (await sql`
-    SELECT room_code, line_type, amount FROM bill_lines WHERE bill_id = ${billId} ORDER BY id
+    SELECT room_code, line_type, amount, unit_price FROM bill_lines WHERE bill_id = ${billId} ORDER BY id
   `) as unknown as LineRow[]
 
   const elecMonth = prevPeriod(bill.period as string)
@@ -31,15 +31,24 @@ export async function buildInvoiceInput(sql: Sql, billId: number): Promise<Invoi
     .map((l) => ({ room_code: l.room_code || "", amount: Number(l.amount), metered: l.line_type === "elec_metered" }))
   const hasMetered = elecLines.some((l) => l.metered)
 
+  // 청구 시점 스냅샷 우선: elec_area 라인의 unit_price가 그때 확정된 10평당 단가.
+  // (생성 이후 검침·파라미터가 바뀌어도 PDF가 실제 청구된 값과 어긋나지 않도록)
+  const areaLine = lines.find((l) => l.line_type === "elec_area" && l.unit_price != null)
+  const per10Billed = areaLine ? Number(areaLine.unit_price) : ctx.allocation.per10Billed
+
   let factory: FactoryDetail | undefined
   if (hasMetered) {
     const f = ctx.factory
     const half = f.usages.HVAC / 2
+    // 금액은 저장된 라인 값 우선(청구 스냅샷), 사용량 내역은 현재 검침 컨텍스트(참고용)
+    const storedByRoom = new Map(
+      elecLines.filter((l) => l.metered).map((l) => [l.room_code, l.amount]),
+    )
     factory = {
       mainUsage: f.usages.MAIN,
-      f101: { usage: f.usages.F101, hvacHalf: half, amount: f.F101 },
-      f103: { usage: f.usages.F103, hvacHalf: half, amount: f.F103 },
-      f102: { amount: f.F102, deduction: f.deduction },
+      f101: { usage: f.usages.F101, hvacHalf: half, amount: storedByRoom.get("F101") ?? f.F101 },
+      f103: { usage: f.usages.F103, hvacHalf: half, amount: storedByRoom.get("F103") ?? f.F103 },
+      f102: { amount: storedByRoom.get("F102") ?? f.F102, deduction: f.deduction },
       unitPrice: ctx.unitPrice,
     }
   }
@@ -50,7 +59,7 @@ export async function buildInvoiceInput(sql: Sql, billId: number): Promise<Invoi
     rentMgmt: Number(bill.rent_total) + Number(bill.mgmt_total),
     elecAmount: Number(bill.elec_amount),
     total: Number(bill.total_amount),
-    per10Billed: ctx.allocation.per10Billed,
+    per10Billed,
     roomCodes,
     elecLines,
     bankInfo: process.env.BILLING_BANK_INFO || DEFAULT_BANK,

@@ -15,6 +15,10 @@ export async function POST(request: Request) {
     const file = form.get("file")
     if (!(file instanceof File)) return NextResponse.json({ success: false, error: "파일이 필요합니다" }, { status: 400 })
     if (file.size > 10 * 1024 * 1024) return NextResponse.json({ success: false, error: "파일이 너무 큽니다 (최대 10MB)" }, { status: 400 })
+    const ext = (file.name.match(/\.[^.]+$/)?.[0] || "").toLowerCase()
+    if (![".xlsx", ".xls", ".xlsm"].includes(ext)) {
+      return NextResponse.json({ success: false, error: "엑셀 파일(.xlsx/.xls)만 업로드할 수 있습니다" }, { status: 400 })
+    }
 
     let parsed: ImportResult
     try {

@@ -61,8 +61,8 @@ export async function PUT(request: Request) {
       if (bill.status !== "issued" && bill.status !== "overdue") {
         return NextResponse.json({ success: false, error: "발행된 청구서만 납부 확인할 수 있습니다" }, { status: 400 })
       }
-      const paidAt = isValidDateString(b.paid_at) ? `${b.paid_at}T00:00:00Z` : "NOW()"
       if (isValidDateString(b.paid_at)) {
+        const paidAt = `${b.paid_at}T00:00:00Z`
         await sql`UPDATE bills SET status = 'paid', paid_at = ${paidAt}, updated_at = NOW() WHERE id = ${id}`
       } else {
         await sql`UPDATE bills SET status = 'paid', paid_at = NOW(), updated_at = NOW() WHERE id = ${id}`
@@ -93,7 +93,16 @@ export async function PUT(request: Request) {
       const elecTotal = cleaned.filter((l: { line_type: string }) => ["elec_area", "elec_metered"].includes(l.line_type)).reduce((s: number, l: { amount: number }) => s + l.amount, 0)
       const manualTotal = cleaned.filter((l: { line_type: string }) => l.line_type === "manual").reduce((s: number, l: { amount: number }) => s + l.amount, 0)
       const gross = rentTotal + mgmtTotal
-      const supply = Math.round(gross / 1.1)
+      // 공급가액은 생성 경로(calcContractCharge)와 동일하게 계약별로 반올림해 합산
+      // (전체 합산 후 반올림하면 다중 호실 기업에서 몇 원 어긋날 수 있음)
+      const grossByContract = new Map<string, number>()
+      for (const l of cleaned as { contract_id: number | null; line_type: string; amount: number }[]) {
+        if (l.line_type !== "rent" && l.line_type !== "mgmt") continue
+        const key = String(l.contract_id ?? "manual")
+        grossByContract.set(key, (grossByContract.get(key) ?? 0) + l.amount)
+      }
+      let supply = 0
+      for (const g of grossByContract.values()) supply += Math.round(g / 1.1)
       const vat = gross - supply
       const total = gross + elecTotal + manualTotal
 

@@ -7,10 +7,18 @@
 -- 관리비 외 테이블(tenants, email_*, programs, submissions, content_* 등)은 절대 건드리지 않는다.
 
 -- ---------- 기존 관리비 테이블 제거 (의존 순서: 자식 → 부모) ----------
-DROP TABLE IF EXISTS bill_lines CASCADE;
-DROP TABLE IF EXISTS bills CASCADE;
-DROP TABLE IF EXISTS meter_readings CASCADE;
-DROP TABLE IF EXISTS billing_items CASCADE;
+-- 재실행 안전 가드: 구버전 마커인 billing_items가 존재할 때만 DROP한다.
+-- (v2 적용 후 billing_items는 사라지므로, 재실행 시 새 bills/meter_readings를 지우지 않는다)
+DO $do$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'billing_items') THEN
+    DROP TABLE IF EXISTS bill_lines CASCADE;
+    DROP TABLE IF EXISTS bills CASCADE;
+    DROP TABLE IF EXISTS meter_readings CASCADE;
+    DROP TABLE IF EXISTS billing_items CASCADE;
+  END IF;
+END
+$do$;
 
 -- ---------- tenants 확장 (세금계산서 메일·담당자·과오입금 잔액) ----------
 ALTER TABLE tenants ADD COLUMN IF NOT EXISTS tax_email VARCHAR(255);
