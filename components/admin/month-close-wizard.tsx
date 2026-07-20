@@ -149,6 +149,16 @@ export function MonthCloseWizard() {
         </p>
       </div>
 
+      {pyeongSum === 0 && (
+        <div className="mb-6 rounded-md border border-gold/40 bg-gold/5 p-4 text-sm">
+          <p className="font-medium text-dark">먼저 호실·계약을 등록하세요</p>
+          <p className="mt-1 text-text-secondary">
+            면적별 계약이 없어 전기료 배분과 청구서 생성이 되지 않습니다.{" "}
+            <a href="/admin/billing/settings" className="text-gold underline">설정 탭</a>에서 기존 정산 엑셀을 가져오거나 호실·계약을 직접 등록해 주세요.
+          </p>
+        </div>
+      )}
+
       <div className="mb-6 flex gap-1">
         {steps.map((s, i) => (
           <button key={i} onClick={() => setStep(i + 1)}
@@ -259,8 +269,9 @@ export function MonthCloseWizard() {
       {step === 4 && (
         <AdminCard className="p-6">
           <h3 className="mb-1 font-semibold text-dark">{monthLabel(billMonth)} 청구서 발행</h3>
-          <p className="mb-4 text-xs text-text-secondary">작성 중인 청구서를 발행하고 각 기업에 청구 메일을 발송합니다. (청구서 PDF 첨부는 준비 중)</p>
-          <Button onClick={issue} disabled={busy}>{busy ? "발행 중..." : "일괄 발행 + 메일"}</Button>
+          <p className="mb-2 text-xs text-text-secondary">작성 중인 청구서를 발행하고, 청구서 PDF를 생성해 각 기업 세금계산서 메일로 발송합니다.</p>
+          <p className="mb-4 text-xs text-text-secondary">발행 전 <a href="/admin/billing/bills" className="text-gold underline" target="_blank" rel="noreferrer">청구서 탭</a>에서 개별 PDF를 미리 확인할 수 있습니다.</p>
+          <Button onClick={issue} disabled={busy}>{busy ? "발행 중..." : "일괄 발행 + PDF 메일"}</Button>
           {issueResult && (
             <div className="mt-4 rounded-md bg-warm-beige/50 p-4 text-sm">
               <p className="font-medium text-dark">발행 {issueResult.issued}건 · 메일 성공 {issueResult.mail.sent}건{issueResult.mail.failed > 0 && `, 실패 ${issueResult.mail.failed}건`}</p>
