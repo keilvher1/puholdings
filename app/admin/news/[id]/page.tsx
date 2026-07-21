@@ -37,7 +37,7 @@ export default async function AdminNewsEditPage({
   }
 
   return (
-    <div className="p-8">
+    <div className="p-5 md:p-8">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-dark">
           {id === "new" ? "새 소식 작성" : "소식 수정"}

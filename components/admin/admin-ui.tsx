@@ -27,5 +27,9 @@ export function AdminCard({
   children: React.ReactNode
   className?: string
 }) {
-  return <div className={`rounded-lg border border-warm-tan bg-card ${className}`}>{children}</div>
+  return (
+    <div className={`overflow-hidden rounded-xl border border-warm-tan bg-card shadow-sm ${className}`}>
+      {children}
+    </div>
+  )
 }

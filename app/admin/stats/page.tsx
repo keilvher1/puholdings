@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { getSession } from "@/lib/auth"
 import { getDb, FALLBACK_STATS } from "@/lib/db"
+import { AdminPageHeader } from "@/components/admin/admin-ui"
 import { StatsForm } from "@/components/admin/stats-form"
 
 async function getStats() {
@@ -21,12 +22,11 @@ export default async function AdminStatsPage() {
   const stats = await getStats()
 
   return (
-    <div className="p-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-dark">통계 관리</h1>
-        <p className="mt-1 text-sm text-text-secondary">메인 페이지에 표시되는 핵심 지표를 관리합니다</p>
-      </div>
-
+    <div className="p-5 md:p-8">
+      <AdminPageHeader
+        title="통계 관리"
+        description="메인 페이지에 표시되는 핵심 지표를 관리합니다"
+      />
       <StatsForm initialData={stats as any[]} />
     </div>
   )

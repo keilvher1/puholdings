@@ -36,7 +36,7 @@ export default async function AdminPortfolioEditPage({
   }
 
   return (
-    <div className="p-8">
+    <div className="p-5 md:p-8">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-dark">
           {id === "new" ? "기업 추가" : "기업 정보 수정"}

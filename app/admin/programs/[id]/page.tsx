@@ -13,7 +13,7 @@ export default async function AdminProgramDetailPage({
   const { id } = await params
 
   return (
-    <div className="p-8">
+    <div className="p-5 md:p-8">
       <ProgramDetail programId={Number(id)} />
     </div>
   )

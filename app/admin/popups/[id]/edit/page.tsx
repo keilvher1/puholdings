@@ -27,7 +27,7 @@ export default async function EditPopupPage({
   if (!popup) notFound()
 
   return (
-    <div className="p-8">
+    <div className="p-5 md:p-8">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-dark">팝업 수정</h1>
         <p className="mt-1 text-sm text-text-secondary">기존 팝업을 수정합니다</p>

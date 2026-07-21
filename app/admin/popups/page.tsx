@@ -4,6 +4,10 @@ import { getDb, type Popup } from "@/lib/db"
 import Link from "next/link"
 import { Plus, Pencil } from "lucide-react"
 import { PopupActiveToggle, PopupDeleteButton } from "@/components/admin/popup-actions"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { AdminPageHeader, AdminCard } from "@/components/admin/admin-ui"
 
 export const dynamic = "force-dynamic"
 
@@ -35,23 +39,9 @@ function StatusBadge({ popup }: { popup: Popup }) {
   const start = new Date(popup.start_at).getTime()
   const end = new Date(popup.end_at).getTime()
 
-  let label: string
-  let cls: string
-  if (now < start) {
-    label = "예정"
-    cls = "bg-blue-100 text-blue-700"
-  } else if (now > end) {
-    label = "만료"
-    cls = "bg-warm-beige text-text-secondary"
-  } else {
-    label = "활성"
-    cls = "bg-emerald-100 text-emerald-700"
-  }
-  return (
-    <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${cls}`}>
-      {label}
-    </span>
-  )
+  if (now < start) return <Badge variant="outline">예정</Badge>
+  if (now > end) return <Badge variant="secondary">만료</Badge>
+  return <Badge>활성</Badge>
 }
 
 export default async function AdminPopupsPage() {
@@ -61,86 +51,80 @@ export default async function AdminPopupsPage() {
   const popups = await getPopups()
 
   return (
-    <div className="p-8">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-dark">팝업</h1>
-          <p className="mt-1 text-sm text-text-secondary">사이트 메인에 노출되는 팝업을 관리합니다</p>
-        </div>
-        <Link
-          href="/admin/popups/new"
-          className="flex items-center gap-2 rounded-md bg-dark px-4 py-2.5 text-sm font-medium text-primary-foreground hover:bg-dark-muted transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          새 팝업 추가
-        </Link>
-      </div>
+    <div className="p-5 md:p-8">
+      <AdminPageHeader
+        title="팝업"
+        description="사이트 메인에 노출되는 팝업을 관리합니다"
+        actions={
+          <Button asChild>
+            <Link href="/admin/popups/new">
+              <Plus className="h-4 w-4" />
+              새 팝업 추가
+            </Link>
+          </Button>
+        }
+      />
 
-      <div className="overflow-hidden rounded-lg border border-warm-tan bg-card">
-        <table className="w-full">
-          <thead className="border-b border-warm-tan bg-warm-beige">
-            <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-text-secondary">제목</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-text-secondary">기간</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-text-secondary">상태</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-text-secondary">우선순위</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-text-secondary">출처</th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-text-secondary">활성</th>
-              <th className="px-4 py-3 text-right text-xs font-medium uppercase text-text-secondary">작업</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-warm-tan">
+      <AdminCard>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>제목</TableHead>
+              <TableHead>기간</TableHead>
+              <TableHead>상태</TableHead>
+              <TableHead>우선순위</TableHead>
+              <TableHead>출처</TableHead>
+              <TableHead>활성</TableHead>
+              <TableHead className="text-right">작업</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {popups.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="px-4 py-10 text-center text-sm text-text-secondary">
+              <TableRow>
+                <TableCell colSpan={7} className="py-10 text-center text-sm text-text-secondary">
                   등록된 팝업이 없습니다.
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ) : (
               popups.map((item) => (
-                <tr key={item.id} className="hover:bg-warm-ivory transition-colors">
-                  <td className="px-4 py-4">
-                    <p className="font-medium text-dark line-clamp-1">{item.title}</p>
-                    {item.content && (
-                      <p className="mt-0.5 text-xs text-text-secondary line-clamp-1">{item.content}</p>
-                    )}
-                  </td>
-                  <td className="px-4 py-4 text-sm text-text-secondary whitespace-nowrap">
+                <TableRow key={item.id}>
+                  <TableCell className="max-w-xs">
+                    <p className="truncate font-medium text-dark">{item.title}</p>
+                    {item.content && <p className="mt-0.5 truncate text-xs text-text-secondary">{item.content}</p>}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap text-sm text-text-secondary">
                     {formatRange(item.start_at, item.end_at)}
-                  </td>
-                  <td className="px-4 py-4">
+                  </TableCell>
+                  <TableCell>
                     <StatusBadge popup={item} />
-                  </td>
-                  <td className="px-4 py-4 text-sm text-dark">{item.priority}</td>
-                  <td className="px-4 py-4 text-sm text-text-secondary">
+                  </TableCell>
+                  <TableCell className="text-sm text-dark">{item.priority}</TableCell>
+                  <TableCell>
                     {item.related_news_id ? (
-                      <span className="inline-flex rounded-full bg-warm-beige px-2.5 py-1 text-xs font-medium text-dark">
-                        공지 #{item.related_news_id}
-                      </span>
+                      <Badge variant="secondary">공지 #{item.related_news_id}</Badge>
                     ) : (
                       <span className="text-xs text-text-tertiary">독립</span>
                     )}
-                  </td>
-                  <td className="px-4 py-4">
+                  </TableCell>
+                  <TableCell>
                     <PopupActiveToggle id={item.id} isActive={item.is_active} />
-                  </td>
-                  <td className="px-4 py-4">
-                    <div className="flex items-center justify-end gap-2">
-                      <Link
-                        href={`/admin/popups/${item.id}/edit`}
-                        className="rounded p-1.5 text-text-secondary hover:bg-warm-beige hover:text-dark transition-colors"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Link>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center justify-end gap-1">
+                      <Button variant="ghost" size="icon" asChild className="h-8 w-8 text-text-secondary hover:text-dark">
+                        <Link href={`/admin/popups/${item.id}/edit`}>
+                          <Pencil className="h-4 w-4" />
+                        </Link>
+                      </Button>
                       <PopupDeleteButton id={item.id} />
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))
             )}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+        </Table>
+      </AdminCard>
     </div>
   )
 }
