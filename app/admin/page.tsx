@@ -16,6 +16,7 @@ import {
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { AdminCard } from "@/components/admin/admin-ui"
+import { AdminNotesCard } from "@/components/admin/admin-notes"
 
 async function getDashboardData() {
   const sql = getDb()
@@ -191,6 +192,9 @@ export default async function AdminDashboardPage() {
           )}
         </AdminCard>
       </div>
+
+      {/* 메모 · 확인 사항 */}
+      <AdminNotesCard />
 
       {/* 빠른 작업 */}
       <AdminCard className="mt-4 p-6 shadow-sm">
