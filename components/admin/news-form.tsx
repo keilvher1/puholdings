@@ -3,6 +3,12 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ImageUpload } from "./image-upload"
 import { FileUpload } from "./file-upload"
 import type { Attachment } from "@/lib/db"
@@ -29,6 +35,8 @@ interface NewsFormProps {
     popup?: LinkedPopup | null
   } | null
 }
+
+const CATEGORIES = ["일반", "투자", "펀드", "실적", "행사", "수상"]
 
 // Convert an ISO/timestamptz string to a value usable by <input type="datetime-local"> (local time).
 function toLocalInput(iso?: string | null): string {
@@ -144,76 +152,78 @@ export function NewsForm({ initialData }: NewsFormProps) {
           label="썸네일 이미지"
         />
 
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-dark">제목</label>
-          <input
-            type="text"
+        <div className="space-y-1.5">
+          <Label htmlFor="news-title">제목</Label>
+          <Input
+            id="news-title"
             value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
-            className="w-full rounded-md border border-warm-tan bg-card px-3 py-2.5 text-sm outline-none focus:border-gold focus:ring-1 focus:ring-gold"
             required
           />
         </div>
 
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-dark">요약</label>
-          <textarea
+        <div className="space-y-1.5">
+          <Label htmlFor="news-summary">요약</Label>
+          <Textarea
+            id="news-summary"
             value={form.summary}
             onChange={(e) => setForm({ ...form, summary: e.target.value })}
             rows={2}
-            className="w-full rounded-md border border-warm-tan bg-card px-3 py-2.5 text-sm outline-none focus:border-gold focus:ring-1 focus:ring-gold resize-none"
+            className="resize-none"
           />
         </div>
 
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-dark">내용</label>
-          <textarea
+        <div className="space-y-1.5">
+          <Label htmlFor="news-content">내용</Label>
+          <Textarea
+            id="news-content"
             value={form.content}
             onChange={(e) => setForm({ ...form, content: e.target.value })}
             rows={8}
-            className="w-full rounded-md border border-warm-tan bg-card px-3 py-2.5 text-sm outline-none focus:border-gold focus:ring-1 focus:ring-gold resize-none"
+            className="resize-none"
           />
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-dark">카테고리</label>
-            <select
+          <div className="space-y-1.5">
+            <Label>카테고리</Label>
+            <Select
               value={form.category}
-              onChange={(e) => setForm({ ...form, category: e.target.value })}
-              className="w-full rounded-md border border-warm-tan bg-card px-3 py-2.5 text-sm outline-none focus:border-gold focus:ring-1 focus:ring-gold"
+              onValueChange={(v) => setForm({ ...form, category: v })}
             >
-              <option value="일반">일반</option>
-              <option value="투자">투자</option>
-              <option value="펀드">펀드</option>
-              <option value="실적">실적</option>
-              <option value="행사">행사</option>
-              <option value="수상">수상</option>
-            </select>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(CATEGORIES.includes(form.category) ? CATEGORIES : [...CATEGORIES, form.category]).map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-dark">발행일</label>
-            <input
+          <div className="space-y-1.5">
+            <Label htmlFor="news-published-at">발행일</Label>
+            <Input
+              id="news-published-at"
               type="date"
               value={form.published_at}
               onChange={(e) => setForm({ ...form, published_at: e.target.value })}
-              className="w-full rounded-md border border-warm-tan bg-card px-3 py-2.5 text-sm outline-none focus:border-gold focus:ring-1 focus:ring-gold"
             />
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
+          <Checkbox
             id="is_visible"
             checked={form.is_visible}
-            onChange={(e) => setForm({ ...form, is_visible: e.target.checked })}
-            className="h-4 w-4 rounded border-warm-tan text-gold focus:ring-gold"
+            onCheckedChange={(v) => setForm({ ...form, is_visible: v === true })}
           />
-          <label htmlFor="is_visible" className="text-sm text-dark">
+          <Label htmlFor="is_visible" className="font-normal">
             공개
-          </label>
+          </Label>
         </div>
 
         <div className="border-t border-warm-tan pt-4">
@@ -224,16 +234,12 @@ export function NewsForm({ initialData }: NewsFormProps) {
       {/* 팝업 설정 */}
       <div className="mt-4 space-y-4 rounded-lg border border-warm-tan bg-card p-6">
         <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
+          <Checkbox
             id="popup_enabled"
             checked={popupEnabled}
-            onChange={(e) => setPopupEnabled(e.target.checked)}
-            className="h-4 w-4 rounded border-warm-tan text-gold focus:ring-gold"
+            onCheckedChange={(v) => setPopupEnabled(v === true)}
           />
-          <label htmlFor="popup_enabled" className="text-sm font-medium text-dark">
-            팝업으로도 띄우기
-          </label>
+          <Label htmlFor="popup_enabled">팝업으로도 띄우기</Label>
         </div>
 
         {popupEnabled && (
@@ -242,53 +248,46 @@ export function NewsForm({ initialData }: NewsFormProps) {
               이 공지가 설정한 기간 동안 사이트 메인에 팝업으로 노출됩니다. 제목·요약·이미지는 공지 내용을 그대로 사용합니다.
             </p>
             <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-dark">시작일</label>
-                <input
+              <div className="space-y-1.5">
+                <Label htmlFor="popup-start-at">시작일</Label>
+                <Input
+                  id="popup-start-at"
                   type="datetime-local"
                   value={popup.start_at}
                   onChange={(e) => setPopup({ ...popup, start_at: e.target.value })}
-                  className="w-full rounded-md border border-warm-tan bg-card px-3 py-2.5 text-sm outline-none focus:border-gold focus:ring-1 focus:ring-gold"
                 />
               </div>
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-dark">종료일</label>
-                <input
+              <div className="space-y-1.5">
+                <Label htmlFor="popup-end-at">종료일</Label>
+                <Input
+                  id="popup-end-at"
                   type="datetime-local"
                   value={popup.end_at}
                   onChange={(e) => setPopup({ ...popup, end_at: e.target.value })}
-                  className="w-full rounded-md border border-warm-tan bg-card px-3 py-2.5 text-sm outline-none focus:border-gold focus:ring-1 focus:ring-gold"
                 />
               </div>
             </div>
-            <div className="sm:w-1/2">
-              <label className="mb-1.5 block text-sm font-medium text-dark">우선순위</label>
-              <input
+            <div className="space-y-1.5 sm:w-1/2">
+              <Label htmlFor="popup-priority">우선순위</Label>
+              <Input
+                id="popup-priority"
                 type="number"
                 value={popup.priority}
                 onChange={(e) => setPopup({ ...popup, priority: Number(e.target.value) })}
-                className="w-full rounded-md border border-warm-tan bg-card px-3 py-2.5 text-sm outline-none focus:border-gold focus:ring-1 focus:ring-gold"
               />
-              <p className="mt-1 text-xs text-text-secondary">숫자가 높을수록 먼저 노출됩니다 (기본 0).</p>
+              <p className="text-xs text-text-secondary">숫자가 높을수록 먼저 노출됩니다 (기본 0).</p>
             </div>
           </div>
         )}
       </div>
 
       <div className="mt-6 flex items-center gap-3">
-        <button
-          type="submit"
-          disabled={loading}
-          className="rounded-md bg-dark px-6 py-2.5 text-sm font-medium text-primary-foreground hover:bg-dark-muted transition-colors disabled:opacity-50"
-        >
+        <Button type="submit" disabled={loading}>
           {loading ? "저장 중..." : "저장"}
-        </button>
-        <Link
-          href="/admin/news"
-          className="rounded-md border border-warm-tan px-6 py-2.5 text-sm font-medium text-dark hover:bg-warm-beige transition-colors"
-        >
-          취소
-        </Link>
+        </Button>
+        <Button type="button" variant="outline" asChild>
+          <Link href="/admin/news">취소</Link>
+        </Button>
       </div>
     </form>
   )

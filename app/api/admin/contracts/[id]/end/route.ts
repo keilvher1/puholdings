@@ -23,7 +23,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ success: false, error: "종료일(ended_at)이 필요합니다" }, { status: 400 })
     }
     const lastMonth = ["full", "prorated", "none"].includes(b.last_month_billing) ? b.last_month_billing : "full"
-    const returnAmount = Number(b.deposit_returned_amount)
+    // 빈 문자열/null은 "미입력"으로 취급 (Number("") === 0으로 0원 반환이 기록되는 것 방지)
+    const returnAmount =
+      b.deposit_returned_amount === "" || b.deposit_returned_amount == null
+        ? NaN
+        : Number(b.deposit_returned_amount)
     const returnedAt = isValidDateString(b.deposit_returned_at) ? b.deposit_returned_at : b.ended_at
 
     const rows = await sql`

@@ -43,6 +43,7 @@ interface Tenant {
   move_out_date: string | null
   status: "active" | "moved_out"
   memo: string | null
+  overpaid_balance: string | null
   account_id: number | null
   account_email: string | null
   account_last_login: string | null
@@ -59,6 +60,7 @@ const EMPTY_FORM = {
   move_out_date: "",
   status: "active",
   memo: "",
+  overpaid_balance: "0",
 }
 
 function toDateInput(value: string | null): string {
@@ -131,6 +133,7 @@ export function TenantsManager() {
       move_out_date: toDateInput(t.move_out_date),
       status: t.status,
       memo: t.memo || "",
+      overpaid_balance: t.overpaid_balance != null ? String(Math.round(Number(t.overpaid_balance))) : "0",
     })
     setFormError("")
     setFormOpen(true)
@@ -139,6 +142,11 @@ export function TenantsManager() {
   const handleSave = async () => {
     if (!form.name.trim()) {
       setFormError("기업명은 필수입니다")
+      return
+    }
+    if (editingId && form.overpaid_balance !== "" &&
+        (!Number.isFinite(Number(form.overpaid_balance)) || Number(form.overpaid_balance) < 0)) {
+      setFormError("과납잔액은 0 이상의 숫자여야 합니다")
       return
     }
     setSaving(true)
@@ -296,6 +304,11 @@ export function TenantsManager() {
                     ) : (
                       <Badge variant="secondary">퇴거</Badge>
                     )}
+                    {t.overpaid_balance != null && Number(t.overpaid_balance) > 0 && (
+                      <div className="mt-1 text-xs text-green-700">
+                        과납 {Number(t.overpaid_balance).toLocaleString("ko-KR")}원
+                      </div>
+                    )}
                   </TableCell>
                   <TableCell>
                     {t.account_id ? (
@@ -433,6 +446,21 @@ export function TenantsManager() {
                 />
               </div>
             </div>
+            {editingId && (
+              <div className="grid gap-1.5">
+                <Label htmlFor="t-overpaid">과납잔액 (원)</Label>
+                <Input
+                  id="t-overpaid"
+                  type="number"
+                  min={0}
+                  value={form.overpaid_balance}
+                  onChange={(e) => setForm({ ...form, overpaid_balance: e.target.value })}
+                />
+                <p className="text-xs text-text-secondary">
+                  미리 납부했거나 초과 납부한 금액. 다음 청구 시 수동으로 차감 반영하세요.
+                </p>
+              </div>
+            )}
             <div className="grid gap-1.5">
               <Label htmlFor="t-memo">메모</Label>
               <Textarea

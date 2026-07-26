@@ -6,6 +6,7 @@ import { isValidDateString } from "@/lib/billing"
 const DEPOSIT_PER_PYEONG = 200000 // 기준 보증금 = 평당 20만원 × 실제평형
 
 function num(v: unknown): number | null {
+  if (v === "" || v == null) return null // Number("")는 0이므로 미입력을 0으로 오기록하지 않게 선차단
   const n = Number(v)
   return Number.isFinite(n) ? n : null
 }

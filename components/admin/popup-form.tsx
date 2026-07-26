@@ -3,6 +3,11 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 import { ImageUpload } from "./image-upload"
 import type { Popup } from "@/lib/db"
 
@@ -107,115 +112,104 @@ export function PopupForm({ initialData }: { initialData?: Popup | null }) {
           label="팝업 이미지"
         />
 
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-dark">제목</label>
-          <input
-            type="text"
+        <div className="space-y-1.5">
+          <Label htmlFor="popup-title">제목</Label>
+          <Input
+            id="popup-title"
             value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
-            className="w-full rounded-md border border-warm-tan bg-card px-3 py-2.5 text-sm outline-none focus:border-gold focus:ring-1 focus:ring-gold"
             required
           />
         </div>
 
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-dark">내용</label>
-          <textarea
+        <div className="space-y-1.5">
+          <Label htmlFor="popup-content">내용</Label>
+          <Textarea
+            id="popup-content"
             value={form.content}
             onChange={(e) => setForm({ ...form, content: e.target.value })}
             rows={5}
-            className="w-full rounded-md border border-warm-tan bg-card px-3 py-2.5 text-sm outline-none focus:border-gold focus:ring-1 focus:ring-gold resize-none"
+            className="resize-none"
           />
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-dark">링크 URL</label>
-            <input
-              type="text"
+          <div className="space-y-1.5">
+            <Label htmlFor="popup-link-url">링크 URL</Label>
+            <Input
+              id="popup-link-url"
               value={form.link_url}
               onChange={(e) => setForm({ ...form, link_url: e.target.value })}
               placeholder="/news 또는 https://..."
-              className="w-full rounded-md border border-warm-tan bg-card px-3 py-2.5 text-sm outline-none focus:border-gold focus:ring-1 focus:ring-gold"
             />
           </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-dark">링크 버튼 라벨</label>
-            <input
-              type="text"
+          <div className="space-y-1.5">
+            <Label htmlFor="popup-link-label">링크 버튼 라벨</Label>
+            <Input
+              id="popup-link-label"
               value={form.link_label}
               onChange={(e) => setForm({ ...form, link_label: e.target.value })}
               placeholder="자세히 보기"
-              className="w-full rounded-md border border-warm-tan bg-card px-3 py-2.5 text-sm outline-none focus:border-gold focus:ring-1 focus:ring-gold"
             />
           </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-dark">시작일</label>
-            <input
+          <div className="space-y-1.5">
+            <Label htmlFor="popup-start-at">시작일</Label>
+            <Input
+              id="popup-start-at"
               type="datetime-local"
               value={form.start_at}
               onChange={(e) => setForm({ ...form, start_at: e.target.value })}
-              className="w-full rounded-md border border-warm-tan bg-card px-3 py-2.5 text-sm outline-none focus:border-gold focus:ring-1 focus:ring-gold"
               required
             />
           </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-dark">종료일</label>
-            <input
+          <div className="space-y-1.5">
+            <Label htmlFor="popup-end-at">종료일</Label>
+            <Input
+              id="popup-end-at"
               type="datetime-local"
               value={form.end_at}
               onChange={(e) => setForm({ ...form, end_at: e.target.value })}
-              className="w-full rounded-md border border-warm-tan bg-card px-3 py-2.5 text-sm outline-none focus:border-gold focus:ring-1 focus:ring-gold"
               required
             />
           </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-dark">우선순위</label>
-            <input
+          <div className="space-y-1.5">
+            <Label htmlFor="popup-priority">우선순위</Label>
+            <Input
+              id="popup-priority"
               type="number"
               value={form.priority}
               onChange={(e) => setForm({ ...form, priority: Number(e.target.value) })}
-              className="w-full rounded-md border border-warm-tan bg-card px-3 py-2.5 text-sm outline-none focus:border-gold focus:ring-1 focus:ring-gold"
             />
-            <p className="mt-1 text-xs text-text-secondary">숫자가 높을수록 먼저 노출됩니다 (기본 0).</p>
+            <p className="text-xs text-text-secondary">숫자가 높을수록 먼저 노출됩니다 (기본 0).</p>
           </div>
           <div className="flex items-end pb-2">
             <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
+              <Checkbox
                 id="is_active"
                 checked={form.is_active}
-                onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
-                className="h-4 w-4 rounded border-warm-tan text-gold focus:ring-gold"
+                onCheckedChange={(v) => setForm({ ...form, is_active: v === true })}
               />
-              <label htmlFor="is_active" className="text-sm text-dark">
+              <Label htmlFor="is_active" className="font-normal">
                 활성화
-              </label>
+              </Label>
             </div>
           </div>
         </div>
       </div>
 
       <div className="mt-6 flex items-center gap-3">
-        <button
-          type="submit"
-          disabled={loading}
-          className="rounded-md bg-dark px-6 py-2.5 text-sm font-medium text-primary-foreground hover:bg-dark-muted transition-colors disabled:opacity-50"
-        >
+        <Button type="submit" disabled={loading}>
           {loading ? "저장 중..." : "저장"}
-        </button>
-        <Link
-          href="/admin/popups"
-          className="rounded-md border border-warm-tan px-6 py-2.5 text-sm font-medium text-dark hover:bg-warm-beige transition-colors"
-        >
-          취소
-        </Link>
+        </Button>
+        <Button type="button" variant="outline" asChild>
+          <Link href="/admin/popups">취소</Link>
+        </Button>
       </div>
     </form>
   )

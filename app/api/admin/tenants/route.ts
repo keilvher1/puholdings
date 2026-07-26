@@ -24,7 +24,7 @@ export async function GET(request: Request) {
         ? await sql`
             SELECT t.id, t.name, t.business_no, t.ceo_name, t.room_no, t.contact_email, t.contact_phone,
                    t.move_in_date::text AS move_in_date, t.move_out_date::text AS move_out_date,
-                   t.status, t.memo, t.created_at, t.updated_at,
+                   t.status, t.memo, t.overpaid_balance, t.created_at, t.updated_at,
                    u.id AS account_id, u.email AS account_email, u.last_login AS account_last_login
             FROM tenants t
             LEFT JOIN tenant_users u ON u.tenant_id = t.id
@@ -34,7 +34,7 @@ export async function GET(request: Request) {
         : await sql`
             SELECT t.id, t.name, t.business_no, t.ceo_name, t.room_no, t.contact_email, t.contact_phone,
                    t.move_in_date::text AS move_in_date, t.move_out_date::text AS move_out_date,
-                   t.status, t.memo, t.created_at, t.updated_at,
+                   t.status, t.memo, t.overpaid_balance, t.created_at, t.updated_at,
                    u.id AS account_id, u.email AS account_email, u.last_login AS account_last_login
             FROM tenants t
             LEFT JOIN tenant_users u ON u.tenant_id = t.id
@@ -125,10 +125,21 @@ export async function PUT(request: Request) {
       move_out_date,
       status,
       memo,
+      overpaid_balance,
     } = await request.json()
 
     if (!id || !name) {
       return NextResponse.json({ success: false, error: "id와 기업명은 필수입니다" }, { status: 400 })
+    }
+
+    // 과납잔액: 미전송(undefined/null/"")이면 기존값 유지, 값이 있는데 잘못됐으면 400
+    let overpaid: number | null = null
+    if (overpaid_balance !== undefined && overpaid_balance !== null && overpaid_balance !== "") {
+      const n = Number(overpaid_balance)
+      if (!Number.isFinite(n) || n < 0) {
+        return NextResponse.json({ success: false, error: "과납잔액은 0 이상의 숫자여야 합니다" }, { status: 400 })
+      }
+      overpaid = Math.round(n)
     }
 
     const rows = await sql`
@@ -143,6 +154,7 @@ export async function PUT(request: Request) {
           move_out_date = ${move_out_date || null},
           status = ${status === "moved_out" ? "moved_out" : "active"},
           memo = ${memo || null},
+          overpaid_balance = COALESCE(${overpaid}, overpaid_balance),
           updated_at = NOW()
       WHERE id = ${id}
       RETURNING *

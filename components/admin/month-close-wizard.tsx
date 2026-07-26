@@ -13,6 +13,11 @@ function nextMonth(period: string): string {
   const d = new Date(Date.UTC(y, m, 1))
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`
 }
+function prevMonth(period: string): string {
+  const [y, m] = period.split("-").map(Number)
+  const d = new Date(Date.UTC(y, m - 2, 1))
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`
+}
 function thisMonthPeriod(): string {
   const n = new Date()
   return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}`
@@ -20,6 +25,8 @@ function thisMonthPeriod(): string {
 const monthLabel = (p: string) => `${Number(p.slice(5, 7))}월`
 
 interface Meter { id: number; name: string; code: string; curr_reading: number | null; prev_reading: number | null; usage: number | null }
+interface BillRow { tenant_id: number; tenant_name: string; total_amount: string }
+interface CompareRow { tenant_name: string; curr: number; prev: number | null }
 interface Factory { F101: number; F102: number; F103: number; totalA: number }
 interface Allocation { areaShare: number; per10Calc: number; per10Suggested: number; per10Billed: number; officeB: number; centerC: number; checkOk: boolean }
 
@@ -40,6 +47,7 @@ export function MonthCloseWizard() {
   const [pyeongSum, setPyeongSum] = useState(0)
 
   const [genResult, setGenResult] = useState<{ created: number; regenerated: number; skipped: { tenant_name: string; reason: string }[] } | null>(null)
+  const [compare, setCompare] = useState<CompareRow[] | null>(null)
   const [issueResult, setIssueResult] = useState<{ issued: number; mail: { sent: number; failed: number }; no_email: string[] } | null>(null)
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState("")
@@ -73,13 +81,40 @@ export function MonthCloseWizard() {
     }
   }, [])
 
+  // 청구월과 그 전월 청구서를 조회해 기업별 전월 대비 증감 표를 만든다.
+  const loadCompare = useCallback(async (bm: string) => {
+    try {
+      const [cur, prev] = await Promise.all([
+        fetch(`/api/admin/billing/bills?period=${bm}`, { credentials: "include" }).then((r) => r.json()),
+        fetch(`/api/admin/billing/bills?period=${prevMonth(bm)}`, { credentials: "include" }).then((r) => r.json()),
+      ])
+      if (!cur.success) { setCompare(null); return }
+      const prevMap = new Map<number, number>(
+        prev.success ? (prev.bills as BillRow[]).map((b) => [b.tenant_id, Number(b.total_amount)]) : []
+      )
+      const rows: CompareRow[] = (cur.bills as BillRow[]).map((b) => ({
+        tenant_name: b.tenant_name,
+        curr: Number(b.total_amount),
+        prev: prevMap.has(b.tenant_id) ? prevMap.get(b.tenant_id)! : null,
+      }))
+      setCompare(rows.length > 0 ? rows : null)
+    } catch {
+      setCompare(null)
+    }
+  }, [])
+
   useEffect(() => {
     loadMeters(elecMonth)
     loadPeriod(elecMonth)
     setGenResult(null)
     setIssueResult(null)
+    setCompare(null)
     setMsg("")
   }, [elecMonth, loadMeters, loadPeriod])
+
+  useEffect(() => {
+    if (step === 3) loadCompare(billMonth)
+  }, [step, billMonth, genResult, loadCompare])
 
   const saveMeters = async () => {
     setBusy(true); setMsg("")
@@ -257,6 +292,44 @@ export function MonthCloseWizard() {
                   {genResult.skipped.map((s, i) => <li key={i}>{s.tenant_name}: {s.reason}</li>)}
                 </ul>
               )}
+            </div>
+          )}
+          {compare && (
+            <div className="mt-4">
+              <p className="mb-2 text-sm font-medium text-dark">{monthLabel(billMonth)} 청구액 — 전월({monthLabel(prevMonth(billMonth))}) 대비</p>
+              <div className="max-h-80 overflow-y-auto rounded-md border border-warm-tan">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 bg-warm-beige/80 text-xs text-text-secondary">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-medium">기업</th>
+                      <th className="px-3 py-2 text-right font-medium">전월</th>
+                      <th className="px-3 py-2 text-right font-medium">이번 달</th>
+                      <th className="px-3 py-2 text-right font-medium">증감</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {compare.map((r, i) => {
+                      const diff = r.prev != null ? r.curr - r.prev : null
+                      const pct = diff != null && r.prev ? Math.round((diff / r.prev) * 1000) / 10 : null
+                      return (
+                        <tr key={i} className="border-t border-warm-tan/50">
+                          <td className="px-3 py-1.5 text-dark">{r.tenant_name}</td>
+                          <td className="px-3 py-1.5 text-right text-text-secondary">{r.prev != null ? `${formatWon(r.prev)}원` : "—"}</td>
+                          <td className="px-3 py-1.5 text-right font-medium text-dark">{formatWon(r.curr)}원</td>
+                          <td className={`px-3 py-1.5 text-right text-xs ${diff == null ? "text-text-tertiary" : diff > 0 ? "text-destructive" : diff < 0 ? "text-blue-700" : "text-text-secondary"}`}>
+                            {diff == null
+                              ? "신규"
+                              : diff === 0
+                                ? "동일"
+                                : `${diff > 0 ? "▲" : "▼"} ${formatWon(Math.abs(diff))}원${pct != null ? ` (${pct > 0 ? "+" : ""}${pct}%)` : ""}`}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <p className="mt-1 text-[11px] text-text-secondary">증감이 큰 기업은 발행 전에 검침·배분 값을 다시 확인하세요.</p>
             </div>
           )}
           <div className="mt-4 flex justify-between">
