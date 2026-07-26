@@ -36,6 +36,9 @@ export function PhilosophySection() {
         size={0.8}
         speed={0.08}
       />
+      {/* 장식: 링 + 블롭 (스크롤 패럴랙스) */}
+      <div aria-hidden="true" data-speed="0.08" className="decor-ring -top-24 -right-24 h-72 w-72" />
+      <div aria-hidden="true" data-speed="-0.05" className="decor-blob -bottom-32 -left-20 h-96 w-96" />
       <div className="relative z-10 mx-auto max-w-7xl px-8 lg:px-12">
         {/* Header */}
         <div className="mb-20 grid gap-8 lg:grid-cols-2 lg:gap-16">

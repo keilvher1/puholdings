@@ -26,8 +26,11 @@ function formatDate(dateStr: string) {
 
 export function NewsSection({ news }: { news: NewsItem[] }) {
   return (
-    <section id="news" className="relative bg-warm-ivory py-28 lg:py-40">
-      <div className="mx-auto max-w-7xl px-8 lg:px-12">
+    <section id="news" className="relative overflow-hidden bg-warm-ivory py-28 lg:py-40">
+      {/* 장식: 도트 그리드 + 블롭 (스크롤 패럴랙스) */}
+      <div aria-hidden="true" data-speed="0.06" className="decor-dots top-16 right-10 hidden h-40 w-56 lg:block" />
+      <div aria-hidden="true" data-speed="-0.04" className="decor-blob -bottom-24 -right-24 h-80 w-80" />
+      <div className="relative mx-auto max-w-7xl px-8 lg:px-12">
         {/* Header */}
         <BlurFade delay={0.1}>
           <div className="mb-6 flex items-center gap-4">
@@ -51,9 +54,9 @@ export function NewsSection({ news }: { news: NewsItem[] }) {
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {news.slice(0, 6).map((item, i) => (
             <BlurFade key={item.id} delay={0.1 + i * 0.05}>
-              <article className="group cursor-pointer overflow-hidden rounded-lg border border-warm-tan bg-white transition-all hover:border-gold/40 hover:shadow-lg">
+              <article className="group hover-lift cursor-pointer overflow-hidden rounded-lg border border-warm-tan bg-white transition-all hover:border-gold/40">
                 {/* Image */}
-                <div className="relative aspect-[16/10] overflow-hidden bg-warm-tan/20">
+                <div className="shine-sweep relative aspect-[16/10] overflow-hidden bg-warm-tan/20">
                   {item.image_url ? (
                     <Image
                       src={`/api/file?pathname=${encodeURIComponent(item.image_url)}`}

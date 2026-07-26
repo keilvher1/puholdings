@@ -53,7 +53,7 @@ export function PortfolioPreviewSection({ companies }: { companies: Company[] })
             <BlurFade key={company.id} delay={0.1 + i * 0.05}>
               <Link
                 href={company.slug ? `/portfolio/${company.slug}` : "/portfolio"}
-                className="group flex h-full flex-col justify-between bg-card p-8 transition-all duration-300 hover:bg-warm-beige lg:p-10"
+                className="group shine-sweep flex h-full flex-col justify-between bg-card p-8 transition-all duration-300 hover:bg-warm-beige lg:p-10"
               >
                 <div>
                   <div className="flex items-center justify-between">
@@ -103,7 +103,7 @@ export function PortfolioPreviewSection({ companies }: { companies: Company[] })
           <div className="mt-12 flex justify-center">
             <Link
               href="/portfolio"
-              className="group relative overflow-hidden border border-gold/60 px-10 py-4 text-[11px] font-semibold tracking-[0.2em] text-gold transition-all duration-500 hover:border-gold hover:text-warm-ivory"
+              className="group shimmer-cta relative overflow-hidden border border-gold/60 px-10 py-4 text-[11px] font-semibold tracking-[0.2em] text-gold transition-all duration-500 hover:border-gold hover:text-warm-ivory"
             >
               <span className="absolute inset-0 -translate-x-full bg-gold transition-transform duration-500 group-hover:translate-x-0" />
               <span className="relative">VIEW ALL PORTFOLIO</span>

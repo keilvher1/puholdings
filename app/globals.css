@@ -119,6 +119,277 @@ html[data-scroll-behavior="smooth"] {
   animation: border-beam linear infinite;
 }
 
+/* ============================================================
+   Modern web animations (MODERNWEBANIMATIONS.md)
+   transform/opacity/filter만 사용, --accent(--gold) 토큰 기반
+   ============================================================ */
+
+/* --- 1-1. Aurora gradient blobs --- */
+.aurora-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  mix-blend-mode: screen;
+  pointer-events: none;
+  will-change: transform;
+}
+.aurora-gold {
+  width: 52vw;
+  height: 52vw;
+  opacity: 0.4;
+  background: radial-gradient(circle, rgba(201, 168, 76, 0.85) 0%, transparent 62%);
+  animation: aurora1 18s ease-in-out infinite alternate;
+}
+.aurora-indigo {
+  width: 46vw;
+  height: 46vw;
+  opacity: 0.35;
+  background: radial-gradient(circle, rgba(61, 91, 255, 0.75) 0%, transparent 62%);
+  animation: aurora2 22s ease-in-out infinite alternate;
+}
+.aurora-ember {
+  width: 38vw;
+  height: 38vw;
+  opacity: 0.25;
+  background: radial-gradient(circle, rgba(219, 185, 96, 0.8) 0%, transparent 60%);
+  animation: aurora3 15s ease-in-out infinite alternate;
+}
+@keyframes aurora1 { to { transform: translate(12vw, 8vh) scale(1.18); } }
+@keyframes aurora2 { to { transform: translate(-10vw, -6vh) scale(1.12); } }
+@keyframes aurora3 { to { transform: translate(6vw, -10vh) scale(1.25); } }
+
+/* --- 1-5. Masked grid pattern --- */
+.hero-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 90% 70% at 50% 45%, #000 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 45%, #000 30%, transparent 75%);
+}
+
+/* --- 2-1. Word-by-word blur reveal --- */
+.reveal-word {
+  display: inline-block;
+  opacity: 0;
+  animation: wordUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: transform, filter;
+}
+@keyframes wordUp {
+  from { opacity: 0; filter: blur(8px); transform: translateY(70%); }
+  to { opacity: 1; filter: blur(0); transform: none; }
+}
+
+/* --- 2-5. Glass kicker badge + pulse dot --- */
+.kicker-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  border: 1px solid rgba(201, 168, 76, 0.35);
+  background: rgba(201, 168, 76, 0.07);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-radius: 999px;
+  padding: 0.45rem 1.1rem;
+}
+.kicker-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 8px 2px rgba(201, 168, 76, 0.55);
+  animation: kickerPulse 2.2s ease-in-out infinite;
+}
+@keyframes kickerPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.8); }
+}
+
+/* --- 2-6. Mouse parallax layers (CSS vars set by JS) --- */
+.parallax-near {
+  transform: translate3d(calc(var(--mx, 0) * 22px), calc(var(--my, 0) * 14px), 0);
+  transition: transform 0.25s ease-out;
+}
+.parallax-far {
+  transform: translate3d(calc(var(--mx, 0) * -34px), calc(var(--my, 0) * -22px), 0);
+  transition: transform 0.35s ease-out;
+}
+
+/* --- 2-7. Shimmer sweep CTA --- */
+.shimmer-cta {
+  position: relative;
+  overflow: hidden;
+}
+.shimmer-cta::after {
+  content: '';
+  position: absolute;
+  top: -60%;
+  bottom: -60%;
+  left: -30%;
+  width: 34%;
+  background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.28), transparent);
+  transform: skewX(-20deg) translateX(-120%);
+  animation: shimmerSweep 2.8s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes shimmerSweep {
+  0% { transform: skewX(-20deg) translateX(-140%); }
+  55%, 100% { transform: skewX(-20deg) translateX(520%); }
+}
+
+/* --- 2-7. Scroll hint (mouse + falling wheel) --- */
+.scroll-mouse {
+  width: 22px;
+  height: 34px;
+  border: 1.5px solid currentColor;
+  border-radius: 12px;
+  position: relative;
+  opacity: 0.7;
+}
+.scroll-mouse::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 6px;
+  width: 3px;
+  height: 6px;
+  border-radius: 2px;
+  background: currentColor;
+  transform: translateX(-50%);
+  animation: wheelDrop 1.8s ease-in-out infinite;
+}
+@keyframes wheelDrop {
+  0% { opacity: 0; transform: translate(-50%, 0); }
+  30% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, 12px); }
+}
+
+/* --- 3-1. Page transition --- */
+.page-in {
+  animation: pageIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(16px); filter: blur(8px); }
+  to { opacity: 1; transform: none; filter: blur(0); }
+}
+
+/* --- 3-2. Scroll progress bar --- */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 60;
+  background: linear-gradient(90deg, var(--gold), var(--gold-light));
+  transform-origin: 0 50%;
+  transform: scaleX(0);
+  pointer-events: none;
+}
+
+/* --- 3-5. Marquee band --- */
+.marquee {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marqueeScroll 36s linear infinite;
+  will-change: transform;
+}
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
+}
+@keyframes marqueeScroll {
+  to { transform: translateX(-50%); }
+}
+
+/* --- 3-6. Section decorations --- */
+.decor-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px dashed rgba(201, 168, 76, 0.25);
+  pointer-events: none;
+}
+.decor-ring::before {
+  content: '';
+  position: absolute;
+  inset: 14%;
+  border-radius: 50%;
+  border: 1px dashed rgba(201, 168, 76, 0.15);
+}
+.decor-dots {
+  position: absolute;
+  pointer-events: none;
+  background-image: radial-gradient(rgba(201, 168, 76, 0.3) 1px, transparent 1.5px);
+  background-size: 18px 18px;
+}
+.decor-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  background: radial-gradient(circle, rgba(201, 168, 76, 0.18) 0%, transparent 65%);
+  pointer-events: none;
+}
+[data-speed] {
+  transform: translate3d(0, var(--py, 0px), 0);
+  will-change: transform;
+}
+
+/* --- 4-5. Hover lift + shine sweep --- */
+.hover-lift {
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 18px 40px -18px rgba(26, 26, 46, 0.28);
+}
+.shine-sweep {
+  position: relative;
+  overflow: hidden;
+}
+.shine-sweep::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -75%;
+  width: 50%;
+  background: linear-gradient(105deg, transparent, rgba(255, 255, 255, 0.22), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.7s ease;
+  pointer-events: none;
+}
+.shine-sweep:hover::after {
+  left: 125%;
+}
+
+/* --- 5. Reduced motion: disable all decorative animation --- */
+@media (prefers-reduced-motion: reduce) {
+  .aurora-blob,
+  .reveal-word,
+  .kicker-dot,
+  .shimmer-cta::after,
+  .scroll-mouse::before,
+  .page-in,
+  .marquee-track,
+  .shine-sweep::after,
+  .hover-lift,
+  .parallax-near,
+  .parallax-far {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1;
+    transform: none !important;
+    filter: none !important;
+  }
+}
+
 /* Portfolio card grid - 모든 카드 높이 동일하게 */
 .portfolio-grid {
   display: grid;
