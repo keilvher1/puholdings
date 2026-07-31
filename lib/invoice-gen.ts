@@ -8,7 +8,7 @@ type Sql = NeonQueryFunction<false, false>
 
 const DEFAULT_BANK = "예금주: ㈜포항연합기술지주 / 하나은행 910-910009-44304"
 
-interface LineRow { room_code: string | null; line_type: string; amount: string; unit_price: string | null }
+interface LineRow { room_code: string | null; line_type: string; label: string | null; amount: string; unit_price: string | null }
 
 // 청구서 PDF 입력 데이터 구성 (bill → InvoicePdfInput). 미리보기·발행 공용.
 export async function buildInvoiceInput(sql: Sql, billId: number): Promise<InvoicePdfInput | null> {
@@ -19,17 +19,28 @@ export async function buildInvoiceInput(sql: Sql, billId: number): Promise<Invoi
   if (bills.length === 0) return null
   const bill = bills[0]
   const lines = (await sql`
-    SELECT room_code, line_type, amount, unit_price FROM bill_lines WHERE bill_id = ${billId} ORDER BY id
+    SELECT room_code, line_type, label, amount, unit_price FROM bill_lines WHERE bill_id = ${billId} ORDER BY id
   `) as unknown as LineRow[]
 
   const elecMonth = prevPeriod(bill.period as string)
   const ctx = await computeElecContext(sql, elecMonth)
 
-  const roomCodes = [...new Set(lines.filter((l) => l.line_type === "rent" && l.room_code).map((l) => l.room_code as string))]
+  // 호실은 임대료·전기 라인 모두에서 파생 (전기만 청구하는 계약도 호실이 표시되도록)
+  const roomCodes = [
+    ...new Set(
+      lines
+        .filter((l) => ["rent", "elec_area", "elec_metered"].includes(l.line_type) && l.room_code)
+        .map((l) => l.room_code as string),
+    ),
+  ]
   const elecLines = lines
     .filter((l) => l.line_type === "elec_area" || l.line_type === "elec_metered")
     .map((l) => ({ room_code: l.room_code || "", amount: Number(l.amount), metered: l.line_type === "elec_metered" }))
   const hasMetered = elecLines.some((l) => l.metered)
+  // 수동 조정 라인(오입금 차감 등)은 청구서에 내역을 그대로 노출한다
+  const manualLines = lines
+    .filter((l) => l.line_type === "manual")
+    .map((l) => ({ label: l.label || "조정", amount: Number(l.amount) }))
 
   // 청구 시점 스냅샷 우선: elec_area 라인의 unit_price가 그때 확정된 10평당 단가.
   // (생성 이후 검침·파라미터가 바뀌어도 PDF가 실제 청구된 값과 어긋나지 않도록)
@@ -62,6 +73,7 @@ export async function buildInvoiceInput(sql: Sql, billId: number): Promise<Invoi
     per10Billed,
     roomCodes,
     elecLines,
+    manualLines: manualLines.length > 0 ? manualLines : undefined,
     bankInfo: process.env.BILLING_BANK_INFO || DEFAULT_BANK,
     issueDate: new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10),
     factory,

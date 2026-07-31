@@ -1,18 +1,19 @@
 import { NextResponse } from "next/server"
 import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/db"
-import { isValidPeriod, prevPeriod, daysInMonthOf, calcBill, type BillContractInput, type ProrateOption } from "@/lib/billing"
+import { isValidPeriod, prevPeriod, daysInMonthOf, calcBill, type BillContractInput, type BillLineData, type ProrateOption } from "@/lib/billing"
 import { computeElecContext, factoryChargeByRoom } from "@/lib/billing-db"
 
-// POST /api/admin/billing/bills/generate — { billMonth: 'YYYY-MM' }
+// POST /api/admin/billing/bills/generate — { billMonth: 'YYYY-MM', force?: boolean }
 // 청구월 M = M월 임대료 + (M−1)월 전기료. 공실 자동 제외, 이미 발행(issued+)된 건 스킵.
+// draft의 수동 조정 라인(manual)은 재생성 후에도 보존한다.
 export async function POST(request: Request) {
   const session = await getSession()
   if (!session) return NextResponse.json({ success: false, error: "인증이 필요합니다" }, { status: 401 })
   const sql = getDb()
   if (!sql) return NextResponse.json({ success: false, error: "데이터베이스 연결 실패" }, { status: 500 })
   try {
-    const { billMonth } = await request.json()
+    const { billMonth, force } = await request.json()
     if (!isValidPeriod(billMonth)) return NextResponse.json({ success: false, error: "billMonth(YYYY-MM)가 필요합니다" }, { status: 400 })
     const elecMonth = prevPeriod(billMonth)
     const billLabel = String(Number(billMonth.slice(5, 7)))
@@ -22,6 +23,22 @@ export async function POST(request: Request) {
     const elecCtx = await computeElecContext(sql, elecMonth)
     const per10Billed = elecCtx.allocation.per10Billed
     const factoryByRoom = factoryChargeByRoom(elecCtx.factory)
+
+    // 음수 단가(한전 총액 < 공장동 부담 A 등)는 force로도 우회 불가 — 음수 전기료 청구서 원천 차단
+    if (per10Billed < 0) {
+      return NextResponse.json({
+        success: false,
+        error: `${elecMonth} 10평당 전기 단가가 음수(${per10Billed}원)로 계산됩니다. 한전 총액이 공장동 부담보다 작지 않은지 2단계 파라미터와 검침을 확인하세요.`,
+      }, { status: 400 })
+    }
+    // 전기 파라미터가 전혀 없으면 전기료 0원 청구서가 조용히 만들어지므로 명시적 확인 없이는 차단
+    if (elecCtx.elecTotal === 0 && elecCtx.per10Billed === null && force !== true) {
+      return NextResponse.json({
+        success: false,
+        needs_force: true,
+        error: `${elecMonth} 전기료 파라미터(한전 총액·10평당 확정단가)가 입력되지 않아 전기료가 0원으로 계산됩니다. 월 마감 1·2단계를 먼저 진행하세요.`,
+      }, { status: 400 })
+    }
 
     // 청구 대상 계약: 진행중 + billMonth에 종료된 계약(마지막달 청구용)
     const contracts = await sql`
@@ -63,9 +80,12 @@ export async function POST(request: Request) {
         // 일할/제외 판정
         let prorate: ProrateOption | undefined
         let skip = false
+        let skipElec = false
         const startsThisMonth = c.start_date && c.start_date.slice(0, 7) === billMonth
         const endsThisMonth = c.ended_at && c.ended_at.slice(0, 7) === billMonth
         if (startsThisMonth) {
+          // 첫달 전기료는 전월(입주 전) 사용분이므로 청구하지 않는다 (엑셀 관행: 신규입주 첫 청구는 임대료만)
+          skipElec = true
           if (c.first_month_billing === "none") skip = true
           else if (c.first_month_billing === "prorated") {
             const startDay = Number(c.start_date.slice(8, 10))
@@ -89,6 +109,7 @@ export async function POST(request: Request) {
           elec_method: c.elec_method,
           metered_elec: c.elec_method === "metered" ? factoryByRoom[c.room_code] ?? 0 : undefined,
           prorate,
+          skip_elec: skipElec,
         })
       }
 
@@ -99,6 +120,27 @@ export async function POST(request: Request) {
 
       const bill = calcBill(inputs, per10Billed, billLabel, elecLabel)
 
+      // 기존 draft의 수동 조정 라인(오입금 차감 등)은 재생성 후에도 유지.
+      // SELECT가 아래 트랜잭션 밖이라 다른 관리자의 동시 라인 편집과 겹치면 그 편집이 유실될 수 있으나
+      // (neon HTTP 트랜잭션은 read-then-write를 원자화할 수 없음) 단일 관리자 운영이라 허용.
+      const manualRows = await sql`
+        SELECT l.contract_id, l.room_code, l.label, l.quantity, l.unit_price, l.amount
+        FROM bill_lines l JOIN bills b ON b.id = l.bill_id
+        WHERE b.tenant_id = ${tenantId} AND b.period = ${billMonth} AND b.status = 'draft' AND l.line_type = 'manual'
+        ORDER BY l.id
+      `
+      const manualLines: BillLineData[] = manualRows.map((l) => ({
+        contract_id: l.contract_id == null ? null : Number(l.contract_id),
+        room_code: l.room_code == null ? null : String(l.room_code),
+        line_type: "manual" as const,
+        label: String(l.label ?? "조정"),
+        quantity: l.quantity == null ? null : Number(l.quantity),
+        unit_price: l.unit_price == null ? null : Number(l.unit_price),
+        amount: Number(l.amount),
+      }))
+      const manualTotal = manualLines.reduce((s, l) => s + l.amount, 0)
+      bill.lines.push(...manualLines)
+
       // 삭제+삽입을 트랜잭션으로 원자화. 동시 generate가 스냅숏을 지나쳐 와도
       // ON CONFLICT DO NOTHING이라 unique 충돌로 500이 나지 않는다(그 기업만 미생성).
       await sql.transaction([
@@ -107,7 +149,7 @@ export async function POST(request: Request) {
           WITH b AS (
             INSERT INTO bills (tenant_id, period, rent_total, mgmt_total, supply_amount, vat_amount, elec_amount, total_amount, status)
             VALUES (${tenantId}, ${billMonth}, ${bill.rent_total}, ${bill.mgmt_total}, ${bill.supply_amount},
-                    ${bill.vat_amount}, ${bill.elec_amount}, ${bill.total_amount}, 'draft')
+                    ${bill.vat_amount}, ${bill.elec_amount}, ${bill.total_amount + manualTotal}, 'draft')
             ON CONFLICT (tenant_id, period) DO NOTHING
             RETURNING id
           )

@@ -48,6 +48,7 @@ export interface InvoicePdfInput {
   per10Billed: number
   roomCodes: string[]
   elecLines: InvoiceElecLine[]
+  manualLines?: { label: string; amount: number }[] // 수동 조정 (오입금 차감 등) — 청구료에 반영됨
   bankInfo: string
   issueDate: string // YYYY-MM-DD
   factory?: FactoryDetail // metered 기업 2페이지
@@ -70,6 +71,7 @@ const s = StyleSheet.create({
   tdR: { padding: 8, textAlign: "right", borderRightWidth: 1, borderRightColor: "#e8e2d6" },
   totalRow: { flexDirection: "row", backgroundColor: "#faf8f3" },
   note: { marginTop: 14, fontSize: 9, color: "#555" },
+  adjust: { marginTop: 10, padding: 8, borderWidth: 1, borderColor: "#e8e2d6", fontSize: 9 },
   per10: { marginTop: 12, fontSize: 11, fontWeight: "bold" },
   bank: { marginTop: 24, padding: 12, borderWidth: 1, borderColor: "#e8e2d6", fontSize: 10 },
   signature: { marginTop: 30, textAlign: "right", fontSize: 12, fontWeight: "bold" },
@@ -85,7 +87,7 @@ function InvoiceDocument({ data }: { data: InvoicePdfInput }) {
     <Document>
       <Page size="A4" style={s.page}>
         <Text style={s.title}>창업보육센터 입주기업 사용료 청구</Text>
-        <Text style={s.subtitle}>제1회 · 한동대학교 창업보육센터 · {data.issueDate}</Text>
+        <Text style={s.subtitle}>한동대학교 창업보육센터 · {data.issueDate}</Text>
 
         <View style={s.metaRow}>
           <Text style={s.metaLabel}>기업명</Text>
@@ -120,7 +122,19 @@ function InvoiceDocument({ data }: { data: InvoicePdfInput }) {
           </View>
         </View>
 
-        <Text style={s.per10}>10평당 전기사용 청구액: {formatWon(data.per10Billed)}원</Text>
+        {data.manualLines && data.manualLines.length > 0 && (
+          <View style={s.adjust}>
+            <Text style={{ fontWeight: "bold", marginBottom: 2 }}>조정 내역 (청구료에 반영)</Text>
+            {data.manualLines.map((l, i) => (
+              <Text key={i}>· {l.label}: {formatWon(l.amount)}원</Text>
+            ))}
+          </View>
+        )}
+
+        {/* 전기료가 없는 청구서(신규입주 첫달 등)에는 청구하지 않은 단가를 표기하지 않는다 */}
+        {data.elecLines.length > 0 && (
+          <Text style={s.per10}>10평당 전기사용 청구액: {formatWon(data.per10Billed)}원</Text>
+        )}
         <Text style={s.note}>※ 매월 전기 총 사용량에 따라 청구 금액이 변동될 수 있습니다.</Text>
 
         <View style={s.bank}>

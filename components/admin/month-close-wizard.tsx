@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -34,6 +34,8 @@ export function MonthCloseWizard() {
   const [elecMonth, setElecMonth] = useState(thisMonthPeriod())
   const billMonth = nextMonth(elecMonth)
   const [step, setStep] = useState(1)
+  // 사용월을 빠르게 전환할 때 이전 달 응답이 늦게 도착해 새 달 폼을 덮어쓰지 않도록 최신 월만 반영
+  const monthRef = useRef(elecMonth)
 
   const [meters, setMeters] = useState<Meter[]>([])
   const [meterInput, setMeterInput] = useState<Record<string, string>>({})
@@ -46,7 +48,7 @@ export function MonthCloseWizard() {
   const [alloc, setAlloc] = useState<Allocation | null>(null)
   const [pyeongSum, setPyeongSum] = useState(0)
 
-  const [genResult, setGenResult] = useState<{ created: number; regenerated: number; skipped: { tenant_name: string; reason: string }[] } | null>(null)
+  const [genResult, setGenResult] = useState<{ created: number; regenerated: number; per10_billed?: number; skipped: { tenant_name: string; reason: string }[] } | null>(null)
   const [compare, setCompare] = useState<CompareRow[] | null>(null)
   const [issueResult, setIssueResult] = useState<{ issued: number; mail: { sent: number; failed: number }; no_email: string[] } | null>(null)
   const [busy, setBusy] = useState(false)
@@ -55,6 +57,7 @@ export function MonthCloseWizard() {
   const loadMeters = useCallback(async (p: string) => {
     const res = await fetch(`/api/admin/billing/meters?period=${p}`, { credentials: "include" })
     const d = await res.json()
+    if (monthRef.current !== p) return
     if (d.success) {
       setMeters(d.meters)
       setFactory(d.factory)
@@ -68,6 +71,7 @@ export function MonthCloseWizard() {
   const loadPeriod = useCallback(async (p: string) => {
     const res = await fetch(`/api/admin/billing/periods?period=${p}`, { credentials: "include" })
     const d = await res.json()
+    if (monthRef.current !== p) return
     if (d.success) {
       setAlloc(d.allocation)
       setFactory(d.factory)
@@ -104,6 +108,13 @@ export function MonthCloseWizard() {
   }, [])
 
   useEffect(() => {
+    monthRef.current = elecMonth
+    // 사용월 전환 시 이전 달 입력값이 새 달 파라미터로 잔존하지 않도록 먼저 리셋
+    setElecTotal("")
+    setPer10("")
+    setAreaRatio("0.70")
+    setAlloc(null)
+    setFactory(null)
     loadMeters(elecMonth)
     loadPeriod(elecMonth)
     setGenResult(null)
@@ -145,15 +156,19 @@ export function MonthCloseWizard() {
     } finally { setBusy(false) }
   }
 
-  const generate = async () => {
+  const generate = async (force = false) => {
     setBusy(true); setMsg("")
     try {
       const res = await fetch("/api/admin/billing/bills/generate", {
         method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include",
-        body: JSON.stringify({ billMonth }),
+        body: JSON.stringify({ billMonth, ...(force ? { force: true } : {}) }),
       })
       const d = await res.json()
-      if (d.success) setGenResult(d); else setMsg(d.error || "생성 실패")
+      if (d.success) setGenResult(d)
+      else if (d.needs_force) {
+        if (confirm(`${d.error}\n\n그래도 전기료 0원으로 생성할까요?`)) { setBusy(false); await generate(true); return }
+        setMsg(d.error)
+      } else setMsg(d.error || "생성 실패")
     } finally { setBusy(false) }
   }
 
@@ -283,10 +298,13 @@ export function MonthCloseWizard() {
         <AdminCard className="p-6">
           <h3 className="mb-1 font-semibold text-dark">{monthLabel(billMonth)} 청구서 생성</h3>
           <p className="mb-4 text-xs text-text-secondary">{monthLabel(billMonth)} 임대료 + {monthLabel(elecMonth)} 전기료로 기업별 초안을 만듭니다. 공실은 자동 제외.</p>
-          <Button onClick={generate} disabled={busy}>{busy ? "생성 중..." : "청구서 생성"}</Button>
+          <Button onClick={() => generate()} disabled={busy}>{busy ? "생성 중..." : "청구서 생성"}</Button>
           {genResult && (
             <div className="mt-4 rounded-md bg-warm-beige/50 p-4 text-sm">
               <p className="font-medium text-dark">생성 {genResult.created}건, 재생성 {genResult.regenerated}건{genResult.skipped.length > 0 && `, 스킵 ${genResult.skipped.length}건`}</p>
+              {genResult.per10_billed != null && (
+                <p className="mt-0.5 text-xs text-text-secondary">적용된 10평당 전기 단가: {formatWon(genResult.per10_billed)}원</p>
+              )}
               {genResult.skipped.length > 0 && (
                 <ul className="mt-2 space-y-0.5 text-xs text-text-secondary">
                   {genResult.skipped.map((s, i) => <li key={i}>{s.tenant_name}: {s.reason}</li>)}

@@ -201,7 +201,7 @@ export interface BillContractInput extends ContractChargeInput {
 
 export interface BillLineData {
   contract_id: number | null
-  room_code: string
+  room_code: string | null
   line_type: "rent" | "mgmt" | "elec_area" | "elec_metered" | "manual"
   label: string
   quantity: number | null
@@ -241,24 +241,27 @@ export function calcBill(
     supply_amount += charge.supply
     vat_amount += charge.vat
 
-    lines.push({
-      contract_id: c.id,
-      room_code: c.room_code,
-      line_type: "rent",
-      label: `${billMonthLabel}월 임대료 (${c.room_code})`,
-      quantity: c.pyeong_billed,
-      unit_price: c.rent_unit_price,
-      amount: charge.rent,
-    })
-    lines.push({
-      contract_id: c.id,
-      room_code: c.room_code,
-      line_type: "mgmt",
-      label: `${billMonthLabel}월 관리비 (${c.room_code})`,
-      quantity: null,
-      unit_price: null,
-      amount: charge.mgmt,
-    })
+    // 임대료 면제 계약(단가 0·관리비 0, 예: 전기만 청구하는 호실)은 0원 라인을 만들지 않는다
+    if (charge.gross !== 0) {
+      lines.push({
+        contract_id: c.id,
+        room_code: c.room_code,
+        line_type: "rent",
+        label: `${billMonthLabel}월 임대료 (${c.room_code})`,
+        quantity: c.pyeong_billed,
+        unit_price: c.rent_unit_price,
+        amount: charge.rent,
+      })
+      lines.push({
+        contract_id: c.id,
+        room_code: c.room_code,
+        line_type: "mgmt",
+        label: `${billMonthLabel}월 관리비 (${c.room_code})`,
+        quantity: null,
+        unit_price: null,
+        amount: charge.mgmt,
+      })
+    }
 
     if (!c.skip_elec) {
       if (c.elec_method === "area") {

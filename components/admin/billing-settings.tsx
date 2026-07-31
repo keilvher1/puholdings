@@ -12,12 +12,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Pencil } from "lucide-react"
 import { formatWon } from "@/lib/billing"
 
-interface Room { id: number; code: string; building: string; floor: number | null; pyeong: number | null; status: string; tenant_name?: string | null }
+interface Room { id: number; code: string; building: string; floor: number | null; pyeong: number | null; status: string; tenant_name?: string | null; area_m2: string | null; memo: string | null; sort_order: number | null }
 interface Tenant { id: number; name: string }
 interface Contract {
   id: number; tenant_id: number; tenant_name: string; room_id: number; room_code: string
-  pyeong_billed: string; rent_unit_price: string; mgmt_fee: string; renewal_type: string
+  pyeong_billed: string; pyeong_actual: string | null; rent_unit_price: string; mgmt_fee: string; renewal_type: string
   elec_method: string; status: string; deposit_standard: string | null; deposit_actual: string | null; ended_at: string | null
+  start_date: string | null; contract_date: string | null; first_month_billing: string | null; memo: string | null
 }
 
 export function BillingSettings() {
@@ -113,7 +114,7 @@ function DataManager() {
   )
 }
 
-const ROOM_EMPTY = { code: "", building: "본관", floor: "", pyeong: "", status: "available", memo: "" }
+const ROOM_EMPTY = { code: "", building: "본관", floor: "", pyeong: "", status: "available", memo: "", area_m2: "", sort_order: "0" }
 
 function RoomsManager() {
   const [rooms, setRooms] = useState<Room[]>([])
@@ -129,7 +130,8 @@ function RoomsManager() {
   useEffect(() => { load() }, [load])
 
   const save = async () => {
-    const body = { ...(editId ? { id: editId } : {}), ...form, floor: form.floor || null, pyeong: form.pyeong || null }
+    // 수정 시 폼에 노출되지 않는 컬럼(memo·area_m2·sort_order)도 원래 값을 함께 보내 소실을 막는다
+    const body = { ...(editId ? { id: editId } : {}), ...form, floor: form.floor || null, pyeong: form.pyeong || null, area_m2: form.area_m2 || null, sort_order: form.sort_order || 0 }
     const res = await fetch("/api/admin/rooms", {
       method: editId ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify(body),
     })
@@ -153,7 +155,7 @@ function RoomsManager() {
                 <TableCell>{r.pyeong ?? "-"}평</TableCell>
                 <TableCell>{r.tenant_name || <span className="text-text-secondary">공실</span>}</TableCell>
                 <TableCell className="text-right">
-                  <Button variant="outline" size="sm" onClick={() => { setEditId(r.id); setForm({ code: r.code, building: r.building, floor: String(r.floor ?? ""), pyeong: String(r.pyeong ?? ""), status: r.status, memo: "" }); setOpen(true) }}><Pencil className="h-3.5 w-3.5" /></Button>
+                  <Button variant="outline" size="sm" onClick={() => { setEditId(r.id); setForm({ code: r.code, building: r.building, floor: String(r.floor ?? ""), pyeong: String(r.pyeong ?? ""), status: r.status, memo: r.memo ?? "", area_m2: r.area_m2 != null ? String(r.area_m2) : "", sort_order: String(r.sort_order ?? 0) }); setOpen(true) }}><Pencil className="h-3.5 w-3.5" /></Button>
                 </TableCell>
               </TableRow>
             ))}
@@ -192,7 +194,7 @@ function RoomsManager() {
   )
 }
 
-const CONTRACT_EMPTY = { tenant_id: "", room_id: "", pyeong_billed: "", pyeong_actual: "", rent_unit_price: "21000", mgmt_fee: "15000", renewal_type: "renewal", elec_method: "area", deposit_actual: "", start_date: "", first_month_billing: "full", memo: "" }
+const CONTRACT_EMPTY = { tenant_id: "", room_id: "", pyeong_billed: "", pyeong_actual: "", rent_unit_price: "21000", mgmt_fee: "15000", renewal_type: "renewal", elec_method: "area", deposit_standard: "", deposit_actual: "", start_date: "", contract_date: "", first_month_billing: "full", memo: "" }
 
 function ContractsManager() {
   const [contracts, setContracts] = useState<Contract[]>([])
@@ -258,7 +260,7 @@ function ContractsManager() {
                 <TableCell>{c.status === "active" ? <Badge>진행</Badge> : <Badge variant="secondary">종료</Badge>}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1">
-                    <Button variant="outline" size="sm" onClick={() => { setEditId(c.id); setForm({ tenant_id: String(c.tenant_id), room_id: String(c.room_id), pyeong_billed: c.pyeong_billed, pyeong_actual: "", rent_unit_price: c.rent_unit_price, mgmt_fee: c.mgmt_fee, renewal_type: c.renewal_type, elec_method: c.elec_method, deposit_actual: c.deposit_actual ?? "", start_date: "", first_month_billing: "full", memo: "" }); setOpen(true) }}><Pencil className="h-3.5 w-3.5" /></Button>
+                    <Button variant="outline" size="sm" onClick={() => { setEditId(c.id); setForm({ tenant_id: String(c.tenant_id), room_id: String(c.room_id), pyeong_billed: c.pyeong_billed, pyeong_actual: c.pyeong_actual ?? "", rent_unit_price: c.rent_unit_price, mgmt_fee: c.mgmt_fee, renewal_type: c.renewal_type, elec_method: c.elec_method, deposit_standard: c.deposit_standard ?? "", deposit_actual: c.deposit_actual ?? "", start_date: c.start_date ?? "", contract_date: c.contract_date ?? "", first_month_billing: c.first_month_billing || "full", memo: c.memo ?? "" }); setOpen(true) }}><Pencil className="h-3.5 w-3.5" /></Button>
                     {c.status === "active" && <Button variant="outline" size="sm" onClick={() => { setEndOpen(c); setEndForm({ ended_at: "", last_month_billing: "full", deposit_returned_amount: "" }) }}>퇴실</Button>}
                   </div>
                 </TableCell>
@@ -297,9 +299,9 @@ function ContractsManager() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="grid gap-1.5"><Label>계약구분</Label>
-                <Select value={form.renewal_type} onValueChange={(v) => setForm({ ...form, renewal_type: v, rent_unit_price: v === "new" ? "20000" : "21000" })}>
+                <Select value={form.renewal_type} onValueChange={(v) => setForm({ ...form, renewal_type: v, rent_unit_price: v === "renewal" ? "21000" : form.rent_unit_price })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent><SelectItem value="renewal">갱신</SelectItem><SelectItem value="new">신규(비갱신)</SelectItem></SelectContent>
+                  <SelectContent><SelectItem value="renewal">갱신</SelectItem><SelectItem value="new">비갱신</SelectItem></SelectContent>
                 </Select>
               </div>
               <div className="grid gap-1.5"><Label>전기 방식</Label>
@@ -309,6 +311,17 @@ function ContractsManager() {
                 </Select>
               </div>
             </div>
+            <p className="text-[11px] text-text-secondary">평당 단가: 갱신·신규입주 21,000원 / 비갱신 기존 계약 20,000원</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-1.5"><Label>입주일</Label><Input type="date" value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} /></div>
+              <div className="grid gap-1.5"><Label>첫 달 청구</Label>
+                <Select value={form.first_month_billing} onValueChange={(v) => setForm({ ...form, first_month_billing: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="full">전액</SelectItem><SelectItem value="prorated">일할</SelectItem><SelectItem value="none">없음</SelectItem></SelectContent>
+                </Select>
+              </div>
+            </div>
+            <p className="text-[11px] text-text-secondary">입주월 청구서에는 전기료(전월 사용분)가 자동 제외됩니다.</p>
           </div>
           <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>취소</Button><Button onClick={save}>저장</Button></DialogFooter>
         </DialogContent>

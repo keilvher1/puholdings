@@ -48,11 +48,12 @@ const STATE_STYLE: Record<BoardRoom["state"], { label: string; cls: string }> = 
   maintenance: { label: "사용불가", cls: "border-warm-tan bg-[repeating-linear-gradient(45deg,#eee,#eee_6px,#fafafa_6px,#fafafa_12px)] text-text-tertiary" },
 }
 
+// 신규 입주 계약은 갱신 여부와 무관하게 21,000원/평 (20,000원은 비갱신 '기존' 계약 전용)
 const MOVE_IN_EMPTY = {
   tenant_id: "",
   start_date: "",
   pyeong_billed: "",
-  rent_unit_price: "20000",
+  rent_unit_price: "21000",
   mgmt_fee: "15000",
   renewal_type: "new",
   elec_method: "area",
@@ -290,13 +291,14 @@ export function RoomsBoard() {
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="grid gap-1.5"><Label>계약구분</Label>
-                        <Select value={moveIn.renewal_type} onValueChange={(v) => setMoveIn({ ...moveIn, renewal_type: v, rent_unit_price: v === "new" ? "20000" : "21000" })}>
+                        <Select value={moveIn.renewal_type} onValueChange={(v) => setMoveIn({ ...moveIn, renewal_type: v })}>
                           <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent><SelectItem value="new">신규(비갱신)</SelectItem><SelectItem value="renewal">갱신</SelectItem></SelectContent>
+                          <SelectContent><SelectItem value="new">비갱신</SelectItem><SelectItem value="renewal">갱신</SelectItem></SelectContent>
                         </Select>
                       </div>
                       <div className="grid gap-1.5"><Label>평당 임대료</Label><Input type="number" value={moveIn.rent_unit_price} onChange={(e) => setMoveIn({ ...moveIn, rent_unit_price: e.target.value })} /></div>
                     </div>
+                    <p className="text-[11px] text-text-secondary">신규 입주는 계약구분과 무관하게 21,000원/평입니다 (20,000원은 비갱신 기존 계약 전용).</p>
                     <div className="grid grid-cols-2 gap-3">
                       <div className="grid gap-1.5"><Label>관리비</Label><Input type="number" value={moveIn.mgmt_fee} onChange={(e) => setMoveIn({ ...moveIn, mgmt_fee: e.target.value })} /></div>
                       <div className="grid gap-1.5"><Label>실보증금</Label><Input type="number" value={moveIn.deposit_actual} onChange={(e) => setMoveIn({ ...moveIn, deposit_actual: e.target.value })} /></div>

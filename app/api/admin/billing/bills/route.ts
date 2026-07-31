@@ -115,8 +115,9 @@ export async function PUT(request: Request) {
             AS l(contract_id int, room_code text, line_type text, label text, quantity numeric, unit_price numeric, amount numeric)
           WHERE EXISTS (SELECT 1 FROM bills WHERE id = ${id} AND status = 'draft')
         `,
+        // manual 라인은 elec_amount에 섞지 않는다 — 전기료 표기(청구서·정산표)가 왜곡되지 않도록 total에만 반영
         sql`UPDATE bills SET rent_total = ${rentTotal}, mgmt_total = ${mgmtTotal}, supply_amount = ${supply},
-              vat_amount = ${vat}, elec_amount = ${elecTotal + manualTotal}, total_amount = ${total}, updated_at = NOW()
+              vat_amount = ${vat}, elec_amount = ${elecTotal}, total_amount = ${total}, updated_at = NOW()
             WHERE id = ${id} AND status = 'draft'`,
       ])
     }

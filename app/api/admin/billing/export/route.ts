@@ -57,7 +57,14 @@ export async function GET(request: Request) {
     let sumTotal = 0
     for (const [, lines] of byBill) {
       const first = lines[0]
-      const roomCodes = [...new Set(lines.filter((l) => l.line_type === "rent" && l.room_code).map((l) => l.room_code))]
+      // 호실은 임대료·전기 라인 모두에서 파생 (임대료 면제 계약은 rent 라인이 없다)
+      const roomCodes = [
+        ...new Set(
+          lines
+            .filter((l) => ["rent", "elec_area", "elec_metered"].includes(l.line_type) && l.room_code)
+            .map((l) => l.room_code),
+        ),
+      ]
       const pyeongSum = lines.filter((l) => l.line_type === "rent").reduce((s, l) => s + Number(l.quantity || 0), 0)
       ws.addRow({
         no: no++,
