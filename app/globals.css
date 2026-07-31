@@ -269,11 +269,112 @@ html[data-scroll-behavior="smooth"] {
 
 /* --- 3-1. Page transition --- */
 .page-in {
-  animation: pageIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: pageIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 @keyframes pageIn {
   from { opacity: 0; transform: translateY(16px); filter: blur(8px); }
-  to { opacity: 1; transform: none; filter: blur(0); }
+  /* filter는 none으로 끝나야 함 — blur(0)이 잔존하면 fixed 자식(진행바 등)의 기준이 뷰포트에서 벗어난다 */
+  to { opacity: 1; transform: none; filter: none; }
+}
+
+/* --- 3-1a. Cinematic intro (첫 방문 랜딩) --- */
+.cine-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 130; /* 팝업(z-100)보다 위 — 인트로 동안 다른 오버레이가 비치지 않게 */
+  cursor: pointer;
+}
+.cine-curtain {
+  position: absolute;
+  inset: 0;
+  clip-path: inset(0 0 0 0);
+}
+/* --cine-elapsed: 리마운트 시 경과 시간만큼 음수 보정되어 애니메이션이 이어서 재생된다 */
+.cine-curtain-gold {
+  background: linear-gradient(160deg, var(--gold), var(--gold-light));
+  animation: cineLift 0.85s cubic-bezier(0.76, 0, 0.24, 1) calc(2.4s + var(--cine-elapsed, 0s)) both;
+}
+.cine-curtain-dark {
+  background: radial-gradient(120% 120% at 50% 18%, var(--dark-muted) 0%, var(--dark) 58%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: cineLift 0.85s cubic-bezier(0.76, 0, 0.24, 1) calc(2.2s + var(--cine-elapsed, 0s)) both;
+}
+.cine-center {
+  text-align: center;
+  padding: 0 24px;
+  animation: cineCenterUp 0.85s cubic-bezier(0.76, 0, 0.24, 1) calc(2.2s + var(--cine-elapsed, 0s)) both;
+}
+.cine-kicker {
+  font-size: 11px;
+  letter-spacing: 0.42em;
+  color: rgba(245, 240, 235, 0.55);
+  margin-bottom: 14px;
+  animation: cineFade 0.8s ease calc(0.25s + var(--cine-elapsed, 0s)) both;
+}
+.cine-title {
+  font-size: clamp(30px, 6vw, 56px);
+  font-weight: 700;
+  color: var(--warm-ivory);
+  animation: cineTitle 1.05s cubic-bezier(0.22, 1, 0.36, 1) calc(0.35s + var(--cine-elapsed, 0s)) both;
+}
+.cine-line {
+  display: block;
+  width: 72px;
+  height: 2px;
+  margin: 20px auto 0;
+  background: linear-gradient(90deg, var(--gold), var(--gold-light));
+  animation: cineLine 0.7s cubic-bezier(0.22, 1, 0.36, 1) calc(1s + var(--cine-elapsed, 0s)) both;
+}
+@keyframes cineTitle {
+  from { opacity: 0; letter-spacing: 0.34em; filter: blur(10px); transform: translateY(14px); }
+  to { opacity: 1; letter-spacing: 0.02em; filter: blur(0); transform: none; }
+}
+@keyframes cineFade {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes cineLine {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@keyframes cineLift {
+  to { clip-path: inset(0 0 100% 0); }
+}
+@keyframes cineCenterUp {
+  to { transform: translateY(-40px); opacity: 0.9; }
+}
+.cine-skip .cine-curtain,
+.cine-skip .cine-center {
+  animation: cineSkipFade 0.22s ease both !important;
+}
+@keyframes cineSkipFade {
+  to { opacity: 0; }
+}
+html.cine-lock {
+  overflow: hidden;
+}
+
+/* --- 3-1b. Cinematic route veil (페이지 전환 와이프) --- */
+.route-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 120; /* 팝업(z-100)보다 위 */
+  pointer-events: none;
+}
+.route-veil span {
+  position: absolute;
+  inset: 0;
+  clip-path: inset(0 0 0 0);
+}
+.route-veil-gold {
+  background: linear-gradient(160deg, var(--gold), var(--gold-light));
+  animation: cineLift 0.85s cubic-bezier(0.76, 0, 0.24, 1) 0.2s both;
+}
+.route-veil-dark {
+  background: var(--dark);
+  animation: cineLift 0.75s cubic-bezier(0.76, 0, 0.24, 1) 0.05s both;
 }
 
 /* --- 3-2. Scroll progress bar --- */
@@ -371,6 +472,13 @@ html[data-scroll-behavior="smooth"] {
 
 /* --- 5. Reduced motion: disable all decorative animation --- */
 @media (prefers-reduced-motion: reduce) {
+  .cine-intro,
+  .route-veil {
+    display: none !important;
+  }
+  html.cine-lock {
+    overflow: auto;
+  }
   .aurora-blob,
   .reveal-word,
   .kicker-dot,
