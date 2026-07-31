@@ -24,6 +24,14 @@ export async function POST(request: Request) {
     const per10Billed = elecCtx.allocation.per10Billed
     const factoryByRoom = factoryChargeByRoom(elecCtx.factory)
 
+    // 검침 사용량 음수(당월 지침 누락·오타 등)는 공장동 전기료가 음수로 계산되므로 차단
+    const negMeters = Object.entries(elecCtx.factory.usages).filter(([, v]) => v < 0).map(([k]) => k)
+    if (negMeters.length > 0) {
+      return NextResponse.json({
+        success: false,
+        error: `${elecMonth} 검침 사용량이 음수인 계량기가 있습니다(${negMeters.join(", ")}). 월 마감 1단계에서 전월·당월 지침을 확인하세요.`,
+      }, { status: 400 })
+    }
     // 음수 단가(한전 총액 < 공장동 부담 A 등)는 force로도 우회 불가 — 음수 전기료 청구서 원천 차단
     if (per10Billed < 0) {
       return NextResponse.json({
