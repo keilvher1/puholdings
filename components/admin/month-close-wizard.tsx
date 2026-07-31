@@ -48,7 +48,7 @@ export function MonthCloseWizard() {
   const [alloc, setAlloc] = useState<Allocation | null>(null)
   const [pyeongSum, setPyeongSum] = useState(0)
 
-  const [genResult, setGenResult] = useState<{ created: number; regenerated: number; per10_billed?: number; skipped: { tenant_name: string; reason: string }[] } | null>(null)
+  const [genResult, setGenResult] = useState<{ created: number; regenerated: number; removed?: number; per10_billed?: number; skipped: { tenant_name: string; reason: string }[] } | null>(null)
   const [compare, setCompare] = useState<CompareRow[] | null>(null)
   const [issueResult, setIssueResult] = useState<{ issued: number; mail: { sent: number; failed: number }; no_email: string[] } | null>(null)
   const [busy, setBusy] = useState(false)
@@ -301,7 +301,7 @@ export function MonthCloseWizard() {
           <Button onClick={() => generate()} disabled={busy}>{busy ? "생성 중..." : "청구서 생성"}</Button>
           {genResult && (
             <div className="mt-4 rounded-md bg-warm-beige/50 p-4 text-sm">
-              <p className="font-medium text-dark">생성 {genResult.created}건, 재생성 {genResult.regenerated}건{genResult.skipped.length > 0 && `, 스킵 ${genResult.skipped.length}건`}</p>
+              <p className="font-medium text-dark">생성 {genResult.created}건, 재생성 {genResult.regenerated}건{(genResult.removed ?? 0) > 0 && `, 퇴실·공실 정리 ${genResult.removed}건`}{genResult.skipped.length > 0 && `, 스킵 ${genResult.skipped.length}건`}</p>
               {genResult.per10_billed != null && (
                 <p className="mt-0.5 text-xs text-text-secondary">적용된 10평당 전기 단가: {formatWon(genResult.per10_billed)}원</p>
               )}

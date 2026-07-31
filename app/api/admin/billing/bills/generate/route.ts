@@ -72,6 +72,18 @@ export async function POST(request: Request) {
       byTenant.get(c.tenant_id)!.contracts.push(c)
     }
 
+    // 청구 대상에서 빠진 기업(퇴실·공실 처리 등)의 기존 draft 자동 정리.
+    // 수기 청구서(is_manual)는 의도적 발행이므로 보존, 발행(issued+)된 건 건드리지 않음.
+    const billableTenantIds = [...byTenant.keys()]
+    const removedRows = await sql`
+      DELETE FROM bills
+      WHERE period = ${billMonth} AND status = 'draft'
+        AND COALESCE(is_manual, FALSE) = FALSE
+        AND NOT (tenant_id = ANY(${billableTenantIds}))
+      RETURNING tenant_id
+    `
+    const removed = removedRows.length
+
     let created = 0
     let regenerated = 0
     const skipped: { tenant_name: string; reason: string }[] = []
@@ -176,7 +188,7 @@ export async function POST(request: Request) {
       bill_month: billMonth,
       elec_month: elecMonth,
       per10_billed: per10Billed,
-      created, regenerated, skipped,
+      created, regenerated, removed, skipped,
     })
   } catch (error) {
     console.error("Generate bills error:", error)
