@@ -2,11 +2,12 @@ import { put } from "@vercel/blob"
 import type { NeonQueryFunction } from "@neondatabase/serverless"
 import { prevPeriod } from "./billing"
 import { computeElecContext } from "./billing-db"
-import { renderInvoicePdf, type InvoicePdfInput, type FactoryDetail } from "./invoice-pdf"
+import { renderInvoicePdf, type InvoicePdfInput } from "./invoice-pdf"
 
 type Sql = NeonQueryFunction<false, false>
 
-const DEFAULT_BANK = "예금주: ㈜포항연합기술지주 / 하나은행 910-910009-44304"
+// 원본 청구서 양식과 동일한 2줄 표기 (BILLING_BANK_INFO env로 교체 가능)
+const DEFAULT_BANK = "예금주 : ㈜ 포항연합기술지주\n계좌번호 : 910-910009-44304  하나은행"
 
 interface LineRow { room_code: string | null; line_type: string; label: string | null; amount: string; unit_price: string | null }
 
@@ -36,7 +37,6 @@ export async function buildInvoiceInput(sql: Sql, billId: number): Promise<Invoi
   const elecLines = lines
     .filter((l) => l.line_type === "elec_area" || l.line_type === "elec_metered")
     .map((l) => ({ room_code: l.room_code || "", amount: Number(l.amount), metered: l.line_type === "elec_metered" }))
-  const hasMetered = elecLines.some((l) => l.metered)
   // 수동 조정 라인(오입금 차감 등)은 청구서에 내역을 그대로 노출한다
   const manualLines = lines
     .filter((l) => l.line_type === "manual")
@@ -46,25 +46,6 @@ export async function buildInvoiceInput(sql: Sql, billId: number): Promise<Invoi
   // (생성 이후 검침·파라미터가 바뀌어도 PDF가 실제 청구된 값과 어긋나지 않도록)
   const areaLine = lines.find((l) => l.line_type === "elec_area" && l.unit_price != null)
   const per10Billed = areaLine ? Number(areaLine.unit_price) : ctx.allocation.per10Billed
-
-  let factory: FactoryDetail | undefined
-  // 해당 전기월 검침값이 없으면(과거 이관분 등) 음수 사용량 명세가 인쇄되므로 공장동 페이지를 생략
-  const readingsPresent = Object.values(ctx.readings).some((v) => v > 0)
-  if (hasMetered && readingsPresent) {
-    const f = ctx.factory
-    const half = f.usages.HVAC / 2
-    // 금액은 저장된 라인 값 우선(청구 스냅샷), 사용량 내역은 현재 검침 컨텍스트(참고용)
-    const storedByRoom = new Map(
-      elecLines.filter((l) => l.metered).map((l) => [l.room_code, l.amount]),
-    )
-    factory = {
-      mainUsage: f.usages.MAIN,
-      f101: { usage: f.usages.F101, hvacHalf: half, amount: storedByRoom.get("F101") ?? f.F101 },
-      f103: { usage: f.usages.F103, hvacHalf: half, amount: storedByRoom.get("F103") ?? f.F103 },
-      f102: { amount: storedByRoom.get("F102") ?? f.F102, deduction: f.deduction },
-      unitPrice: ctx.unitPrice,
-    }
-  }
 
   return {
     tenantName: bill.tenant_name,
@@ -78,7 +59,6 @@ export async function buildInvoiceInput(sql: Sql, billId: number): Promise<Invoi
     manualLines: manualLines.length > 0 ? manualLines : undefined,
     bankInfo: process.env.BILLING_BANK_INFO || DEFAULT_BANK,
     issueDate: new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10),
-    factory,
   }
 }
 
