@@ -48,7 +48,9 @@ export async function buildInvoiceInput(sql: Sql, billId: number): Promise<Invoi
   const per10Billed = areaLine ? Number(areaLine.unit_price) : ctx.allocation.per10Billed
 
   let factory: FactoryDetail | undefined
-  if (hasMetered) {
+  // 해당 전기월 검침값이 없으면(과거 이관분 등) 음수 사용량 명세가 인쇄되므로 공장동 페이지를 생략
+  const readingsPresent = Object.values(ctx.readings).some((v) => v > 0)
+  if (hasMetered && readingsPresent) {
     const f = ctx.factory
     const half = f.usages.HVAC / 2
     // 금액은 저장된 라인 값 우선(청구 스냅샷), 사용량 내역은 현재 검침 컨텍스트(참고용)
