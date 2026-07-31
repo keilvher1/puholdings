@@ -4,6 +4,7 @@ import {
   Page,
   Text,
   View,
+  Image,
   StyleSheet,
   Font,
   renderToBuffer,
@@ -74,7 +75,9 @@ const s = StyleSheet.create({
   adjust: { marginTop: 10, padding: 8, borderWidth: 1, borderColor: "#e8e2d6", fontSize: 9 },
   per10: { marginTop: 12, fontSize: 11, fontWeight: "bold" },
   bank: { marginTop: 24, padding: 12, borderWidth: 1, borderColor: "#e8e2d6", fontSize: 10 },
-  signature: { marginTop: 30, textAlign: "right", fontSize: 12, fontWeight: "bold" },
+  signatureRow: { marginTop: 26, flexDirection: "row", justifyContent: "flex-end", alignItems: "center" },
+  signature: { fontSize: 12, fontWeight: "bold" },
+  seal: { width: 54, height: 54, marginLeft: 10 },
   h2: { fontSize: 13, fontWeight: "bold", marginBottom: 10 },
 })
 
@@ -142,7 +145,10 @@ function InvoiceDocument({ data }: { data: InvoicePdfInput }) {
           <Text>{data.bankInfo}</Text>
         </View>
 
-        <Text style={s.signature}>㈜ 포항연합기술지주 대표이사</Text>
+        <View style={s.signatureRow}>
+          <Text style={s.signature}>㈜ 포항연합기술지주 대표이사</Text>
+          <Image src={join(process.cwd(), "public", "seal.png")} style={s.seal} />
+        </View>
       </Page>
 
       {/* metered 기업: 공장동 전력사용현황 명세 */}
