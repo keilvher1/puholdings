@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/db"
-import { isValidPeriod, prevPeriod, daysInMonthOf, calcBill, decideBillRegen, type BillContractInput, type BillLineData, type ProrateOption } from "@/lib/billing"
+import { isValidPeriod, prevPeriod, daysInMonthOf, calcBill, decideBillRegen, BILL_STATUS_LABELS, type BillContractInput, type BillLineData, type ProrateOption } from "@/lib/billing"
 import { computeElecContext, factoryChargeByRoom } from "@/lib/billing-db"
 
 interface StoredLine { line_type: string; room_code: string | null; label: string | null; unit_price: string | number | null; amount: string | number }
@@ -132,7 +132,8 @@ export async function POST(request: Request) {
     let created = 0
     let regenerated = 0
     let reissued = 0 // 발행 상태에서 초안으로 되돌려 재생성한 건수
-    let reissuable = 0 // regenerate_issued=true로 재생성 가능한(지금은 스킵된) 건수
+    let reissuable = 0 // 되돌려 다시 만들면 실제로 금액이 달라지는(지금은 스킵된) 발행분 건수
+    let reissuableDiff = 0 // 그 건들에서 반영되지 못한 전기료 차액 합계
     let elecSum = 0 // 이번에 생성·재생성된 청구서의 전기료 합계
     const skipped: { tenant_name: string; reason: string }[] = []
     const unmappedMetered: string[] = [] // 계량기에 매핑되지 않아 전기료 0원이 된 검침 계약
@@ -140,13 +141,14 @@ export async function POST(request: Request) {
     for (const [tenantId, group] of byTenant) {
       const prev = billByTenant.get(tenantId)
       const decision = decideBillRegen(prev, regenerate_issued === true)
-      if (decision.action === "skip") {
-        if (decision.reissuable) reissuable++
+      // 되돌리면 재생성할 수 있는 건(reissuable)은 여기서 끊지 않는다 — 아래에서 실제로 다시 계산해
+      // "값이 달라지는가"를 확인해야 화면에 헛경보(내용이 같은데 되돌리라는 안내)가 뜨지 않는다.
+      if (decision.action === "skip" && !decision.reissuable) {
         skipped.push({ tenant_name: group.name, reason: decision.reason })
         continue
       }
       // 재생성 시 갱신을 허용할 기존 상태. paid·수기는 절대 포함되지 않는다.
-      const allowedStatuses = decision.action === "regenerate" ? decision.allowedStatuses : ["draft"]
+      const allowedStatuses = decision.action === "regenerate" ? decision.allowedStatuses : ["draft", "issued", "overdue"]
 
       const inputs: BillContractInput[] = []
       for (const c of group.contracts) {
@@ -221,8 +223,9 @@ export async function POST(request: Request) {
       const manualTotal = manualLines.reduce((s, l) => s + l.amount, 0)
       bill.lines.push(...manualLines)
 
-      // 발행된 건을 되돌릴 때는 "실제로 달라지는" 청구서만 손댄다.
+      // 발행된 건은 "실제로 달라지는" 것만 손댄다.
       // 내용이 같은데도 초안→재발행을 태우면 금액이 그대로인 기업에까지 [정정] 메일이 나간다.
+      // 되돌리기를 요청하지 않은 호출에서도 같은 비교를 해서, 값이 달라지는 건만 reissuable로 센다.
       if (prev && prev.status !== "draft") {
         const cur = await sql`
           SELECT b.rent_total, b.mgmt_total, b.elec_amount, b.total_amount,
@@ -234,8 +237,19 @@ export async function POST(request: Request) {
           WHERE b.tenant_id = ${tenantId} AND b.period = ${billMonth}
           GROUP BY b.id
         `
-        if (cur.length > 0 && sameBill(cur[0], bill, manualTotal)) {
-          skipped.push({ tenant_name: group.name, reason: "내용 변경 없음 — 발행 상태 유지" })
+        const unchanged = cur.length > 0 && sameBill(cur[0], bill, manualTotal)
+        if (unchanged) {
+          skipped.push({ tenant_name: group.name, reason: `이미 ${BILL_STATUS_LABELS[prev.status] ?? prev.status} — 내용 변경 없음` })
+          continue
+        }
+        if (decision.action === "skip") {
+          // 되돌리면 금액이 바뀌는 건 — 화면에서 이걸 세어 되돌리기를 권한다
+          reissuable++
+          reissuableDiff += bill.elec_amount - Number(cur[0]?.elec_amount ?? 0)
+          skipped.push({
+            tenant_name: group.name,
+            reason: `이미 ${BILL_STATUS_LABELS[prev.status] ?? prev.status} — 최신 값이 반영되지 않음`,
+          })
           continue
         }
       }
@@ -287,6 +301,7 @@ export async function POST(request: Request) {
       elec_month: elecMonth,
       per10_billed: per10Billed,
       elec_sum: elecSum,
+      reissuable_elec_diff: reissuableDiff,
       unmapped_metered: unmappedMetered,
       created, regenerated, reissued, reissuable, removed, skipped,
     })

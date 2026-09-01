@@ -49,7 +49,7 @@ export function MonthCloseWizard() {
   const [alloc, setAlloc] = useState<Allocation | null>(null)
   const [pyeongSum, setPyeongSum] = useState(0)
 
-  const [genResult, setGenResult] = useState<{ created: number; regenerated: number; reissued?: number; reissuable?: number; removed?: number; per10_billed?: number; elec_sum?: number; unmapped_metered?: string[]; skipped: { tenant_name: string; reason: string }[] } | null>(null)
+  const [genResult, setGenResult] = useState<{ created: number; regenerated: number; reissued?: number; reissuable?: number; reissuable_elec_diff?: number; removed?: number; per10_billed?: number; elec_sum?: number; unmapped_metered?: string[]; skipped: { tenant_name: string; reason: string }[] } | null>(null)
   const [compare, setCompare] = useState<CompareRow[] | null>(null)
   const [issueResult, setIssueResult] = useState<{ issued: number; corrected?: number; mail: { sent: number; failed: number }; no_email: string[] } | null>(null)
   const [busy, setBusy] = useState(false)
@@ -171,7 +171,7 @@ export function MonthCloseWizard() {
     } finally { setBusy(false) }
   }
 
-  const generate = async (opts: { force?: boolean; regenerateIssued?: boolean } = {}) => {
+  const generate = async (opts: { force?: boolean; regenerateIssued?: boolean; silentReissuePrompt?: boolean } = {}) => {
     setBusy(true); setMsg("")
     try {
       const res = await fetch("/api/admin/billing/bills/generate", {
@@ -187,6 +187,12 @@ export function MonthCloseWizard() {
         setGenResult(d)
         // 발행됨 → 초안으로 되돌린 건이 있으면 4단계에서 다시 발행해야 하므로 이전 발행 결과를 지운다
         if (d.reissued > 0) setIssueResult(null)
+        // [청구서 생성] 한 번으로 끝나게 한다 — 발행됐다는 이유로 최신 값이 반영되지 못한 건이
+        // 있으면 그 자리에서 바로 물어보고 이어서 재생성한다(따로 버튼을 찾아 누르지 않아도 되도록).
+        if (!opts.regenerateIssued && d.reissuable > 0 && !opts.silentReissuePrompt) {
+          setBusy(false)
+          if (confirmReissue(d.reissuable)) { await generate({ ...opts, regenerateIssued: true }); return }
+        }
       } else if (d.needs_force) {
         if (confirm(`${d.error}\n\n그래도 전기료 0원으로 생성할까요?`)) { setBusy(false); await generate({ ...opts, force: true }); return }
         setMsg(d.error)
@@ -194,18 +200,20 @@ export function MonthCloseWizard() {
     } finally { setBusy(false) }
   }
 
-  // 이미 발행된 청구서를 초안으로 되돌려 최신 값으로 다시 만든다.
-  // 전기 파라미터를 발행 뒤에 입력한 경우처럼, 재생성하지 않으면 영영 반영되지 않는 상황을 푸는 경로.
-  const regenerateIssued = async () => {
-    const n = genResult?.reissuable ?? 0
-    if (!confirm(
-      `이미 발행된 ${n}건을 '작성 중' 초안으로 되돌리고 최신 전기료·임대료로 다시 만듭니다.\n\n` +
+  const confirmReissue = (n: number) =>
+    confirm(
+      `이미 발행된 ${n}건에는 최신 전기료·임대료가 반영되지 않았습니다.\n\n` +
+      `이 ${n}건을 '작성 중' 초안으로 되돌리고 다시 만들까요?\n\n` +
+      `· 내용이 실제로 달라지는 건만 되돌립니다(불필요한 정정 메일 방지).\n` +
       `· 기존 청구서 PDF는 폐기되고, 4단계에서 다시 발행할 때 새로 만들어집니다.\n` +
       `· 4단계 발행을 다시 눌러야 기업에 정정 청구서 메일이 나갑니다.\n` +
       `· 되돌린 동안에는 입주기업 포털에서 해당 청구서가 보이지 않습니다 — 재발행하면 다시 나타나므로 이어서 진행하세요.\n` +
-      `· 내용이 똑같은 청구서는 되돌리지 않습니다(불필요한 정정 메일 방지).\n` +
       `· 납부 완료(paid)·수기 청구서는 건드리지 않습니다.\n\n계속할까요?`
-    )) return
+    )
+
+  // 위 확인창에서 [취소]한 뒤 마음이 바뀌었을 때 쓰는 명시적 경로.
+  const regenerateIssued = async () => {
+    if (!confirmReissue(genResult?.reissuable ?? 0)) return
     await generate({ regenerateIssued: true })
   }
 
@@ -477,11 +485,15 @@ export function MonthCloseWizard() {
           {(genResult?.reissuable ?? 0) > 0 && (
             <div className="mt-4 rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm">
               <p className="font-medium text-dark">
-                이미 발행된 {genResult!.reissuable}건은 다시 만들어지지 않았습니다.
+                이미 발행된 {genResult!.reissuable}건에 최신 값이 반영되지 않았습니다.
               </p>
               <p className="mt-1 text-xs text-text-secondary">
-                지금 화면의 {monthLabel(elecMonth)} 전기료·단가는 <b className="text-dark">이 {genResult!.reissuable}건에 반영되지 않은 상태</b>입니다.
-                발행 뒤에 전기 파라미터를 입력했다면, 아래 버튼으로 초안으로 되돌려 다시 만든 다음 4단계에서 재발행하세요.
+                발행된 청구서는 다시 만들어지지 않습니다. 지금 되돌려 다시 만들면
+                {(genResult!.reissuable_elec_diff ?? 0) !== 0 && (
+                  <> {monthLabel(elecMonth)} 전기료 <b className="text-dark">{formatWon(genResult!.reissuable_elec_diff!)}원</b>이 추가로 반영됩니다.</>
+                )}
+                {(genResult!.reissuable_elec_diff ?? 0) === 0 && <> 금액이 달라집니다.</>}
+                {" "}되돌린 뒤 <b className="text-dark">4단계에서 발행을 다시 눌러야</b> 정정 청구서가 나갑니다.
               </p>
               <Button variant="destructive" className="mt-3" onClick={regenerateIssued} disabled={busy}>
                 {busy ? "처리 중..." : `발행된 ${genResult!.reissuable}건 초안으로 되돌려 다시 만들기`}
