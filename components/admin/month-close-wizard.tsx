@@ -53,6 +53,7 @@ export function MonthCloseWizard() {
   const [compare, setCompare] = useState<CompareRow[] | null>(null)
   const [issueResult, setIssueResult] = useState<{ issued: number; corrected?: number; mail: { sent: number; failed: number }; no_email: string[] } | null>(null)
   const [busy, setBusy] = useState(false)
+  const [zipBusy, setZipBusy] = useState(false)
   const [msg, setMsg] = useState("")
 
   const loadMeters = useCallback(async (p: string) => {
@@ -215,6 +216,32 @@ export function MonthCloseWizard() {
   const regenerateIssued = async () => {
     if (!confirmReissue(genResult?.reissuable ?? 0)) return
     await generate({ regenerateIssued: true })
+  }
+
+  // 청구월 전체 청구서 PDF를 zip 하나로 내려받는다. 실패 시 서버가 JSON을 주므로
+  // 링크가 아니라 fetch로 받아서 Blob URL로 저장한다.
+  const downloadZip = async () => {
+    setZipBusy(true); setMsg("")
+    try {
+      const res = await fetch(`/api/admin/billing/bills/download?period=${billMonth}`, { credentials: "include" })
+      if (!res.ok) {
+        const d = await res.json().catch(() => null)
+        setMsg(d?.error || "청구서 묶음 다운로드에 실패했습니다")
+        return
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `청구서_${billMonth}.zip`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 60_000)
+      setMsg(`청구서 ${res.headers.get("X-Invoice-Count") ?? ""}건을 zip으로 내려받았습니다`)
+    } catch {
+      setMsg("청구서 묶음 다운로드에 실패했습니다")
+    } finally { setZipBusy(false) }
   }
 
   const issue = async (force = false) => {
@@ -560,7 +587,16 @@ export function MonthCloseWizard() {
             누르기 전에 3단계의 전월 대비 표에서 금액이 이상한 기업이 없는지 꼭 확인하세요.
           </StepIntro>
           <p className="mb-4 text-xs text-text-secondary">발행 전 <a href="/admin/billing/bills" className="text-gold underline" target="_blank" rel="noreferrer">청구서 탭</a>에서 개별 PDF를 미리 확인할 수 있습니다.</p>
-          <Button onClick={() => issue()} disabled={busy}>{busy ? "발행 중..." : "일괄 발행 + PDF 메일"}</Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button onClick={() => issue()} disabled={busy}>{busy ? "발행 중..." : "일괄 발행 + PDF 메일"}</Button>
+            <Button variant="outline" onClick={downloadZip} disabled={zipBusy}>
+              {zipBusy ? "묶는 중..." : `${monthLabel(billMonth)} 청구서 PDF 전체 내려받기 (zip)`}
+            </Button>
+          </div>
+          <p className="mt-2 text-xs text-text-secondary">
+            기업별 PDF를 한 파일씩 담은 zip으로 받습니다. 발행된 건은 실제로 메일에 첨부된 그 파일이고,
+            초안은 현재 내용으로 즉석 생성하므로 건수가 많으면 시간이 걸립니다.
+          </p>
           {issueResult && (
             <div className="mt-4 rounded-md bg-warm-beige/50 p-4 text-sm">
               <p className="font-medium text-dark">발행 {issueResult.issued}건 · 메일 성공 {issueResult.mail.sent}건{issueResult.mail.failed > 0 && `, 실패 ${issueResult.mail.failed}건`}</p>

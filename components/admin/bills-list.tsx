@@ -11,7 +11,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { Plus, Trash2 } from "lucide-react"
+import { Download, Plus, Trash2 } from "lucide-react"
 import { formatWon, BILL_STATUS_LABELS } from "@/lib/billing"
 
 interface Bill {
@@ -40,6 +40,7 @@ export function BillsList() {
   const [detail, setDetail] = useState<Bill | null>(null)
   const [lines, setLines] = useState<Line[]>([])
   const [payDate, setPayDate] = useState("")
+  const [zipBusy, setZipBusy] = useState(false)
 
   // 수동 청구서 (퇴거 정산 등 정산표 밖 수기 청구)
   const [manualOpen, setManualOpen] = useState(false)
@@ -105,6 +106,37 @@ export function BillsList() {
     if (d.success) { setDetail(null); load() } else alert(d.error || "처리 실패")
   }
 
+  // 현재 필터(청구월 + 상태)에 잡히는 청구서 PDF를 zip 하나로 내려받는다.
+  // 서버가 오래 걸릴 수 있고 실패 시 JSON을 돌려주므로, 링크가 아니라 fetch로 받아서
+  // Blob URL로 저장한다(링크였다면 오류 JSON 페이지로 이동해 버린다).
+  const downloadZip = async () => {
+    setZipBusy(true)
+    try {
+      const q = new URLSearchParams({ period })
+      if (status !== "all") q.set("status", status)
+      const res = await fetch(`/api/admin/billing/bills/download?${q}`, { credentials: "include" })
+      if (!res.ok) {
+        const d = await res.json().catch(() => null)
+        alert(d?.error || "다운로드에 실패했습니다")
+        return
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `청구서_${period}${status !== "all" ? `_${status}` : ""}.zip`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      // 브라우저가 저장을 시작할 시간을 준 뒤 해제
+      setTimeout(() => URL.revokeObjectURL(url), 60_000)
+    } catch {
+      alert("다운로드에 실패했습니다")
+    } finally {
+      setZipBusy(false)
+    }
+  }
+
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -121,10 +153,16 @@ export function BillsList() {
             </SelectContent>
           </Select>
         </div>
-        <Button variant="outline" onClick={openManual}>
-          <Plus className="h-4 w-4" />
-          수동 청구서 만들기
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={downloadZip} disabled={zipBusy || bills.length === 0}>
+            <Download className="h-4 w-4" />
+            {zipBusy ? "묶는 중..." : `청구서 PDF 일괄 다운로드${bills.length > 0 ? ` (${bills.length}건)` : ""}`}
+          </Button>
+          <Button variant="outline" onClick={openManual}>
+            <Plus className="h-4 w-4" />
+            수동 청구서 만들기
+          </Button>
+        </div>
       </div>
 
       <AdminCard>
