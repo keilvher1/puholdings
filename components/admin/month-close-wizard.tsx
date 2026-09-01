@@ -145,11 +145,25 @@ export function MonthCloseWizard() {
   }
 
   const savePeriod = async () => {
+    // 확정단가를 비운 채 저장하면 per10_billed가 NULL로 남고, 청구서 생성은 그때그때의
+    // 제안값으로 조용히 대체한다 — 검침이 나중에 바뀌면 단가도 같이 흔들린다.
+    // 빈칸으로 저장하려는 순간에 확정을 유도한다.
+    let per10ToSave = per10
+    if (per10ToSave === "" && alloc) {
+      if (confirm(
+        `10평당 청구단가를 확정하지 않았습니다.\n\n` +
+        `이대로 저장하면 청구서 생성 때마다 그 시점의 제안값(현재 ${formatWon(alloc.per10Suggested)}원)이 쓰이고,\n` +
+        `검침·한전 총액이 바뀌면 단가도 같이 바뀝니다.\n\n제안값 ${formatWon(alloc.per10Suggested)}원으로 확정할까요?`
+      )) {
+        per10ToSave = String(alloc.per10Suggested)
+        setPer10(per10ToSave)
+      }
+    }
     setBusy(true); setMsg("")
     try {
       const res = await fetch("/api/admin/billing/periods", {
         method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include",
-        body: JSON.stringify({ period: elecMonth, elec_total: Number(elecTotal), elec_unit_price: Number(unitPrice), area_ratio: Number(areaRatio), per10_billed: per10 === "" ? null : Number(per10) }),
+        body: JSON.stringify({ period: elecMonth, elec_total: Number(elecTotal), elec_unit_price: Number(unitPrice), area_ratio: Number(areaRatio), per10_billed: per10ToSave === "" ? null : Number(per10ToSave) }),
       })
       const d = await res.json()
       if (d.success) { setAlloc(d.allocation); setFactory(d.factory); setPyeongSum(Number(d.pyeong_sum_area || 0)); setMsg("전기료 파라미터 저장됨"); }
@@ -188,6 +202,8 @@ export function MonthCloseWizard() {
       `이미 발행된 ${n}건을 '작성 중' 초안으로 되돌리고 최신 전기료·임대료로 다시 만듭니다.\n\n` +
       `· 기존 청구서 PDF는 폐기되고, 4단계에서 다시 발행할 때 새로 만들어집니다.\n` +
       `· 4단계 발행을 다시 눌러야 기업에 정정 청구서 메일이 나갑니다.\n` +
+      `· 되돌린 동안에는 입주기업 포털에서 해당 청구서가 보이지 않습니다 — 재발행하면 다시 나타나므로 이어서 진행하세요.\n` +
+      `· 내용이 똑같은 청구서는 되돌리지 않습니다(불필요한 정정 메일 방지).\n` +
       `· 납부 완료(paid)·수기 청구서는 건드리지 않습니다.\n\n계속할까요?`
     )) return
     await generate({ regenerateIssued: true })
@@ -386,6 +402,9 @@ export function MonthCloseWizard() {
                   <Button variant="outline" size="sm" onClick={() => setPer10(String(alloc.per10Suggested))}>제안값</Button>
                   <Button variant="outline" size="sm" onClick={savePeriod} disabled={busy}>재계산</Button>
                 </div>
+                {per10 === "" && (
+                  <p className="text-destructive">⚠ 확정단가가 비어 있습니다 — 지금은 제안값 {formatWon(alloc.per10Suggested)}원이 임시로 쓰입니다. [제안값] → [재계산]으로 확정하세요.</p>
+                )}
                 <p>사무실 기업부담 (B): <b>{formatWon(alloc.officeB)}</b>원</p>
                 <p>센터부담 (C): <b>{formatWon(alloc.centerC)}</b>원</p>
                 <p className={alloc.checkOk ? "text-green-700" : "text-destructive"}>
