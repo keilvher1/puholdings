@@ -21,6 +21,20 @@ interface Bill {
 }
 interface Line { id: number; room_code: string | null; line_type: string; label: string; amount: string }
 
+// 서버가 보낸 Content-Disposition의 filename*=UTF-8''... 을 그대로 저장 파일명으로 쓴다.
+// Blob URL에는 헤더가 따라붙지 않아 a.download를 우리가 정해야 하는데,
+// 직접 조립하면 서버가 붙인 이름(상태 라벨 등)과 어긋난다.
+function filenameFromResponse(res: Response, fallback: string): string {
+  const cd = res.headers.get("Content-Disposition") || ""
+  const m = /filename\*=UTF-8''([^;]+)/i.exec(cd)
+  if (!m) return fallback
+  try {
+    return decodeURIComponent(m[1].trim().replace(/^"|"$/g, ""))
+  } catch {
+    return fallback
+  }
+}
+
 function thisMonth(): string {
   const n = new Date()
   return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}`
@@ -124,12 +138,18 @@ export function BillsList() {
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
-      a.download = `청구서_${period}${status !== "all" ? `_${status}` : ""}.zip`
+      a.download = filenameFromResponse(res, `청구서_${period}.zip`)
       document.body.appendChild(a)
       a.click()
       a.remove()
       // 브라우저가 저장을 시작할 시간을 준 뒤 해제
       setTimeout(() => URL.revokeObjectURL(url), 60_000)
+      // 일부가 빠졌다면 zip 안 _안내.txt만 보고 알아채기 어려우므로 화면에서도 알린다
+      const got = Number(res.headers.get("X-Invoice-Count"))
+      const total = Number(res.headers.get("X-Invoice-Total"))
+      if (Number.isFinite(got) && Number.isFinite(total) && got < total) {
+        alert(`${total}건 중 ${got}건만 받았습니다. 빠진 기업은 zip 안 _안내.txt를 확인하세요.`)
+      }
     } catch {
       alert("다운로드에 실패했습니다")
     } finally {

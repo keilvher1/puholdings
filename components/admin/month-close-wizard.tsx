@@ -23,6 +23,20 @@ function thisMonthPeriod(): string {
   const n = new Date()
   return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, "0")}`
 }
+// 서버가 보낸 Content-Disposition의 filename*=UTF-8''... 을 그대로 저장 파일명으로 쓴다.
+// Blob URL에는 헤더가 따라붙지 않아 a.download를 우리가 정해야 하는데,
+// 직접 조립하면 서버가 붙인 이름(상태 라벨 등)과 어긋난다.
+function filenameFromResponse(res: Response, fallback: string): string {
+  const cd = res.headers.get("Content-Disposition") || ""
+  const m = /filename\*=UTF-8''([^;]+)/i.exec(cd)
+  if (!m) return fallback
+  try {
+    return decodeURIComponent(m[1].trim().replace(/^"|"$/g, ""))
+  } catch {
+    return fallback
+  }
+}
+
 const monthLabel = (p: string) => `${Number(p.slice(5, 7))}월`
 
 interface Meter { id: number; name: string; code: string; curr_reading: number | null; prev_reading: number | null; usage: number | null }
@@ -233,12 +247,18 @@ export function MonthCloseWizard() {
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
-      a.download = `청구서_${billMonth}.zip`
+      a.download = filenameFromResponse(res, `청구서_${billMonth}.zip`)
       document.body.appendChild(a)
       a.click()
       a.remove()
       setTimeout(() => URL.revokeObjectURL(url), 60_000)
-      setMsg(`청구서 ${res.headers.get("X-Invoice-Count") ?? ""}건을 zip으로 내려받았습니다`)
+      const got = Number(res.headers.get("X-Invoice-Count"))
+      const total = Number(res.headers.get("X-Invoice-Total"))
+      setMsg(
+        Number.isFinite(got) && Number.isFinite(total) && got < total
+          ? `${total}건 중 ${got}건만 zip에 담겼습니다 — 빠진 기업은 zip 안 _안내.txt를 확인하세요`
+          : `청구서 ${got}건을 zip으로 내려받았습니다`,
+      )
     } catch {
       setMsg("청구서 묶음 다운로드에 실패했습니다")
     } finally { setZipBusy(false) }

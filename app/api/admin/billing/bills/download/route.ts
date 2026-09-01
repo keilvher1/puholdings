@@ -80,18 +80,28 @@ export async function GET(request: Request) {
     }))
 
     const rendered: (Uint8Array | null)[] = new Array(jobs.length).fill(null)
+    // 저장본을 못 읽어 현재 내용으로 다시 그린 발행분 — 관리자에게 알려야 한다
+    const rerendered: string[] = []
 
     const fetchOne = async (job: (typeof jobs)[number], index: number) => {
       try {
         let buffer: Buffer | null = null
         // 발행 시점에 저장된 PDF가 있으면 그것을 쓴다 — 기업이 실제로 받은 파일과 동일해야 한다.
         if (job.pathname) {
-          const stored = await get(job.pathname, { access: "private" })
-          if (stored?.stream) {
-            buffer = Buffer.from(await new Response(stored.stream).arrayBuffer())
+          // @vercel/blob의 get은 404일 때만 null을 주고 그 밖의 오류(5xx·토큰 문제 등)는 throw한다.
+          // 여기서 잡지 않으면 아래 즉석 렌더 폴백에 닿지 못해 그 기업만 통째로 빠진다.
+          try {
+            const stored = await get(job.pathname, { access: "private" })
+            if (stored?.stream) {
+              buffer = Buffer.from(await new Response(stored.stream).arrayBuffer())
+            }
+          } catch (error) {
+            console.error(`Invoice zip: blob 읽기 실패 ${job.pathname}`, error)
           }
+          if (!buffer) rerendered.push(job.tenantName)
         }
-        // 초안이라 저장본이 없거나 blob이 사라진 경우 현재 내용으로 즉석 렌더
+        // 초안이라 저장본이 없거나, 저장본을 못 읽은 경우 현재 내용으로 즉석 렌더.
+        // 발행된 청구서는 항목 수정이 막혀 있어(bills PUT은 draft만 허용) 내용은 발행본과 같다.
         if (!buffer) {
           const input = await buildInvoiceInput(sql, job.id)
           if (input) buffer = await renderInvoicePdf(input)
@@ -121,14 +131,23 @@ export async function GET(request: Request) {
     if (Object.keys(files).length === 0) {
       return NextResponse.json({ error: "PDF를 하나도 만들지 못했습니다" }, { status: 500 })
     }
-    // 일부만 실패했을 때 조용히 빠뜨리지 않도록 zip 안에 사유를 남긴다
+    // 빠지거나 다시 그린 건이 있으면 조용히 넘어가지 않도록 zip 안에 사유를 남긴다
+    const notes: string[] = []
     if (failed.length > 0) {
-      files["_실패한_청구서.txt"] = new TextEncoder().encode(
-        `아래 기업의 청구서 PDF를 만들지 못해 이 zip에서 빠졌습니다.\n관리자 화면에서 개별 미리보기로 확인하세요.\n\n${failed.join("\n")}\n`,
+      notes.push(
+        `[빠진 청구서 ${failed.length}건]\n아래 기업의 PDF를 만들지 못해 이 zip에 들어있지 않습니다.\n관리자 화면에서 개별 미리보기로 확인하세요.\n\n${failed.join("\n")}`,
       )
     }
+    if (rerendered.length > 0) {
+      notes.push(
+        `[다시 그린 청구서 ${rerendered.length}건]\n발행 때 저장해 둔 PDF를 읽지 못해 현재 내용으로 다시 만들었습니다.\n발행된 청구서는 항목 수정이 막혀 있어 내용은 같지만, 원본 파일 그대로는 아닙니다.\n\n${rerendered.join("\n")}`,
+      )
+    }
+    if (notes.length > 0) {
+      files["_안내.txt"] = new TextEncoder().encode(`${notes.join("\n\n")}\n`)
+    }
 
-    const count = Object.keys(files).length - (failed.length > 0 ? 1 : 0)
+    const count = Object.keys(files).length - (notes.length > 0 ? 1 : 0)
     const data = await zipAsync(files)
     const label = vStatus ? `_${BILL_STATUS_LABELS[vStatus] ?? vStatus}` : ""
     const filename = encodeURIComponent(`청구서_${period}${label}.zip`)
@@ -138,6 +157,7 @@ export async function GET(request: Request) {
         "Content-Disposition": `attachment; filename*=UTF-8''${filename}`,
         "Cache-Control": "private, no-store",
         "X-Invoice-Count": String(count),
+        "X-Invoice-Total": String(jobs.length),
       },
     })
   } catch (error) {
