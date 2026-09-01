@@ -5,6 +5,7 @@ import {
   calcFactoryElec,
   calcElecAllocation,
   prorate,
+  decideBillRegen,
   type FactoryReadings,
 } from "@/lib/billing"
 
@@ -70,5 +71,57 @@ describe("calcElecAllocation — 전기료 3단 배분", () => {
 describe("prorate — 일할 계산", () => {
   it("월액 415,000, 6월(30일) 중 15일", () => {
     expect(prorate(415000, 15, 30)).toBe(207500)
+  })
+})
+
+// 2026-08 사고 회귀 방지 — 전기 파라미터를 발행 뒤에 입력했을 때, 재생성이 발행분을 건너뛰어
+// 전기료 0원 청구서가 영구히 고정된 사건. 복구 경로(regenerate_issued)와 그 안전장치를 고정한다.
+describe("decideBillRegen — 청구서 재생성 정책", () => {
+  it("기존 청구서가 없으면 새로 만든다", () => {
+    expect(decideBillRegen(undefined, false)).toEqual({ action: "create" })
+    expect(decideBillRegen(undefined, true)).toEqual({ action: "create" })
+  })
+
+  it("초안은 항상 재생성하고, paid로는 절대 번지지 않는다", () => {
+    for (const flag of [false, true]) {
+      const d = decideBillRegen({ status: "draft", is_manual: false }, flag)
+      expect(d).toEqual({ action: "regenerate", allowedStatuses: ["draft"] })
+    }
+  })
+
+  it("발행됨·연체는 기본 스킵이지만 재생성 가능(reissuable)으로 보고한다", () => {
+    for (const status of ["issued", "overdue"]) {
+      const d = decideBillRegen({ status, is_manual: false }, false)
+      expect(d.action).toBe("skip")
+      if (d.action === "skip") expect(d.reissuable).toBe(true)
+    }
+  })
+
+  it("regenerate_issued=true면 발행됨·연체를 초안으로 되돌려 재생성한다", () => {
+    for (const status of ["issued", "overdue"]) {
+      const d = decideBillRegen({ status, is_manual: false }, true)
+      expect(d).toEqual({ action: "regenerate", allowedStatuses: ["draft", "issued", "overdue"] })
+      // 허용 목록에 paid가 새어 들어가면 납부 완료 건이 덮어써진다
+      if (d.action === "regenerate") expect(d.allowedStatuses).not.toContain("paid")
+    }
+  })
+
+  it("납부 완료는 강제 재생성으로도 건드리지 않는다", () => {
+    const d = decideBillRegen({ status: "paid", is_manual: false }, true)
+    expect(d.action).toBe("skip")
+    if (d.action === "skip") expect(d.reissuable).toBe(false)
+  })
+
+  it("수기 청구서는 상태와 무관하게 자동 생성이 덮어쓰지 않는다", () => {
+    for (const status of ["draft", "issued", "overdue", "paid"]) {
+      const d = decideBillRegen({ status, is_manual: true }, true)
+      expect(d.action).toBe("skip")
+      if (d.action === "skip") expect(d.reissuable).toBe(false)
+    }
+  })
+
+  it("알 수 없는 상태는 스킵한다", () => {
+    const d = decideBillRegen({ status: "voided", is_manual: false }, true)
+    expect(d.action).toBe("skip")
   })
 })

@@ -188,6 +188,47 @@ export function calcElecAllocation(
   }
 }
 
+// ---------- 재생성 정책 (기존 청구서를 다시 만들어도 되는가) ----------
+
+export interface ExistingBill {
+  status: string
+  is_manual: boolean
+}
+
+export type BillRegenDecision =
+  | { action: "create" }
+  /** allowedStatuses: UPDATE의 WHERE에 그대로 쓰는, 갱신을 허용할 기존 상태 목록 */
+  | { action: "regenerate"; allowedStatuses: string[] }
+  /** reissuable: regenerate_issued=true로 다시 부르면 재생성 가능한 건인가 */
+  | { action: "skip"; reason: string; reissuable: boolean }
+
+// 청구월 재생성 시 기업별 판정.
+// 원칙 — 납부 완료(paid)와 수기 청구서(is_manual)는 어떤 경우에도 자동 생성이 덮어쓰지 않는다.
+// 발행됨(issued)·연체(overdue)는 기본 스킵이지만, 관리자가 명시적으로 요청하면(regenerateIssued)
+// 초안으로 되돌려 다시 만든다 — 전기 파라미터를 발행 뒤에 입력한 경우를 복구하기 위한 유일한 경로.
+export function decideBillRegen(prev: ExistingBill | undefined, regenerateIssued: boolean): BillRegenDecision {
+  if (!prev) return { action: "create" }
+  if (prev.is_manual) {
+    return {
+      action: "skip",
+      reason: `수기 청구서(${BILL_STATUS_LABELS[prev.status] ?? prev.status}) — 재생성 대상 아님`,
+      reissuable: false,
+    }
+  }
+  if (prev.status === "draft") return { action: "regenerate", allowedStatuses: ["draft"] }
+  if (prev.status === "paid") {
+    return { action: "skip", reason: "이미 납부 완료 — 재생성 대상 아님", reissuable: false }
+  }
+  if (prev.status === "issued" || prev.status === "overdue") {
+    if (!regenerateIssued) {
+      return { action: "skip", reason: `이미 ${BILL_STATUS_LABELS[prev.status]} 상태`, reissuable: true }
+    }
+    return { action: "regenerate", allowedStatuses: ["draft", "issued", "overdue"] }
+  }
+  // 알 수 없는 상태는 건드리지 않는다
+  return { action: "skip", reason: `알 수 없는 상태(${prev.status}) — 재생성 대상 아님`, reissuable: false }
+}
+
 // ---------- 기업 청구서 합성 (계약들 + 전기료 컨텍스트 → bills/bill_lines) ----------
 
 export interface BillContractInput extends ContractChargeInput {

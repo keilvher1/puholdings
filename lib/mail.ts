@@ -23,6 +23,8 @@ export interface SendMailOptions {
   // 템플릿 없이 제목/본문을 직접 지정 (관리자 수동 발송, 재발송용).
   // 지정 시에도 vars의 {{key}} 치환은 동일하게 적용된다.
   overrides?: { subject: string; html: string }
+  // 렌더된 제목 앞에 그대로 붙는 접두사 (예: "[정정] " — 청구서 재발행 시 수신자가 구분하도록).
+  subjectPrefix?: string
   // 여기 나열된 변수는 email_logs에 저장되는 본문에서 ********로 마스킹된다
   // (임시 비밀번호 등 민감 값이 DB 로그에 평문으로 남지 않도록).
   redactVarsInLog?: string[]
@@ -132,7 +134,7 @@ function getMailEnv(): { resend: Resend; from: string } | { error: string } {
 }
 
 export async function sendMail(options: SendMailOptions): Promise<SendMailResult> {
-  const { to, templateCode, vars = {}, tenantId = null, related, overrides, redactVarsInLog, rawHtmlVars, attachments } = options
+  const { to, templateCode, vars = {}, tenantId = null, related, overrides, subjectPrefix, redactVarsInLog, rawHtmlVars, attachments } = options
   const rawKeys = rawHtmlVars ? new Set(rawHtmlVars) : undefined
 
   try {
@@ -158,7 +160,8 @@ export async function sendMail(options: SendMailOptions): Promise<SendMailResult
 
     // 2. {{key}} 치환 (로그 저장용은 민감 변수 마스킹)
     const context = `${templateCode} → ${to}`
-    const subject = renderTemplate(rawSubject, vars, context, false)
+    const prefix = subjectPrefix ?? ""
+    const subject = prefix + renderTemplate(rawSubject, vars, context, false)
     const html = renderTemplate(rawHtml, vars, context, true, rawKeys)
     let logSubject = subject
     let logHtml = html
@@ -167,7 +170,7 @@ export async function sendMail(options: SendMailOptions): Promise<SendMailResult
       for (const key of redactVarsInLog) {
         if (key in redacted) redacted[key] = "********"
       }
-      logSubject = renderTemplate(rawSubject, redacted, context, false)
+      logSubject = prefix + renderTemplate(rawSubject, redacted, context, false)
       logHtml = renderTemplate(rawHtml, redacted, context, true, rawKeys)
     }
 
