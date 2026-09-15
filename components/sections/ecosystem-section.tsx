@@ -102,22 +102,22 @@ const ACCELERATING_PROGRAMS = [
 const VALUE_CHAIN_PARTNERS = [
   { 
     name: "㈜포항연합기술지주", 
-    src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-9Oe9fZGsMZf8zKbK5Ir5yJB6UySdZb.png",
+    src: "/logos/puholdings-mark.png",
     isPublic: true 
   },
   { 
     name: "(재)포항테크노파크", 
-    src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%91%E1%85%A9%E1%84%92%E1%85%A1%E1%86%BC%E1%84%90%E1%85%A6%E1%84%8F%E1%85%B3%E1%84%82%E1%85%A9%E1%84%91%E1%85%A1%E1%84%8F%E1%85%B3_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-KYY9EfhPyxhtWAW9eEvhxglAhkC65T.png",
+    src: "/logos/pohang-technopark.png",
     isPublic: true 
   },
   { 
     name: "POSTECH Holdings", 
-    src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image%203%20%281%29-vj8TaaRHbljXhF1leCxLPGIgV5CVNY.png",
+    src: "/logos/postech-holdings.png",
     isPublic: false 
   },
   { 
     name: "POSCO 포스코기술투자", 
-    src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-fQmiNl8hX6fRS5gtsYenUwm9kVMJMB.png",
+    src: "/logos/posco-tech-investment.png",
     isPublic: false 
   },
 ]
@@ -189,9 +189,10 @@ export function EcosystemSection() {
                         </div>
                         <div className="relative h-10 w-36">
                           <Image
-                            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-9Oe9fZGsMZf8zKbK5Ir5yJB6UySdZb.png"
+                            src="/logos/puholdings-mark.png"
                             alt="포항연합기술지주"
                             fill
+                            sizes="200px"
                             className="object-contain"
                           />
                         </div>
@@ -218,9 +219,10 @@ export function EcosystemSection() {
                         </div>
                         <div className="relative h-10 w-36">
                           <Image
-                            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image%203%20%281%29-vj8TaaRHbljXhF1leCxLPGIgV5CVNY.png"
+                            src="/logos/postech-holdings.png"
                             alt="POSTECH Holdings"
                             fill
+                            sizes="200px"
                             className="object-contain"
                           />
                         </div>
@@ -248,9 +250,10 @@ export function EcosystemSection() {
                         </div>
                         <div className="relative h-10 w-36">
                           <Image
-                            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-fQmiNl8hX6fRS5gtsYenUwm9kVMJMB.png"
+                            src="/logos/posco-tech-investment.png"
                             alt="POSCO 포스코기술투자"
                             fill
+                            sizes="200px"
                             className="object-contain"
                           />
                         </div>
@@ -310,7 +313,7 @@ export function EcosystemSection() {
                   {/* 포항연합기술지주 - 좌상단 (공공 + 예비창업) - Y축에 가깝게 */}
                   <div className="absolute top-12 left-[20%] w-36 h-36 rounded-full border-2 border-dashed border-[#c53d3d] flex items-center justify-center bg-white">
                     <Image
-                      src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-9Oe9fZGsMZf8zKbK5Ir5yJB6UySdZb.png"
+                      src="/logos/puholdings-mark.png"
                       alt="포항연합기술지주"
                       width={100}
                       height={40}
@@ -322,9 +325,10 @@ export function EcosystemSection() {
                   <div className="absolute top-1/2 left-1/2 -translate-x-1/4 translate-y-4 w-32 h-32 rounded-full bg-gradient-to-br from-warm-tan/30 to-warm-tan/10 flex items-center justify-center">
                     <div className="relative h-10 w-28">
                       <Image
-                        src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image%203%20%281%29-vj8TaaRHbljXhF1leCxLPGIgV5CVNY.png"
+                        src="/logos/postech-holdings.png"
                         alt="POSTECH Holdings"
                         fill
+                        sizes="200px"
                         className="object-contain"
                       />
                     </div>
@@ -334,9 +338,10 @@ export function EcosystemSection() {
                   <div className="absolute bottom-8 right-8 w-32 h-28 rounded-full bg-gradient-to-br from-warm-tan/30 to-warm-tan/10 flex items-center justify-center">
                     <div className="relative h-10 w-28">
                       <Image
-                        src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-fQmiNl8hX6fRS5gtsYenUwm9kVMJMB.png"
+                        src="/logos/posco-tech-investment.png"
                         alt="POSCO 포스코기술투자"
                         fill
+                        sizes="200px"
                         className="object-contain"
                       />
                     </div>
@@ -445,9 +450,10 @@ export function EcosystemSection() {
             <div className="flex items-center justify-center gap-4 mb-6">
               <div className="relative h-12 w-32 flex-shrink-0">
                 <Image
-                  src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%91%E1%85%A9%E1%84%92%E1%85%A1%E1%86%BC%E1%84%89%E1%85%B5_%E1%84%89%E1%85%B5%E1%86%B7%E1%84%87%E1%85%A5%E1%86%AF%E1%84%86%E1%85%A1%E1%84%8F%E1%85%B3-RtbRvsaGUZ6vMr2I3UNyB4gS6ZdM2v.png"
+                  src="/logos/pohang-si.png"
                   alt="포항시"
                   fill
+                  sizes="200px"
                   className="object-contain"
                 />
               </div>
@@ -462,6 +468,7 @@ export function EcosystemSection() {
                     src={partner.src}
                     alt={partner.name}
                     fill
+                    sizes="200px"
                     className="object-contain"
                   />
                 </div>

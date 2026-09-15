@@ -25,25 +25,25 @@ const EXTERNAL_NETWORK = [
 ]
 
 const PORTFOLIO_COMPANIES: { name: string; src: string; cropTop?: boolean }[] = [
-  { name: "HEM파마",      src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image%201-l90atQ3Mq3n9e9Pzo7e898Ma37xKJH.png" },
-  { name: "Impactive AI", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Impactive_AI_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-63XPQG0DuzorwF4HiMH9d2sHX7laM4.svg" },
-  { name: "MIDBAR",       src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/MIDBAR_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-VTtxhnWkT0lkNPatvqcC6xX3ga4sla.png" },
-  { name: "deep visions", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image%202%20%281%29-jqJoGl5iItFBAgkKWCQiYh23UdFHVG.png" },
+  { name: "HEM파마",      src: "/logos/hem-pharma.png" },
+  { name: "Impactive AI", src: "/logos/impactive-ai.svg" },
+  { name: "MIDBAR",       src: "/logos/midbar.png" },
+  { name: "deep visions", src: "/logos/deep-visions.png" },
 ]
 
 const LOCAL_GOVERNMENTS = [
-  { name: "경상북도", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-vU26IRzJJ4kKcaskgj7rSaM3kdCcvW.png", height: "h-12", width: "w-48" },
-  { name: "포항시",   src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%91%E1%85%A9%E1%84%92%E1%85%A1%E1%86%BC%E1%84%89%E1%85%B5_%E1%84%89%E1%85%B5%E1%86%B7%E1%84%87%E1%85%A5%E1%86%AF%E1%84%86%E1%85%A1%E1%84%8F%E1%85%B3-RtbRvsaGUZ6vMr2I3UNyB4gS6ZdM2v.png", height: "h-12", width: "w-32" },
-  { name: "영덕군",   src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-AJ08NsEDJN4DhAMh1aDXCKhiXlvhTH.png", height: "h-12", width: "w-32" },
-  { name: "안동시",   src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%8B%E1%85%A1%E1%86%AB%E1%84%83%E1%85%A9%E1%86%BC%E1%84%89%E1%85%B5_%E1%84%89%E1%85%B5%E1%86%B7%E1%84%87%E1%85%A5%E1%86%AF%E1%84%86%E1%85%A1%E1%84%8F%E1%85%B3-g9cwmiJZ7cngWjO49gYBwS9cPk2qos.png", height: "h-12", width: "w-20" },
+  { name: "경상북도", src: "/logos/gyeongsangbuk-do.png", height: "h-12", width: "w-48" },
+  { name: "포항시",   src: "/logos/pohang-si.png", height: "h-12", width: "w-32" },
+  { name: "영덕군",   src: "/logos/yeongdeok-gun.png", height: "h-12", width: "w-32" },
+  { name: "안동시",   src: "/logos/andong-si.png", height: "h-12", width: "w-20" },
 ]
 
 const RELATED_ORGANIZATIONS = [
-  { name: "포항테크노파크",         src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%91%E1%85%A9%E1%84%92%E1%85%A1%E1%86%BC%E1%84%90%E1%85%A6%E1%84%8F%E1%85%B3%E1%84%82%E1%85%A9%E1%84%91%E1%85%A1%E1%84%8F%E1%85%B3_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-KYY9EfhPyxhtWAW9eEvhxglAhkC65T.png",  width: "w-36" },
-  { name: "경북창조경제혁신센터",   src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%80%E1%85%A7%E1%86%BC%E1%84%87%E1%85%AE%E1%86%A8%E1%84%8E%E1%85%A1%E1%86%BC%E1%84%8C%E1%85%A9%E1%84%80%E1%85%A7%E1%86%BC%E1%84%8C%E1%85%A6%E1%84%92%E1%85%A7%E1%86%A8%E1%84%89%E1%85%B5%E1%86%AB%E1%84%89%E1%85%A6%E1%86%AB%E1%84%90%E1%85%A5-%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-removebg-preview-c5UlGcMZeVUCalaI4H7FdA9gyONTdB.png", width: "w-44" },
-  { name: "Y&ARCHER",              src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-removebg-preview%202-5BczWRddAklErGk7RVOC3Uj55TjE0n.png",                                                                                                                                                                                                                                                          width: "w-36" },
-  { name: "경북콘텐츠기업지원센터", src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%80%E1%85%A7%E1%86%BC%E1%84%87%E1%85%AE%E1%86%A8%E1%84%8F%E1%85%A9%E1%86%AB%E1%84%90%E1%85%A6%E1%86%AB%E1%84%8E%E1%85%B3%E1%84%80%E1%85%B5%E1%84%8B%E1%85%A5%E1%86%B8%E1%84%8C%E1%85%B5%E1%84%8B%E1%85%AF%E1%86%AB%E1%84%89%E1%85%A6%E1%86%AB%E1%84%90%E1%85%A5_%E1%84%85%E1%85%A9%E1%84%80%E1%85%A9-Vrn2WSg3scOaJu02kaEDCkVzLX3BAE.png", width: "w-36" },
-  { name: "대경기술지주",           src: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/%E1%84%83%E1%85%A2%E1%84%80%E1%85%A7%E1%86%BC%E1%84%80%E1%85%B5%E1%84%89%E1%85%AE%E1%86%AF%E1%84%8C%E1%85%B5%E1%84%8C%E1%85%AE%20%281%29%201-vcayQBUc9dta5qDF26xwlrTkwOYdgF.png",                                                                                                                                                 width: "w-44" },
+  { name: "포항테크노파크",         src: "/logos/pohang-technopark.png",  width: "w-36" },
+  { name: "경북창조경제혁신센터",   src: "/logos/gyeongbuk-ccei.png", width: "w-44" },
+  { name: "Y&ARCHER",              src: "/logos/y-and-archer.png", width: "w-36" },
+  { name: "경북콘텐츠기업지원센터", src: "/logos/gyeongbuk-content-center.png", width: "w-36" },
+  { name: "대경기술지주",           src: "/logos/daegyeong-holdings.png", width: "w-44" },
 ]
 
 export type CoreActivities = { handong: string[]; puholdings: string[]; external: string[] }
@@ -121,9 +121,10 @@ export function CoreFunctionsSection({
                       <div className="flex justify-center items-center h-12 mb-2">
                         <div className="relative h-10 w-full">
                           <Image
-                            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-Gr0HGRS2EgHMVp6hUlFloPH4NbnZqE.png"
+                            src="/logos/handong-univ.png"
                             alt="한동대학교"
                             fill
+                            sizes="200px"
                             className="object-contain"
                           />
                         </div>
@@ -139,9 +140,10 @@ export function CoreFunctionsSection({
                       <div className="flex justify-center items-center h-12 mb-2">
                         <div className="relative h-10 w-full">
                           <Image
-                            src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-5SMkRAzZQ5MANmKw9kknm38UuBSgc1.png"
+                            src="/logos/puholdings-wordmark.png"
                             alt="(주)포항연합기술지주"
                             fill
+                            sizes="200px"
                             className="object-contain"
                           />
                         </div>
@@ -193,6 +195,7 @@ export function CoreFunctionsSection({
                         src={gov.src}
                         alt={gov.name}
                         fill
+                        sizes="200px"
                         className="object-contain"
                       />
                     </div>
@@ -212,6 +215,7 @@ export function CoreFunctionsSection({
                         src={org.src}
                         alt={org.name}
                         fill
+                        sizes="200px"
                         className="object-contain"
                       />
                     </div>
@@ -231,6 +235,7 @@ export function CoreFunctionsSection({
                         src={company.src}
                         alt={company.name}
                         fill
+                        sizes="200px"
                         className="object-contain object-top"
                       />
                     </div>
@@ -241,6 +246,7 @@ export function CoreFunctionsSection({
                       src={company.src}
                       alt={company.name}
                       fill
+                      sizes="200px"
                       className="object-contain"
                     />
                   </div>

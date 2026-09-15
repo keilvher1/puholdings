@@ -10,6 +10,13 @@ const nextConfig = {
   },
   // @react-pdf/renderer는 서버 외부 패키지로 처리
   serverExternalPackages: ["@react-pdf/renderer"],
+  // next/image는 여기 등록된 호스트만 최적화한다. 비어 있으면 외부 이미지가
+  // 400(INVALID_IMAGE_OPTIMIZE_REQUEST)으로 깨진다 — Blob에 올린 로고·사진용.
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "*.public.blob.vercel-storage.com" },
+    ],
+  },
 }
 
 export default nextConfig
