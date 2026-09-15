@@ -2,96 +2,56 @@
 
 import { BlurFade } from "@/components/magicui/blur-fade"
 
-const MANAGEMENT = [
+// DB(content_items.org_member)가 비었거나 조회에 실패했을 때만 쓰는 기본값 — 관리자 화면의 현재 구성원과 맞춰 둔다.
+const MANAGEMENT: Member[] = [
+  {
+    name: "이권영",
+    position: "대표이사",
+    role: "사업총괄",
+    details: [
+      "현) 한동대학교 기계공학 교수",
+      "현) 한동대학교 산학협력단장",
+      "前) 삼성엔지니어링, 한국원자력연구원 등",
+    ],
+  },
   {
     name: "심규진",
     position: "부대표",
     role: "투자, 펀드 조성, 경영 관리",
     details: [
-      "한동대학교 대학원 AI융합학과 교수 (창업 전공 담당)",
-      "공공 펀드 650억 규모 조성 참여, Startup exits 2회",
-      "전국 최대 규모 문화기획사 창업, 와디즈 인사 총괄",
-    ],
-  },
-  {
-    name: "안석현",
-    position: "이사",
-    role: "운영 총괄",
-    details: [
-      "VC 전문인력, 창업보육전문매니저",
-      "포항공과대학교 기술지주(주) 액셀러레이팅팀 팀장",
-      "2023년 중소벤처기업부 창업보육 장관상 수상",
+      "현) 한동대학교 창의융합교육원 조교수 및 글로컬사업단 지역혁신추진실장",
+      "전) 포스코인재창조원 책임컨설턴트, 와디즈 인사팀장 역임",
     ],
   },
 ]
 
-const STRATEGY = [
+const STRATEGY: Member[] = []
+
+const INVESTMENT_TEAM: Member[] = [
   {
-    name: "이강원",
+    name: "배중구",
     position: "실장",
-    role: "사업 기획 총괄",
+    role: "투자 실무 총괄",
     details: [
-      "VC 전문인력, 창업보육전문매니저",
-      "동국대학교 창업보육센터 매니저",
+      "현) 포항연합기술지주 실장·심사역",
+      "- 스타트업 투자·육성 경력 10년, 6개사 투자 집행 참여",
     ],
   },
 ]
 
-const INVESTMENT_TEAM = [
+const INCUBATION_TEAM: Member[] = [
   {
-    name: "김병규",
-    position: "팀장",
-    role: "투자 / 외부사업",
+    name: "오재준",
+    position: "파트장",
+    role: "실무 지원",
     details: [
-      "창업보육전문매니저",
-      "웰컴저축은행, 푸드팡(스타트업) 팀장 등",
-    ],
-  },
-  {
-    name: "박진기",
-    position: "주임",
-    role: "투자 / 외부사업",
-    details: [
-      "창업보육전문매니저, 벤처투자분석사",
-      "조슈아파트너스(AC), 아트와(스타트업) 이사 등",
+      "현) 포항연합기술지주 파트장",
+      "- 주요 역량: 대학·재정지원사업 행정, 프로그램 운영 지원, 국제행사 등",
     ],
   },
 ]
 
-const INCUBATION_TEAM = [
-  {
-    name: "김예준",
-    position: "팀장",
-    role: "창업 보육 / 교내 사업",
-    details: [
-      "창업보육전문매니저",
-      "한동대학교 직원, 블라썸(스타트업) 대표",
-    ],
-  },
-  {
-    name: "허홍석",
-    position: "주임",
-    role: "창업 보육 / 교내 사업",
-    details: [
-      "창업보육전문매니저",
-    ],
-  },
-]
-
-const VENTURE_PARTNERS = [
-  {
-    name: "이원중 (David)",
-    position: "벤처파트너",
-    role: "F&B 인큐베이팅 / 투자",
-    details: [
-      "UC San Diego 경제학과 졸업",
-      "두더지프로젝트 대표 CEO (F&B 인큐베이팅 전문기업)",
-      "창리단길 로컬스페이스 10개소 설립 운영",
-      "AI 언어학습 '원아원', 웰니스 '달램' VC 투자",
-      "LINC 3.0 산학연계 교육협력기관 (한동대 외 4개교)",
-    ],
-  },
-]
+const VENTURE_PARTNERS: Member[] = []
 
 const PARTNER_ORGANIZATIONS = [
   {
@@ -126,7 +86,7 @@ const PARTNER_ORGANIZATIONS = [
   },
 ]
 
-function PersonCard({ person, index }: { person: typeof MANAGEMENT[0]; index: number }) {
+function PersonCard({ person, index }: { person: Member; index: number }) {
   return (
     <BlurFade delay={0.05 * index}>
       <div className="flex gap-5 py-5 border-b border-warm-tan/20 last:border-b-0">
@@ -157,7 +117,9 @@ function PersonCard({ person, index }: { person: typeof MANAGEMENT[0]; index: nu
   )
 }
 
-function TeamSection({ title, members, startIndex }: { title: string; members: typeof MANAGEMENT; startIndex: number }) {
+function TeamSection({ title, members, startIndex }: { title: string; members: Member[]; startIndex: number }) {
+  // 구성원이 없는 팀은 제목만 덩그러니 남지 않도록 통째로 숨긴다.
+  if (members.length === 0) return null
   return (
     <div>
       <div className="mb-3">
@@ -232,18 +194,18 @@ export function OrganizationSection({
                 {/* Connector line */}
                 <div className="w-10 h-px bg-warm-tan/30 shrink-0" />
 
-                {/* Middle boxes - 부대표, 이사, 전략기획실 */}
+                {/* Middle boxes - 부대표, 실장, 파트장 */}
                 <div className="flex items-center gap-0 shrink-0">
                   <div className="bg-dark-muted border border-warm-tan/20 w-28 h-28 flex items-center justify-center">
                     <p className="text-base text-primary-foreground text-center">부대표</p>
                   </div>
                   <div className="w-5 h-px bg-warm-tan/30" />
                   <div className="bg-dark-muted border border-warm-tan/20 w-28 h-28 flex items-center justify-center">
-                    <p className="text-base text-primary-foreground text-center">이사</p>
+                    <p className="text-base text-primary-foreground text-center">실장</p>
                   </div>
                   <div className="w-5 h-px bg-warm-tan/30" />
                   <div className="bg-dark-muted border border-warm-tan/20 w-28 h-28 flex items-center justify-center">
-                    <p className="text-base text-primary-foreground text-center">전략기획실</p>
+                    <p className="text-base text-primary-foreground text-center">파트장</p>
                   </div>
                 </div>
 
@@ -335,9 +297,11 @@ export function OrganizationSection({
             </div>
 
             {/* Venture Partners */}
-            <div className="mt-10">
-              <TeamSection title="벤처파트너" members={t.venture} startIndex={7} />
-            </div>
+            {t.venture.length > 0 && (
+              <div className="mt-10">
+                <TeamSection title="벤처파트너" members={t.venture} startIndex={7} />
+              </div>
+            )}
           </div>
         </BlurFade>
       </div>
