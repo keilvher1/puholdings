@@ -1,9 +1,14 @@
 import Image from "next/image"
+import Link from "next/link"
 
 export interface ContactInfo {
   address?: string
   phone?: string
   email?: string
+  // 오시는 길 지도 좌표·주차 안내 (관리자 화면: 설정·텍스트 > 연락처)
+  map_lat?: unknown
+  map_lng?: unknown
+  parking?: string
 }
 
 export const DEFAULT_CONTACT = {
@@ -30,9 +35,13 @@ export function Footer({ contact }: { contact?: ContactInfo }) {
           </div>
 
           <div className="lg:col-span-4">
-            <p className="text-xs leading-[2.2] text-text-tertiary [word-break:keep-all]">
+            {/* 전 페이지에서 오시는 길로 한 번에 이동 */}
+            <Link
+              href="/contact#directions"
+              className="text-xs leading-[2.2] text-text-tertiary transition-colors hover:text-gold [word-break:keep-all]"
+            >
               {address}
-            </p>
+            </Link>
           </div>
 
           <div className="lg:col-span-4 lg:text-right">

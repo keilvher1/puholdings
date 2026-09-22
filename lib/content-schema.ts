@@ -103,10 +103,36 @@ export const SETTINGS: {
   },
   {
     key: "contact",
-    label: "연락처 (하단·문의 공용)",
+    label: "연락처 · 오시는 길 (하단·문의 공용)",
     fields: [
-      { key: "address", label: "주소", type: "text" },
+      {
+        key: "address",
+        label: "주소",
+        type: "text",
+        help: "주소를 바꾸면 아래 지도 좌표도 반드시 함께 수정하세요. 주소만 바꾸면 지도 핀은 옛 위치에 남습니다.",
+      },
       { key: "phone", label: "전화", type: "text" },
+      {
+        key: "map_lat",
+        label: "지도 위도",
+        type: "text",
+        placeholder: "36.1035067",
+        help: "구글 지도에서 건물을 우클릭하면 나오는 좌표의 앞 숫자. 비워두면 기본값(한동대 창업보육센터)을 씁니다.",
+      },
+      {
+        key: "map_lng",
+        label: "지도 경도",
+        type: "text",
+        placeholder: "129.3857248",
+        help: "좌표의 뒤 숫자. 위도·경도 중 하나라도 잘못되면 기본 좌표로 되돌아갑니다.",
+      },
+      {
+        key: "parking",
+        label: "주차 안내",
+        type: "text",
+        placeholder: "건물 앞 지상 주차장 이용",
+        help: "비워두면 오시는 길 섹션에서 주차 항목이 숨겨집니다.",
+      },
     ],
   },
   {

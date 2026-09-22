@@ -127,6 +127,9 @@ export function ContactSection({ contact }: { contact?: ContactInfo } = {}) {
                     <input
                       type="text"
                       placeholder="이름 *"
+                      id="contact-name"
+                      aria-label="이름"
+                      autoComplete="name"
                       required
                       value={form.name}
                       onChange={(e) => setForm({ ...form, name: e.target.value })}
@@ -135,6 +138,9 @@ export function ContactSection({ contact }: { contact?: ContactInfo } = {}) {
                     <input
                       type="email"
                       placeholder="이메일 *"
+                      id="contact-email"
+                      aria-label="이메일"
+                      autoComplete="email"
                       required
                       value={form.email}
                       onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -143,6 +149,9 @@ export function ContactSection({ contact }: { contact?: ContactInfo } = {}) {
                     <input
                       type="tel"
                       placeholder="연락처"
+                      id="contact-phone"
+                      aria-label="연락처"
+                      autoComplete="tel"
                       value={form.phone}
                       onChange={(e) => setForm({ ...form, phone: e.target.value })}
                       className={inputClass}
@@ -150,6 +159,9 @@ export function ContactSection({ contact }: { contact?: ContactInfo } = {}) {
                     <input
                       type="text"
                       placeholder="회사명"
+                      id="contact-company"
+                      aria-label="회사명"
+                      autoComplete="organization"
                       value={form.company}
                       onChange={(e) => setForm({ ...form, company: e.target.value })}
                       className={inputClass}
@@ -157,6 +169,8 @@ export function ContactSection({ contact }: { contact?: ContactInfo } = {}) {
                   </div>
                   <textarea
                     placeholder="문의 내용 *"
+                    id="contact-message"
+                    aria-label="문의 내용"
                     required
                     rows={4}
                     value={form.message}
