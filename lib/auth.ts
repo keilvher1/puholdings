@@ -1,3 +1,4 @@
+import { cache } from "react"
 import { cookies } from "next/headers"
 import { getDb } from "./db"
 import bcrypt from "bcryptjs"
@@ -55,12 +56,12 @@ export async function verifyToken(token: string): Promise<AdminUser | null> {
   }
 }
 
-export async function getSession(): Promise<AdminUser | null> {
+export const getSession = cache(async function getSession(): Promise<AdminUser | null> {
   const cookieStore = await cookies()
   const token = cookieStore.get("admin_token")?.value
   if (!token) return null
   return verifyToken(token)
-}
+})
 
 export async function login(email: string, password: string): Promise<{ success: boolean; error?: string; user?: AdminUser }> {
   // Demo mode - use hardcoded credentials
@@ -153,7 +154,10 @@ export async function verifyPortalToken(token: string): Promise<TenantSession | 
 
 // 토큰 검증 + DB 재검증: 퇴거/삭제/비밀번호 초기화가 기존 토큰에 즉시 반영되도록
 // 계정 존재 여부와 기업 status를 매 요청 확인하고, must_change_password는 DB 값으로 갱신한다.
-export async function getPortalSession(): Promise<TenantSession | null> {
+//
+// React cache()로 감싸 요청 스코프 메모이제이션을 건다 — 레이아웃과 페이지가 각각 호출해도
+// 한 요청 안에서는 DB를 한 번만 친다(요청이 끝나면 캐시도 사라지므로 세션 재검증 성격은 그대로다).
+export const getPortalSession = cache(async function getPortalSession(): Promise<TenantSession | null> {
   const cookieStore = await cookies()
   const token = cookieStore.get("portal_token")?.value
   if (!token) return null
@@ -177,7 +181,7 @@ export async function getPortalSession(): Promise<TenantSession | null> {
     console.error("Portal session validation error:", error)
     return null
   }
-}
+})
 
 // 계정 미존재 시 타이밍 오라클 방지용 더미 해시 ("dummy-password-for-timing"의 bcrypt)
 const DUMMY_PASSWORD_HASH = "$2b$12$umPF0oRJiqmj9YV5duIkQO3bX34Fqe5xpKzF3r6wqketr3lr0q/iW"

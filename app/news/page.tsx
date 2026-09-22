@@ -3,6 +3,9 @@ import { NewsSection } from "@/components/sections/news-section"
 import { SiteFooter } from "@/components/site-footer"
 import { getDb, FALLBACK_NEWS } from "@/lib/db"
 
+// 관리자 화면에서 고친 내용이 재배포 없이 반영되도록 동적 렌더(홈·문의·포트폴리오와 동일).
+export const dynamic = "force-dynamic"
+
 export const metadata = {
   title: "뉴스 | 포항연합기술지주",
   description: "포항연합기술지주의 최신 소식과 공지사항을 확인하세요.",

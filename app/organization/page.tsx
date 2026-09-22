@@ -3,6 +3,9 @@ import { OrganizationSection, type OrgTeams } from "@/components/sections/organi
 import { SiteFooter } from "@/components/site-footer"
 import { getContentItems } from "@/lib/site-content"
 
+// 관리자 화면에서 고친 내용이 재배포 없이 반영되도록 동적 렌더(홈·문의·포트폴리오와 동일).
+export const dynamic = "force-dynamic"
+
 export const metadata = {
   title: "조직 | 포항연합기술지주",
   description: "포항연합기술지주의 조직도, 구성원, 우수기술, 협력기관을 소개합니다.",

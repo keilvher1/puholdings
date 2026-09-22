@@ -22,9 +22,21 @@ async function canAccessSubmission(pathname: string): Promise<boolean> {
   return !!portalSession && pathname.startsWith(`submissions/${portalSession.tenant_id}/`)
 }
 
+// 공개 페이지에서 그대로 노출되는 프리픽스 — CDN에 캐시해도 되는 것들.
+// 이 목록에 없는 경로는 절대 public 캐시 헤더를 붙이지 않는다.
+const PUBLIC_PREFIXES = ['news/', 'popups/', 'portfolio/', 'content/']
+
+function isPublicAsset(pathname: string): boolean {
+  return PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))
+}
+
 async function canAccess(pathname: string): Promise<boolean> {
   if (pathname.startsWith('submissions/')) {
     return canAccessSubmission(pathname)
+  }
+  // billing/ — 계량기 판독 원본 사진 등 내부 정산 자료. 관리자만.
+  if (pathname.startsWith('billing/')) {
+    return !!(await getSession())
   }
   // invoices/{period}/{tenant_id}.pdf — 관리자이거나 본인 기업만.
   if (pathname.startsWith('invoices/')) {
@@ -85,13 +97,20 @@ export async function GET(request: NextRequest) {
       return new NextResponse('Not found', { status: 404 })
     }
 
+    // 업로드 경로는 `{folder}/{timestamp}-{name}` 이라 같은 URL의 내용이 바뀌지 않는다.
+    // 따라서 공개 자산은 immutable로 길게 캐시해도 안전하다(s-maxage가 있어야 CDN이 캐시한다).
+    // 비공개 자산은 절대 CDN에 올리면 안 되므로 기존 private, no-cache를 유지한다.
+    const cacheControl = isPublicAsset(pathname)
+      ? 'public, max-age=31536000, s-maxage=31536000, immutable'
+      : 'private, no-cache'
+
     // Blob hasn't changed — tell the browser to use its cached copy
     if (result.statusCode === 304) {
       return new NextResponse(null, {
         status: 304,
         headers: {
           ETag: result.blob.etag,
-          'Cache-Control': 'private, no-cache',
+          'Cache-Control': cacheControl,
         },
       })
     }
@@ -99,7 +118,9 @@ export async function GET(request: NextRequest) {
     const headers: Record<string, string> = {
       'Content-Type': result.blob.contentType,
       ETag: result.blob.etag,
-      'Cache-Control': 'private, no-cache',
+      'Cache-Control': cacheControl,
+      // 업로드된 파일이 다른 타입으로 해석돼 실행되지 않도록
+      'X-Content-Type-Options': 'nosniff',
     }
 
     if (wantsDownload) {
