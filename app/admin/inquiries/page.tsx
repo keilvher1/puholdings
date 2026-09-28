@@ -9,7 +9,16 @@ async function getInquiries() {
   const sql = getDb()
   if (!sql) return []
   try {
-    const rows = await sql`SELECT * FROM inquiries ORDER BY created_at DESC`
+    // 운영 스키마(contact_person·company_name·status)를 화면이 쓰는 이름으로 맞춘다.
+    const rows = await sql`
+      SELECT id,
+             contact_person AS name,
+             NULLIF(company_name, '') AS company,
+             email, phone, message, created_at,
+             COALESCE(status, 'new') <> 'new' AS is_read
+      FROM inquiries
+      ORDER BY created_at DESC
+    `
     return rows
   } catch {
     return []

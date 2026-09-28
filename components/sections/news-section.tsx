@@ -58,10 +58,14 @@ export function NewsSection({ news }: { news: NewsItem[] }) {
                 {/* Image */}
                 <div className="shine-sweep relative aspect-[16/10] overflow-hidden bg-warm-tan/20">
                   {item.image_url ? (
+                    // /api/file 프록시(쿼리스트링 로컬 경로)는 Next 16 기본 images.localPatterns에
+                    // 걸려 SSR에서 예외(E871)가 나고 홈·/news 전체가 500이 된다. 비공개 Blob 프록시라
+                    // 최적화 대상도 아니므로 원본을 그대로 쓴다.
                     <Image
                       src={`/api/file?pathname=${encodeURIComponent(item.image_url)}`}
                       alt={item.title}
                       fill
+                      unoptimized
                       sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                       className="object-cover transition-transform duration-300 group-hover:scale-105"
                     />

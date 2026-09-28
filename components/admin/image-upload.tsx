@@ -82,10 +82,12 @@ export function ImageUpload({ value, onChange, folder = "uploads", label = "이�
       {value ? (
         <div className="relative inline-block">
           <div className="relative h-32 w-32 overflow-hidden rounded-lg border border-warm-tan">
+            {/* /api/file 프록시 이미지는 최적화하지 않는다(뉴스 섹션과 같은 이유 — 쿼리스트링 로컬 경로) */}
             <Image
               src={`/api/file?pathname=${encodeURIComponent(value)}`}
               alt="Uploaded image"
               fill
+              unoptimized
               className="object-cover"
             />
           </div>

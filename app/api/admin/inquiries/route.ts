@@ -15,7 +15,9 @@ export async function PATCH(request: Request) {
 
   try {
     const { id, is_read } = await request.json()
-    await sql`UPDATE inquiries SET is_read = ${is_read} WHERE id = ${id}`
+    // 운영 스키마에는 is_read가 없고 status('new' | 'read')로 읽음 여부를 관리한다.
+    const status = is_read ? "read" : "new"
+    await sql`UPDATE inquiries SET status = ${status} WHERE id = ${id}`
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("Update inquiry error:", error)

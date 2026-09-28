@@ -32,7 +32,7 @@ async function getDashboardData() {
       sql`SELECT COUNT(*)::int c FROM news`,
       sql`SELECT COUNT(*)::int c FROM portfolio_companies`,
       sql`SELECT COUNT(*)::int c FROM inquiries`,
-      sql`SELECT COUNT(*)::int c FROM inquiries WHERE is_read = false`,
+      sql`SELECT COUNT(*)::int c FROM inquiries WHERE COALESCE(status, 'new') = 'new'`,
       sql`
         SELECT COUNT(*)::int AS total,
                COUNT(*) FILTER (WHERE c.id IS NOT NULL)::int AS occupied,
@@ -43,7 +43,11 @@ async function getDashboardData() {
       `,
       sql`SELECT COUNT(*)::int c FROM bills WHERE status = 'draft'`,
       sql`SELECT COUNT(*)::int c FROM programs WHERE status = 'open'`,
-      sql`SELECT id, name, company, message, created_at, is_read FROM inquiries ORDER BY created_at DESC LIMIT 3`,
+      sql`
+        SELECT id, contact_person AS name, NULLIF(company_name, '') AS company, message, created_at,
+               COALESCE(status, 'new') <> 'new' AS is_read
+        FROM inquiries ORDER BY created_at DESC LIMIT 3
+      `,
     ])
     const total = Number(rooms[0]?.total) || 0
     const occupied = Number(rooms[0]?.occupied) || 0

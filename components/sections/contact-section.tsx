@@ -128,6 +128,7 @@ export function ContactSection({ contact }: { contact?: ContactInfo } = {}) {
                       type="text"
                       placeholder="이름 *"
                       id="contact-name"
+                      maxLength={255}
                       aria-label="이름"
                       autoComplete="name"
                       required
@@ -139,6 +140,7 @@ export function ContactSection({ contact }: { contact?: ContactInfo } = {}) {
                       type="email"
                       placeholder="이메일 *"
                       id="contact-email"
+                      maxLength={255}
                       aria-label="이메일"
                       autoComplete="email"
                       required
@@ -150,6 +152,7 @@ export function ContactSection({ contact }: { contact?: ContactInfo } = {}) {
                       type="tel"
                       placeholder="연락처"
                       id="contact-phone"
+                      maxLength={50}
                       aria-label="연락처"
                       autoComplete="tel"
                       value={form.phone}
@@ -160,6 +163,7 @@ export function ContactSection({ contact }: { contact?: ContactInfo } = {}) {
                       type="text"
                       placeholder="회사명"
                       id="contact-company"
+                      maxLength={255}
                       aria-label="회사명"
                       autoComplete="organization"
                       value={form.company}
@@ -170,6 +174,7 @@ export function ContactSection({ contact }: { contact?: ContactInfo } = {}) {
                   <textarea
                     placeholder="문의 내용 *"
                     id="contact-message"
+                    maxLength={5000}
                     aria-label="문의 내용"
                     required
                     rows={4}
