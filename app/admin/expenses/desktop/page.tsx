@@ -102,7 +102,7 @@ export default async function AdminExpensesDesktopPage() {
             <div className="px-4 py-4">
               <Steps
                 items={[
-                  "exe 파일 실행(설치는 자동 · 관리자 권한 불필요)",
+                  "exe 파일 실행 › 설치 마법사에서 다음 › 설치(관리자 권한 불필요)",
                   <>
                     ‘Windows의 PC 보호’가 뜨면 <b className="font-semibold">추가 정보 › 실행</b>
                   </>,
