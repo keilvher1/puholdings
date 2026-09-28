@@ -34,6 +34,10 @@ async function canAccess(pathname: string): Promise<boolean> {
   if (pathname.startsWith('submissions/')) {
     return canAccessSubmission(pathname)
   }
+  // desktop/ — 데스크톱 앱 설치 파일. 전용 다운로드 라우트가 있지만 이 프록시로도 관리자만.
+  if (pathname.startsWith('desktop/')) {
+    return !!(await getSession())
+  }
   // billing/ — 계량기 판독 원본 사진 등 내부 정산 자료. 관리자만.
   if (pathname.startsWith('billing/')) {
     return !!(await getSession())

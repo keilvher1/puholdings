@@ -5,27 +5,33 @@ import { Button } from "@/components/ui/button"
 import { AdminPageHeader } from "@/components/admin/admin-ui"
 import { ExpensesNav } from "@/components/admin/expenses/expenses-nav"
 import { InlineNotice, Panel, PanelHeader } from "@/components/admin/expenses/ui"
+import { DESKTOP_PLATFORMS, DESKTOP_PLATFORM_INFO, formatFileSize, listDesktopReleases } from "@/lib/desktop-release"
 
 // 데스크톱 앱(포연기 증빙함) 설치 안내.
-// 설치 파일 주소는 env(NEXT_PUBLIC_DESKTOP_*_URL)로 받는다. 없으면 담당자에게 요청하라고 안내한다.
+// 설치 파일은 비공개 Blob desktop/{버전}/…에 있고, 플랫폼별 최신 버전을 찾아
+// 관리자 전용 다운로드 라우트(/api/admin/expenses/desktop/download)로 연결한다.
 
 export const dynamic = "force-dynamic"
 
 type DownloadLink = { label: string; note: string; url: string }
 
-function downloads(): DownloadLink[] {
-  const list: (DownloadLink | null)[] = [
-    process.env.NEXT_PUBLIC_DESKTOP_MAC_ARM64_URL
-      ? { label: "맥 (Apple 칩)", note: "M1 이후 · dmg", url: process.env.NEXT_PUBLIC_DESKTOP_MAC_ARM64_URL }
-      : null,
-    process.env.NEXT_PUBLIC_DESKTOP_MAC_X64_URL
-      ? { label: "맥 (Intel)", note: "2020년 이전 맥 · dmg", url: process.env.NEXT_PUBLIC_DESKTOP_MAC_X64_URL }
-      : null,
-    process.env.NEXT_PUBLIC_DESKTOP_WIN_URL
-      ? { label: "윈도우", note: "Windows 10·11 64비트 · exe", url: process.env.NEXT_PUBLIC_DESKTOP_WIN_URL }
-      : null,
-  ]
-  return list.filter((d): d is DownloadLink => d !== null)
+async function downloads(): Promise<DownloadLink[]> {
+  try {
+    const releases = await listDesktopReleases()
+    return DESKTOP_PLATFORMS.flatMap((platform) => {
+      const r = releases[platform]
+      if (!r) return []
+      const info = DESKTOP_PLATFORM_INFO[platform]
+      return [{
+        label: info.label,
+        note: `${info.note} · ${formatFileSize(r.size)} · v${r.version}`,
+        url: `/api/admin/expenses/desktop/download?platform=${platform}`,
+      }]
+    })
+  } catch (error) {
+    console.error("[desktop-page] 설치 파일 목록 조회 실패:", error)
+    return []
+  }
 }
 
 function Steps({ items }: { items: React.ReactNode[] }) {
@@ -41,7 +47,7 @@ function Steps({ items }: { items: React.ReactNode[] }) {
 export default async function AdminExpensesDesktopPage() {
   const session = await getSession()
   if (!session) redirect("/admin/login")
-  const files = downloads()
+  const files = await downloads()
 
   return (
     <div className="p-5 md:p-8">
@@ -59,7 +65,7 @@ export default async function AdminExpensesDesktopPage() {
               <div className="flex flex-wrap gap-2">
                 {files.map((f) => (
                   <Button key={f.label} asChild variant="outline" className="h-auto py-2">
-                    <a href={f.url} rel="noopener">
+                    <a href={f.url} download>
                       <Download className="h-4 w-4" aria-hidden />
                       <span className="text-left">
                         <span className="block text-sm font-semibold text-dark">{f.label}</span>
@@ -70,7 +76,7 @@ export default async function AdminExpensesDesktopPage() {
                 ))}
               </div>
             ) : (
-              <InlineNotice tone="info">설치 파일은 담당자에게 요청하세요.</InlineNotice>
+              <InlineNotice tone="info">설치 파일을 불러오지 못했습니다. 잠시 후 새로고침하거나 담당자에게 요청하세요.</InlineNotice>
             )}
             <p className="mt-3 text-xs text-text-secondary">
               맥 칩 확인: 왼쪽 위 Apple 메뉴 › 이 Mac에 관하여 › 칩(Apple M…)이면 Apple 칩, 프로세서(Intel…)면 Intel
