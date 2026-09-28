@@ -332,9 +332,10 @@ export async function DELETE(request: Request) {
     const pathname = String(rows[0].file_pathname)
 
     // 한 파일에 증빙이 여러 장이면 다른 행이 같은 원본을 쓴다 — 마지막 행일 때만 원본을 지운다.
+    // 확인 대기함에 아직 저장 전인 초안이 남아 있어도(같은 원본) 지우지 않는다.
     try {
       const others = await sql`SELECT 1 FROM expense_receipts WHERE file_pathname = ${pathname} LIMIT 1`
-      if (others.length === 0) await del(pathname)
+      if (others.length === 0 && !(await inboxStillUses(sql, pathname))) await del(pathname)
     } catch (error) {
       console.error("Expense receipt blob cleanup failed:", pathname, error)
     }
@@ -342,5 +343,18 @@ export async function DELETE(request: Request) {
   } catch (error) {
     console.error("Expense receipt delete error:", error)
     return fail(dbErrorMessage(error, "증빙을 삭제하지 못했습니다. 잠시 후 다시 시도하세요."), 500)
+  }
+}
+
+// 확인 대기함(pending)이 이 원본을 아직 쓰는지. 테이블이 없으면(마이그레이션 전, 42P01) 참조 없음으로 본다.
+async function inboxStillUses(sql: Sql, pathname: string): Promise<boolean> {
+  try {
+    const rows = await sql`
+      SELECT 1 FROM expense_inbox WHERE file_pathname = ${pathname} AND status = 'pending' LIMIT 1
+    `
+    return rows.length > 0
+  } catch (error) {
+    if ((error as { code?: string } | null)?.code === "42P01") return false
+    throw error
   }
 }

@@ -9,6 +9,7 @@ const tabs = [
   { href: "/admin/expenses", label: "증빙 올리기" },
   { href: "/admin/expenses/receipts", label: "증빙 내역" },
   { href: "/admin/expenses/projects", label: "사업·프로젝트" },
+  { href: "/admin/expenses/desktop", label: "데스크톱 앱" },
 ]
 
 function isActive(pathname: string, href: string): boolean {

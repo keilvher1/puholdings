@@ -133,6 +133,50 @@ export type ScanResponse =
   | { success: true; file: UploadedFileMeta; drafts: ReceiptDraft[]; duplicates: DuplicateReceipt[] }
   | { success: false; error: string; needs_setup?: boolean }
 
+// ── 확인 대기함(데스크톱 앱이 올린 증빙) ─────────────────────────────────────────
+// 데스크톱 앱(포연기 증빙함)이 파일을 올리면 서버가 원본을 보관·인식해 expense_inbox에 둔다.
+// 증빙 장부(expense_receipts)에는 넣지 않는다 — 웹 '증빙 올리기' 화면에서 사람이 확인·저장한다.
+export type InboxStatus = "pending" | "done" | "dismissed"
+export type InboxScanStatus = "ok" | "failed" | "not_configured"
+export const INBOX_STATUSES = ["pending", "done", "dismissed"] as const
+export const MAX_INBOX_LIST = 200
+
+export interface InboxItem {
+  id: number
+  source: string // 'desktop'
+  file: UploadedFileMeta
+  preferred_project_id: number | null // 앱에서 고른 기본 프로젝트(활성 프로젝트일 때만)
+  status: InboxStatus
+  scan_status: InboxScanStatus
+  drafts: ReceiptDraft[]
+  warnings: string[]
+  duplicates: DuplicateReceipt[]
+  possible_duplicates: unknown[] // SimilarReceipt[][] (drafts와 같은 순서)
+  error: string
+  created_at: string
+}
+
+// POST /api/admin/expenses/inbox 응답
+export type InboxUploadResponse =
+  | {
+      success: true
+      item: {
+        id: number
+        file_name: string
+        scan_status: InboxScanStatus
+        error: string
+        drafts_count: number
+        first: { vendor_name: string; total_amount: number | null; issue_date: string } | null
+      }
+      pending_count: number
+    }
+  | { success: false; error: string }
+
+// GET /api/admin/expenses/inbox 응답
+export type InboxListResponse =
+  | { success: true; items: InboxItem[]; pending_count: number }
+  | { success: false; error: string }
+
 // POST /api/admin/expenses/projects/analyze 응답
 export type AnalyzeProjectsResponse =
   | { success: true; drafts: ProjectDraft[]; files: Attachment[]; warnings: string[] }

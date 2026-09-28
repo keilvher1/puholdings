@@ -19,6 +19,7 @@ import {
   SCAN_CONCURRENCY,
   formatWon,
   type DuplicateReceipt,
+  type InboxItem,
   type ReceiptDraft,
   type ReceiptFields,
 } from "@/lib/expenses"
@@ -39,8 +40,10 @@ import {
   parseBackup,
   resolveInsertConflicts,
   rowErrors,
+  rowsFromInbox,
   rowsFromScan,
   serializeBackup,
+  uploadItemFromInbox,
   toCreateInput,
   PROJECT_REQUIRED,
   type DraftRow,
@@ -112,10 +115,13 @@ export function ReceiptUploader({
   projects,
   aiReady = true,
   defaultProjectId = null,
+  inbox = [],
 }: {
   projects: UploaderProject[]
   aiReady?: boolean
   defaultProjectId?: number | null
+  // 데스크톱 앱이 올려 확인 대기함에 있는 증빙(pending). 처음 열 때 완료된 파일 카드 + 표 행으로 채운다.
+  inbox?: InboxItem[]
 }) {
   const [items, setItems] = useState<UploadItem[]>([])
   const [rows, setRows] = useState<DraftRow[]>([])
@@ -144,6 +150,56 @@ export function ReceiptUploader({
   const fileSeqRef = useRef(new Map<string, number>())
   const savingRef = useRef(false)
   const cleanupAfterSaveRef = useRef(false)
+  // 확인 대기함에서 온 파일 카드(key → 대기함 번호). 이 파일의 행은 서버에 남아 있으므로 임시 보관하지 않는다.
+  const inboxKeysRef = useRef(new Map<string, number>())
+  // 이번 화면에서 행을 하나라도 저장한 대기함 파일(key). 남은 행을 표에서 지워 행이 없어지면 대기함에서 뺀다.
+  const savedInboxKeysRef = useRef(new Set<string>())
+
+  // ── 확인 대기함(데스크톱 앱) 항목 채우기 — 처음 한 번만 ─────────────────────────
+  // 서버 렌더링과 key가 어긋나지 않도록 화면이 뜬 뒤에 넣는다.
+  const inboxSeededRef = useRef(false)
+  useEffect(() => {
+    if (inboxSeededRef.current) return
+    inboxSeededRef.current = true
+    if (inbox.length === 0) return
+    const seededItems: UploadItem[] = []
+    let seededRows: DraftRow[] = []
+    for (const entry of inbox) {
+      const key = newKey()
+      fileSeqRef.current.set(key, ++seqRef.current)
+      inboxKeysRef.current.set(key, entry.id)
+      const added = rowsFromInbox(key, entry, projects, defaultProjectId)
+      const { prev, added: resolved } = resolveInsertConflicts(seededRows, added)
+      seededRows = [...prev, ...resolved]
+      seededItems.push(uploadItemFromInbox(key, entry))
+    }
+    setItems((prev) => [...seededItems, ...prev])
+    setRows((prev) => {
+      const { prev: kept, added } = resolveInsertConflicts(prev, seededRows)
+      return [...added, ...kept]
+    })
+  }, [inbox, projects, defaultProjectId])
+
+  // 대기함 항목의 행을 모두 저장했으면 대기함에서 뺀다(실패해도 다음에 열 때 다시 보일 뿐이다).
+  const markInboxDone = useCallback(async (ids: number[]) => {
+    if (ids.length === 0) return
+    for (const [k, v] of inboxKeysRef.current) {
+      if (ids.includes(v)) {
+        inboxKeysRef.current.delete(k)
+        savedInboxKeysRef.current.delete(k)
+      }
+    }
+    try {
+      await fetch("/api/admin/expenses/inbox", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ ids, status: "done" }),
+      })
+    } catch {
+      // 네트워크 오류 — 무시(다음에 열 때 서버가 저장된 증빙과 대조해 저장한 초안은 빼고, 다 저장된 파일은 대기함에서 정리한다)
+    }
+  }, [])
 
   // ── 행 삽입 순서: 파일을 올린 순서대로(끝난 순서가 아니라) ─────────────────────
   // 넣기 전에 표에 이미 있는 행과 견줘, 같은 파일을 다시 올렸거나 같은 거래의 다른 서류(세금계산서+이체확인증 등)면
@@ -378,13 +434,39 @@ export function ReceiptUploader({
   const removeItem = useCallback((key: string) => {
     abortRef.current.get(key)?.abort()
     const it = itemsRef.current.find((i) => i.key === key)
+    const inboxId = inboxKeysRef.current.get(key)
+    if (inboxId !== undefined) {
+      // 확인 대기함 파일: 대기함에서 제외하고(원본도 정리) 이 파일의 표 행도 함께 뺀다.
+      const rowCount = rowsRef.current.filter((r) => r.fileKey === key).length
+      const ok = window.confirm(
+        `'${it?.name ?? "파일"}'을(를) 확인 대기함에서 제외합니다.${rowCount > 0 ? `\n표의 행 ${rowCount}건도 함께 빠집니다.` : ""}\n\n제외할까요?`
+      )
+      if (!ok) return
+      inboxKeysRef.current.delete(key)
+      savedInboxKeysRef.current.delete(key)
+      setRows((prev) => prev.filter((r) => r.fileKey !== key))
+      setItems((prev) => prev.filter((i) => i.key !== key))
+      void fetch("/api/admin/expenses/inbox", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ id: inboxId }),
+      })
+        .then((res) => {
+          if (!res.ok) setNotice({ tone: "error", text: httpErrorMessage(res.status, "대기함에서 제외하지 못했습니다. 새로고침 후 다시 시도하세요.") })
+        })
+        .catch(() => setNotice({ tone: "error", text: "네트워크 오류로 대기함에서 제외하지 못했습니다. 새로고침 후 다시 시도하세요." }))
+      return
+    }
     releaseUrl(it?.localUrl ?? null)
     setItems((prev) => prev.filter((i) => i.key !== key))
   }, [])
 
+  // 확인 대기함 파일 카드는 남긴다(빼려면 카드의 X — 대기함에서 제외).
   const clearFinished = useCallback(() => {
-    for (const i of itemsRef.current) if (i.status === "done" || i.status === "error") releaseUrl(i.localUrl)
-    setItems((prev) => prev.filter((i) => i.status !== "done" && i.status !== "error"))
+    const clearable = (i: UploadItem) => (i.status === "done" || i.status === "error") && !inboxKeysRef.current.has(i.key)
+    for (const i of itemsRef.current) if (clearable(i)) releaseUrl(i.localUrl)
+    setItems((prev) => prev.filter((i) => !clearable(i)))
   }, [])
 
   // ── 표 조작 ──────────────────────────────────────────────────────────────────
@@ -438,6 +520,19 @@ export function ReceiptUploader({
         if (entries.length === 0) return
         setRows((prev) => prev.filter((r) => !set.has(r.key)))
         setUndo({ entries })
+        // 확인 대기함 파일의 마지막 행을 지운 경우: 이번에 일부를 저장한 파일이면 대기함에서 빼고(done),
+        // 저장한 적이 없으면 카드를 남겨 두고 X로 빼도록 안내한다.
+        const left = new Set(rowsRef.current.filter((r) => !set.has(r.key)).map((r) => r.fileKey))
+        const emptied = [...new Set(entries.map((e) => e.row.fileKey))].filter(
+          (fk): fk is string => !!fk && inboxKeysRef.current.has(fk) && !left.has(fk)
+        )
+        const doneKeys = new Set(emptied.filter((fk) => savedInboxKeysRef.current.has(fk)))
+        const unsaved = emptied.length - doneKeys.size
+        if (doneKeys.size > 0) {
+          void markInboxDone([...doneKeys].map((fk) => inboxKeysRef.current.get(fk) as number))
+          setItems((prev) => prev.filter((i) => !doneKeys.has(i.key)))
+        }
+        if (unsaved > 0) setFlash("표에 남은 행이 없는 대기함 파일은 파일 카드의 X로 대기함에서 제외하세요.")
       },
       addRowForFile: (rowKey: string) => {
         const src = rowsRef.current.find((r) => r.key === rowKey)
@@ -453,7 +548,7 @@ export function ReceiptUploader({
       },
       openReview: (key: string) => setReviewKey(key),
     }),
-    [projects, defaultProjectId]
+    [projects, defaultProjectId, markInboxDone]
   )
 
   const undoRemove = () => {
@@ -623,6 +718,16 @@ export function ReceiptUploader({
         return !!cur && (cur.fields !== r.fields || cur.project_id !== r.project_id)
       })
       cleanupAfterSaveRef.current = true
+      // 확인 대기함 파일 중 표에 남은 행이 없어진 것은 대기함에서 뺀다.
+      const remainingFileKeys = new Set(rowsRef.current.filter((r) => !saved.has(r.key)).map((r) => r.fileKey))
+      const doneInbox = new Set<number>()
+      for (const r of savedRows) {
+        const inboxId = r.fileKey ? inboxKeysRef.current.get(r.fileKey) : undefined
+        if (inboxId === undefined || !r.fileKey) continue
+        savedInboxKeysRef.current.add(r.fileKey)
+        if (!remainingFileKeys.has(r.fileKey)) doneInbox.add(inboxId)
+      }
+      void markInboxDone([...doneInbox])
       setRows((prev) => prev.filter((r) => !saved.has(r.key)))
       setUndo(null)
       const projectIds = Array.from(new Set(savedRows.map((r) => r.project_id)))
@@ -647,14 +752,15 @@ export function ReceiptUploader({
     }
     // 결과 안내가 화면 위쪽에 뜨므로 그쪽으로 올려 준다(고칠 행으로 이동한 경우는 제외).
     if (!focusedError) window.scrollTo({ top: 0, behavior: "smooth" })
-  }, [])
+  }, [markInboxDone])
 
   // 저장이 끝나면, 표에 더 남은 행이 없는 완료 파일 카드는 치운다.
   useEffect(() => {
     if (!cleanupAfterSaveRef.current) return
     cleanupAfterSaveRef.current = false
     const inUse = new Set(rows.map((r) => r.fileKey))
-    const gone = items.filter((i) => i.status === "done" && !inUse.has(i.key))
+    // 확인 대기함 카드(아직 done 처리 전)는 남긴다 — 치우면 X(대기함에서 제외)를 누를 수 없고 다음에 열면 다시 나타난다.
+    const gone = items.filter((i) => i.status === "done" && !inUse.has(i.key) && !inboxKeysRef.current.has(i.key))
     if (gone.length === 0) return
     for (const g of gone) releaseUrl(g.localUrl)
     const goneKeys = new Set(gone.map((g) => g.key))
@@ -679,7 +785,9 @@ export function ReceiptUploader({
     if (!backupLoaded) return
     const t = window.setTimeout(() => {
       try {
-        const all = backup ? [...backup.rows, ...rows] : rows
+        // 확인 대기함 파일의 행은 서버에 남아 다음에 열 때 다시 채워지므로 임시 보관하지 않는다.
+        const local = rows.filter((r) => !r.fileKey || !inboxKeysRef.current.has(r.fileKey))
+        const all = backup ? [...backup.rows, ...local] : local
         if (all.length === 0) window.localStorage.removeItem(BACKUP_KEY)
         else window.localStorage.setItem(BACKUP_KEY, serializeBackup(all))
       } catch {
@@ -769,6 +877,7 @@ export function ReceiptUploader({
   const readySum = readyRows.reduce((acc, r) => acc + (r.fields.total_amount ?? 0), 0)
   const projectNames = projects.map((p) => p.name)
   const tableMatches = useMemo(() => findTableMatches(rows), [rows])
+  const inboxCount = items.filter((i) => i.inboxId != null).length
   // 처리 중 표시: 파일 목록과 같은 기준(인식 중 = 압축·인식, 대기 = 차례 기다림)
   const runningCount = items.filter((i) => i.status === "compressing" || i.status === "scanning").length
   const waitingCount = processing - runningCount
@@ -826,8 +935,15 @@ export function ReceiptUploader({
 
       <UploadDropzone onFiles={addFiles} compact={items.length > 0 || rows.length > 0} />
 
+      {inboxCount > 0 && (
+        <p className="mt-3 text-sm text-dark" role="status">
+          데스크톱 앱에서 받은 증빙 <b className="font-semibold tabular-nums">{inboxCount}건</b>
+          <span className="text-text-secondary"> · 확인 후 프로젝트를 골라 저장</span>
+        </p>
+      )}
+
       {items.length > 0 && (
-        <div className="mt-3">
+        <div className={inboxCount > 0 ? "mt-2" : "mt-3"}>
           <UploadFileList
             items={items}
             onRetry={retryItem}

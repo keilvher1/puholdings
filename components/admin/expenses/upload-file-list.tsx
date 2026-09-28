@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 import { AlertCircle, CheckCircle2, FileText, RotateCw, X } from "lucide-react"
 import { formatBytes } from "@/lib/client-image"
 import type { UploadItem } from "./upload-model"
-import { BusyText, Panel, StatusChip } from "./ui"
+import { BusyText, Chip, Panel, StatusChip } from "./ui"
 
 // 올린 파일 목록: 파일마다 대기 → 압축 중 → 인식 중 → 완료/실패(사유·다시 시도).
 // 모두 끝나면 한 줄 요약으로 접고(실패한 파일만 남김), '전체 보기'로 다시 펼친다.
@@ -103,14 +103,21 @@ function ItemActions({ item, onRetry, onManual }: { item: UploadItem; onRetry: (
   )
 }
 
+// 데스크톱 앱(포연기 증빙함)에서 받아 확인 대기함에 있던 파일
+function SourceChip({ item }: { item: UploadItem }) {
+  if (item.inboxId == null) return null
+  return <Chip title="데스크톱 앱에서 받은 파일 · 저장하면 대기함에서 빠짐">데스크톱 앱</Chip>
+}
+
 function RemoveButton({ item, onRemove }: { item: UploadItem; onRemove: (key: string) => void }) {
   const cancel = item.status === "compressing" || item.status === "scanning" || item.status === "queued"
+  const inbox = item.inboxId != null
   return (
     <button
       type="button"
       onClick={() => onRemove(item.key)}
-      title={cancel ? "인식 취소" : "목록에서 제거(표의 행은 유지)"}
-      aria-label={`${item.name} ${item.status === "scanning" || item.status === "queued" ? "인식 취소" : "목록에서 제거"}`}
+      title={inbox ? "대기함에서 제외(표의 행도 함께 빠짐)" : cancel ? "인식 취소" : "목록에서 제거(표의 행은 유지)"}
+      aria-label={`${item.name} ${inbox ? "대기함에서 제외" : item.status === "scanning" || item.status === "queued" ? "인식 취소" : "목록에서 제거"}`}
       className="shrink-0 rounded p-1 text-text-secondary transition-colors hover:bg-warm-beige hover:text-dark"
     >
       <X className="h-4 w-4" />
@@ -212,11 +219,12 @@ export function UploadFileList({
             {shown.map((item) => (
               <li key={item.key} className="flex flex-wrap items-center gap-x-3 gap-y-1.5 px-4 py-2.5">
                 <div className="min-w-0 flex-1 basis-64">
-                  <p className="flex min-w-0 items-baseline gap-2">
+                  <p className="flex min-w-0 items-center gap-2">
                     <span className="truncate text-sm font-medium text-dark" title={item.name}>
                       {item.name}
                     </span>
                     <span className="shrink-0 text-xs text-text-secondary">{formatBytes(item.size)}</span>
+                    <SourceChip item={item} />
                   </p>
                   <div className="mt-0.5">
                     <StatusLine item={item} now={now} queuePos={0} />
@@ -244,7 +252,10 @@ export function UploadFileList({
                   <p className="truncate text-sm font-medium text-dark" title={item.name}>
                     {item.name}
                   </p>
-                  <p className="text-xs text-text-secondary">{formatBytes(item.size)}</p>
+                  <p className="flex items-center gap-1.5 text-xs text-text-secondary">
+                    {formatBytes(item.size)}
+                    <SourceChip item={item} />
+                  </p>
                   <div className="mt-1">
                     <StatusLine item={item} now={now} queuePos={queuePos.get(item.key) ?? 0} />
                   </div>

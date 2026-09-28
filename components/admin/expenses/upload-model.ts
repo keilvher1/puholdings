@@ -14,6 +14,7 @@ import {
   type Confidence,
   type DuplicateReceipt,
   type ExpenseProject,
+  type InboxItem,
   type ReceiptCreateInput,
   type ReceiptDraft,
   type ReceiptFields,
@@ -59,6 +60,8 @@ export interface UploadItem {
   aiSkipped: boolean // AI 없이 빈 행만 만든 경우(AI 미설정·직접 입력 선택)
   // AI 판독은 실패했지만 원본은 서버에 보관된 경우 — '직접 입력'으로 빈 행을 만들 수 있다.
   fallback: { file: UploadedFileMeta; duplicates: DuplicateReceipt[] } | null
+  // 데스크톱 앱이 올려 확인 대기함(expense_inbox)에 있던 파일이면 그 번호. 행을 모두 저장하면 대기함에서 빠진다.
+  inboxId?: number | null
 }
 
 // ── 표의 한 행(증빙 초안 1건) ─────────────────────────────────────────────────
@@ -264,6 +267,64 @@ export function rowsFromScan(
       selected: duplicates.length === 0 && sim.length === 0,
     }
   })
+}
+
+// ── 확인 대기함(데스크톱 앱) 항목 → 파일 카드 + 표 행 ─────────────────────────────
+// 인식 성공: /scan 응답과 같은 변환(rowsFromScan). 앱에서 고른 기본 프로젝트가 진행 중이면 그 프로젝트로 미리 선택.
+// 인식 미설정: 빈 행 1개(직접 입력). 인식 실패: 행 없이 실패 카드('직접 입력' 가능).
+export function inboxPreferredProject(item: Pick<InboxItem, "preferred_project_id">, projects: UploaderProject[]): number | null {
+  const id = item.preferred_project_id
+  return id !== null && projects.some((p) => p.id === id) ? id : null
+}
+
+export function rowsFromInbox(
+  fileKey: string,
+  item: InboxItem,
+  projects: UploaderProject[],
+  defaultProjectId: number | null
+): DraftRow[] {
+  if (item.scan_status === "failed") return []
+  const file = normalizeFileMeta(item.file)
+  const preferred = inboxPreferredProject(item, projects)
+  const duplicates = Array.isArray(item.duplicates) ? item.duplicates : []
+  if (item.scan_status === "not_configured") {
+    return [blankRow(fileKey, file, projects, preferred ?? defaultProjectId, { duplicates })]
+  }
+  const similar = Array.isArray(item.possible_duplicates) ? item.possible_duplicates.map(toSimilarList) : []
+  const rows = rowsFromScan(fileKey, file, Array.isArray(item.drafts) ? item.drafts : [], duplicates, projects, defaultProjectId, similar)
+  if (preferred === null) return rows
+  return rows.map((r) => ({ ...r, project_id: preferred, projectSource: "default" as ProjectSource }))
+}
+
+// 파일 카드. 원본은 서버에 있으므로 file·prepared는 빈 자리표시(다시 인식하지 않는다).
+export function uploadItemFromInbox(key: string, item: InboxItem): UploadItem {
+  const file = normalizeFileMeta(item.file)
+  const image = isImageMeta(file)
+  const recognized = (Array.isArray(item.drafts) ? item.drafts : []).filter(
+    (d) => !!d && (!!d.vendor_name || !!d.issue_date || (d.total_amount !== null && d.total_amount !== undefined))
+  ).length
+  const failed = item.scan_status === "failed"
+  const duplicates = Array.isArray(item.duplicates) ? item.duplicates : []
+  return {
+    key,
+    file: new File([], file.name, { type: file.type }),
+    prepared: null,
+    originalHash: file.hash || null,
+    name: file.name || "이름 없는 파일",
+    size: file.size,
+    kind: image ? "image" : file.type === "application/pdf" || /\.pdf$/i.test(file.name) ? "pdf" : "other",
+    localUrl: image ? fileUrl(file.pathname) : null,
+    status: failed ? "error" : "done",
+    error: failed ? item.error || "인식 실패 · 직접 입력 가능" : "",
+    retryable: false,
+    startedAt: null,
+    uploaded: failed ? null : file,
+    draftCount: item.scan_status === "ok" ? recognized : 0,
+    duplicateCount: duplicates.length,
+    aiSkipped: item.scan_status === "not_configured",
+    fallback: failed ? { file, duplicates } : null,
+    inboxId: item.id,
+  }
 }
 
 // 서버 응답의 possible_duplicates 한 칸을 방어적으로 정리한다.
