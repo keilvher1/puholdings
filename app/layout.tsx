@@ -16,12 +16,12 @@ const SITE_URL = process.env.APP_URL || 'https://www.puholdings.co.kr'
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: '(주)포항연합기술지주 | PU Holdings',
-  description: 'POSTECH 기술사업화를 선도하는 포항연합기술지주 - 혁신 기술 스타트업 투자 및 육성',
-  keywords: ['포항연합기술지주', 'PU Holdings', 'POSTECH', '기술지주', '벤처투자', '스타트업', '포항 창업보육센터', '한동대 창업보육센터'],
+  description: '기술사업화를 선도하는 포항연합기술지주 - 혁신 기술 스타트업 투자 및 육성',
+  keywords: ['포항연합기술지주', 'PU Holdings', '기술지주', '벤처투자', '스타트업', '포항 창업보육센터', '한동대 창업보육센터'],
   alternates: { canonical: '/' },
   openGraph: {
     title: '(주)포항연합기술지주 | PU Holdings',
-    description: 'POSTECH 기술사업화를 선도하는 포항연합기술지주',
+    description: '기술사업화를 선도하는 포항연합기술지주',
     type: 'website',
     locale: 'ko_KR',
     siteName: '(주)포항연합기술지주',
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: '(주)포항연합기술지주 | PU Holdings',
-    description: 'POSTECH 기술사업화를 선도하는 포항연합기술지주',
+    description: '기술사업화를 선도하는 포항연합기술지주',
   },
 }
 
