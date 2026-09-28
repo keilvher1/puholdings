@@ -92,10 +92,7 @@ export default async function AdminExpensesDesktopPage() {
                 items={[
                   "dmg 파일 열기",
                   "포연기 증빙함 아이콘을 응용 프로그램 폴더로 끌기",
-                  <>
-                    처음 실행 시: 응용 프로그램 폴더에서 아이콘 <b className="font-semibold">우클릭 › 열기</b> › 열기
-                  </>,
-                  "‘열 수 없음’이 뜨면: 시스템 설정 › 개인정보 보호 및 보안 › ‘그래도 열기’",
+                  "응용 프로그램 폴더에서 실행(Apple 공증 완료 · 별도 허용 불필요)",
                 ]}
               />
             </div>
