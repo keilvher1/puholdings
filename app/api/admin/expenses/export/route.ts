@@ -215,13 +215,13 @@ export async function GET(request: Request) {
   const params = new URL(request.url).searchParams
   const rawProjectId = params.get("project_id")
   const projectId = parseId(rawProjectId)
-  if (rawProjectId && !projectId) return fail("프로젝트를 다시 선택해 주세요", 400)
+  if (rawProjectId && !projectId) return fail("프로젝트를 다시 선택하세요", 400)
   const from = params.get("from")
   const to = params.get("to")
 
   try {
     const project = projectId ? await getProject(sql, projectId) : null
-    if (projectId && !project) return fail("없는 프로젝트입니다. 새로고침해 주세요.", 404)
+    if (projectId && !project) return fail("없는 프로젝트입니다. 새로고침하세요.", 404)
     const receipts = await listReceipts(sql, {
       projectId,
       from: isValidDate(from) ? from : null,
@@ -238,7 +238,7 @@ export async function GET(request: Request) {
       isValidDate(from) || isValidDate(to) ? `기간 ${isValidDate(from) ? from : "처음"} ~ ${isValidDate(to) ? to : "현재"}` : "",
       q ? `검색어 '${q}'` : "",
     ].filter(Boolean)
-    const filterNote = conditions.length > 0 ? `${conditions.join(", ")} — 이 조건에 맞는 증빙만 집계했습니다` : ""
+    const filterNote = conditions.length > 0 ? `${conditions.join(", ")} (조건에 맞는 증빙만 집계)` : ""
     if (project) addBudgetSheet(wb, project, receipts, filterNote)
     else addProjectSummarySheet(wb, await listProjects(sql), receipts)
 
@@ -255,6 +255,6 @@ export async function GET(request: Request) {
     })
   } catch (error) {
     console.error("Expense export error:", error)
-    return fail(dbErrorMessage(error, "엑셀 파일을 만들지 못했습니다. 잠시 후 다시 시도해 주세요."), 500)
+    return fail(dbErrorMessage(error, "엑셀 파일을 만들지 못했습니다. 잠시 후 다시 시도하세요."), 500)
   }
 }

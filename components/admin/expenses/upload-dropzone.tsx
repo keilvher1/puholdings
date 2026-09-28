@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Camera, FileUp, ImagePlus, UploadCloud } from "lucide-react"
+import { Camera, FileUp, ImagePlus } from "lucide-react"
 import { SCAN_ACCEPT } from "@/lib/expenses"
 import { cn } from "@/lib/utils"
 
@@ -134,11 +134,9 @@ export function UploadDropzone({
   )
 
   const overlay = dragging && (
-    <div className="pointer-events-none fixed inset-0 z-[60] flex items-center justify-center bg-dark/40 backdrop-blur-[2px]">
-      <div className="rounded-2xl border-2 border-dashed border-gold bg-card px-10 py-8 text-center shadow-xl">
-        <UploadCloud className="mx-auto h-10 w-10 text-gold" />
-        <p className="mt-3 text-base font-semibold text-dark">여기에 놓으면 바로 분석을 시작합니다</p>
-        <p className="mt-1 text-sm text-text-secondary">여러 파일을 한꺼번에 놓아도 됩니다</p>
+    <div className="pointer-events-none fixed inset-0 z-[60] flex items-center justify-center bg-dark/30">
+      <div className="rounded-md border border-dashed border-dark/60 bg-card px-10 py-8 text-center">
+        <p className="text-base font-semibold text-dark">놓으면 인식을 시작합니다</p>
       </div>
     </div>
   )
@@ -147,17 +145,16 @@ export function UploadDropzone({
     return (
       <div
         className={cn(
-          "flex flex-wrap items-center gap-2 rounded-xl border border-dashed border-warm-tan bg-card px-4 py-3",
-          over && "border-gold bg-gold/5"
+          "flex flex-wrap items-center gap-2 rounded-md border border-dashed border-dark/50 bg-card px-3 py-2 transition-colors",
+          over && "border-dark bg-warm-ivory"
         )}
         onDragEnter={() => setOver(true)}
         onDragLeave={() => setOver(false)}
       >
         {inputs}
         {overlay}
-        <UploadCloud className="h-5 w-5 shrink-0 text-gold" />
         <p className="mr-auto text-sm text-text-secondary [word-break:keep-all]">
-          더 올릴 증빙이 있으면 끌어다 놓거나 <span className="hidden md:inline">Ctrl+V로 붙여넣거나 </span>아래 버튼을 누르세요.
+          증빙 추가 · 끌어다 놓기<span className="hidden md:inline"> · Ctrl+V 붙여넣기</span>
         </p>
         <Button type="button" size="sm" variant="outline" onClick={openPicker} disabled={disabled}>
           <FileUp className="h-4 w-4" />
@@ -178,7 +175,7 @@ export function UploadDropzone({
       <div
         role="button"
         tabIndex={0}
-        aria-label="증빙 파일 올리기: 클릭해서 파일 선택"
+        aria-label="증빙 파일 선택"
         aria-disabled={disabled || undefined}
         onClick={() => !disabled && openPicker()}
         onKeyDown={(e) => {
@@ -191,22 +188,17 @@ export function UploadDropzone({
         onDragEnter={() => setOver(true)}
         onDragLeave={() => setOver(false)}
         className={cn(
-          "group flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-warm-tan bg-card px-6 py-12 text-center transition-colors outline-none",
-          "hover:border-gold/70 hover:bg-gold/5 focus-visible:border-gold focus-visible:ring-[3px] focus-visible:ring-gold/40",
-          over && "border-gold bg-gold/5",
+          "flex cursor-pointer flex-col items-center justify-center rounded-md border border-dashed border-dark/50 bg-card px-6 py-8 text-center transition-colors outline-none",
+          "hover:border-dark/70 hover:bg-warm-ivory/60 focus-visible:border-dark/70 focus-visible:ring-[3px] focus-visible:ring-ring/50",
+          over && "border-dark bg-warm-ivory",
           disabled && "pointer-events-none opacity-60"
         )}
       >
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gold/15 transition-transform group-hover:scale-105">
-          <UploadCloud className="h-7 w-7 text-gold" />
-        </div>
-        <p className="mt-4 text-lg font-semibold text-dark [word-break:keep-all]">
-          영수증·카드전표·세금계산서를 여기에 끌어다 놓으세요
+        <p className="text-base font-semibold text-dark [word-break:keep-all]">증빙 파일을 끌어다 놓거나 선택하세요</p>
+        <p className="mt-1 text-sm text-text-secondary [word-break:keep-all]">
+          영수증 · 카드전표 · 세금계산서 · 거래명세서 · 이체확인증<span className="hidden md:inline"> · Ctrl+V 붙여넣기</span>
         </p>
-        <p className="mt-1.5 text-sm text-text-secondary [word-break:keep-all]">
-          클릭해서 파일을 고르거나<span className="hidden md:inline">, 캡처한 이미지를 Ctrl+V로 붙여넣어도 됩니다</span>. 여러 개를 한꺼번에 올려도 됩니다.
-        </p>
-        <div className="mt-5 flex flex-wrap justify-center gap-2">
+        <div className="mt-4 flex flex-wrap justify-center gap-2">
           <Button
             type="button"
             onClick={(e) => {
@@ -229,12 +221,10 @@ export function UploadDropzone({
             disabled={disabled}
           >
             <Camera className="h-4 w-4" />
-            카메라로 촬영
+            촬영
           </Button>
         </div>
-        <p className="mt-4 text-xs text-text-tertiary [word-break:keep-all]">
-          사진(JPG·PNG·HEIC 등) 또는 PDF · PDF는 한 파일 4MB까지 · 사진은 자동으로 줄여서 보냅니다
-        </p>
+        <p className="mt-3 text-xs text-text-secondary [word-break:keep-all]">JPG·PNG·HEIC·PDF · PDF 파일당 4MB 이하 · 여러 파일 가능</p>
       </div>
     </div>
   )

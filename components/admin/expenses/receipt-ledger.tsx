@@ -2,26 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import {
-  Eye,
-  FileSpreadsheet,
-  FileArchive,
-  FolderPlus,
-  Inbox,
-  Loader2,
-  RefreshCw,
-  Search,
-  SearchX,
-  Trash2,
-  TriangleAlert,
-  Upload,
-  X,
-} from "lucide-react"
+import { Eye, FileArchive, FileSpreadsheet, Loader2, RefreshCw, Search, Trash2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,15 +18,29 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { AdminCard } from "@/components/admin/admin-ui"
 import { BudgetUsageTable } from "@/components/admin/expenses/ledger-budget-table"
 import { ReceiptEditSheet } from "@/components/admin/expenses/receipt-edit-sheet"
-import { RateBar } from "@/components/admin/expenses/project-card"
 import { NoticeBanner, type Notice } from "@/components/admin/expenses/notice-banner"
+import {
+  BusyText,
+  Chip,
+  DotList,
+  EmptyState,
+  InlineNotice,
+  Money,
+  Panel,
+  PanelHeader,
+  RateValue,
+  RecordCard,
+  SummaryItem,
+  SummaryStrip,
+  TABLE_CLASS,
+  TableFrame,
+  UsageBar,
+} from "@/components/admin/expenses/ui"
 import {
   downloadFromApi,
   fileUrl,
-  formatRate,
   jsonInit,
   monthRange,
   normalizeName,
@@ -59,6 +59,7 @@ import {
   type ExpenseProject,
   type ExpenseReceipt,
 } from "@/lib/expenses"
+import { cn } from "@/lib/utils"
 
 // 증빙 내역 — 저장된 증빙을 찾아보고(프로젝트·기간·검색), 고치고, 엑셀·원본 zip으로 내려받는다.
 
@@ -174,7 +175,7 @@ export function ReceiptLedger({ initialProjectId = null }: { initialProjectId?: 
     if (!projectsLoaded || projectsError || projectId === "all") return
     if (!projects.some((p) => String(p.id) === projectId)) {
       setProjectId("all")
-      setNotice({ tone: "info", text: "요청한 프로젝트를 찾을 수 없어 전체 프로젝트를 보여 드립니다." })
+      setNotice({ tone: "info", text: "프로젝트를 찾을 수 없어 전체 프로젝트를 표시합니다." })
     }
   }, [projectsLoaded, projectsError, projects, projectId])
 
@@ -293,7 +294,7 @@ export function ReceiptLedger({ initialProjectId = null }: { initialProjectId?: 
         ? { tone: "error", text: err }
         : {
             tone: "success",
-            text: kind === "xlsx" ? "엑셀 파일을 내려받았습니다." : "증빙 원본 파일을 zip으로 내려받았습니다.",
+            text: kind === "xlsx" ? "엑셀 파일을 내려받았습니다." : "원본 zip을 내려받았습니다.",
           }
     )
   }
@@ -314,43 +315,65 @@ export function ReceiptLedger({ initialProjectId = null }: { initialProjectId?: 
     refreshAll()
   }
 
+
   // ── 화면 ─────────────────────────────────────────────────────────────────
   if (projectsLoaded && !projectsError && projects.length === 0) {
     return (
-      <AdminCard className="px-6 py-14 text-center">
-        <FolderPlus className="mx-auto h-10 w-10 text-text-tertiary" />
-        <p className="mt-3 text-base font-semibold text-dark">아직 등록된 프로젝트가 없습니다</p>
-        <p className="mt-1 text-sm text-text-secondary [word-break:keep-all]">
-          증빙은 프로젝트별로 모입니다. 먼저 사업·프로젝트를 등록해 주세요.
-        </p>
-        <Button asChild className="mt-4">
-          <Link href="/admin/expenses/projects">프로젝트 등록하러 가기</Link>
-        </Button>
-      </AdminCard>
+      <Panel>
+        <EmptyState
+          title="등록된 프로젝트 없음"
+          description="증빙은 프로젝트별로 관리됩니다. 사업·프로젝트를 먼저 등록하세요."
+          action={
+            <Button asChild>
+              <Link href="/admin/expenses/projects">프로젝트 등록</Link>
+            </Button>
+          }
+        />
+      </Panel>
     )
   }
+
+  const projectRate = selectedProject ? usageRate(selectedProject.spent_total, selectedProject.total_budget) : null
+  const projectRemain =
+    selectedProject && selectedProject.total_budget !== null ? selectedProject.total_budget - selectedProject.spent_total : null
+  const topProjects = sums.byProject.slice(0, 3)
+  const showProjectCol = !selectedProject
+  const downloadDisabled = !selectedProject || downloading !== null || selectedProject.receipt_count === 0
+  const listMeta = selectedProject
+    ? downloading === "zip"
+      ? "원본 파일 압축 중… (최대 약 1분)"
+      : "엑셀·zip: 조회 조건과 무관하게 프로젝트 전체 증빙"
+    : "엑셀·zip 다운로드는 프로젝트 선택 후 가능"
+  const TH = (extra?: string) => cn(TABLE_CLASS.th, "sticky top-0 z-[1]", extra)
+  const TD = (extra?: string) => cn(TABLE_CLASS.td, extra)
 
   return (
     <div>
       <NoticeBanner notice={notice} onClose={clearNotice} />
       {projectsError && (
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-3.5 py-2.5 text-sm text-destructive">
-          <span className="[word-break:keep-all]">프로젝트 목록을 불러오지 못했습니다. {projectsError}</span>
-          <Button size="sm" variant="outline" onClick={() => void loadProjects()}>
-            다시 시도
-          </Button>
-        </div>
+        <InlineNotice
+          tone="danger"
+          className="mb-4"
+          action={
+            <Button size="sm" variant="outline" onClick={() => void loadProjects()}>
+              <RefreshCw className="h-3.5 w-3.5" />
+              다시 시도
+            </Button>
+          }
+        >
+          프로젝트 목록을 불러오지 못했습니다. {projectsError}
+        </InlineNotice>
       )}
 
-      {/* 필터 */}
-      <AdminCard className="mb-4 p-4">
-        <div className="grid gap-3 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1.2fr)]">
-          <div className="grid gap-1.5">
-            <Label htmlFor="lf-project" className="text-xs text-text-secondary">
+      {/* 조회 조건: 모바일은 2열(프로젝트 한 줄 · 기간+검색 한 줄)에 라벨을 숨겨 첫 화면에 기록이 보이게 한다. */}
+      <div className="mb-4">
+        <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-2 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1.2fr)] md:gap-3">
+          <div className="col-span-2 grid gap-1.5 md:col-span-1">
+            <Label htmlFor="lf-project" className="sr-only text-xs font-medium text-text-secondary md:not-sr-only">
               프로젝트
             </Label>
             <Select value={projectId} onValueChange={setProjectId}>
-              <SelectTrigger id="lf-project" className="w-full">
+              <SelectTrigger id="lf-project" className="w-full bg-card">
                 <SelectValue placeholder="전체 프로젝트" />
               </SelectTrigger>
               <SelectContent>
@@ -366,13 +389,13 @@ export function ReceiptLedger({ initialProjectId = null }: { initialProjectId?: 
             </Select>
           </div>
 
-          <div className="grid gap-1.5">
-            <Label htmlFor="lf-period" className="text-xs text-text-secondary">
+          <div className={cn("grid gap-1.5 md:col-span-1", preset === "month" && "col-span-2")}>
+            <Label htmlFor="lf-period" className="sr-only text-xs font-medium text-text-secondary md:not-sr-only">
               거래 기간
             </Label>
             <div className="flex gap-2">
               <Select value={preset} onValueChange={(v) => setPreset(v as Preset)}>
-                <SelectTrigger id="lf-period" className={preset === "month" ? "w-28 shrink-0" : "w-full"}>
+                <SelectTrigger id="lf-period" className={cn("bg-card", preset === "month" ? "w-28 shrink-0" : "w-full")}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -385,7 +408,7 @@ export function ReceiptLedger({ initialProjectId = null }: { initialProjectId?: 
               </Select>
               {preset === "month" && (
                 <Select value={month} onValueChange={setMonth}>
-                  <SelectTrigger className="w-full" aria-label="월">
+                  <SelectTrigger className="w-full bg-card" aria-label="월">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="max-h-72">
@@ -400,25 +423,25 @@ export function ReceiptLedger({ initialProjectId = null }: { initialProjectId?: 
             </div>
           </div>
 
-          <div className="grid gap-1.5">
-            <Label htmlFor="lf-q" className="text-xs text-text-secondary">
+          <div className={cn("grid gap-1.5 md:col-span-1", preset === "month" && "col-span-2")}>
+            <Label htmlFor="lf-q" className="sr-only text-xs font-medium text-text-secondary md:not-sr-only">
               검색
             </Label>
             <div className="relative">
-              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-text-tertiary" />
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-text-secondary" />
               <Input
                 id="lf-q"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="거래처·적요·비목·금액으로 찾기"
-                className="pl-8 pr-8"
+                placeholder="거래처·적요·비목·금액"
+                className={cn("bg-card pl-8 text-ellipsis", q ? "pr-8" : "pr-2")}
               />
               {q && (
                 <button
                   type="button"
                   aria-label="검색어 지우기"
                   onClick={() => setQ("")}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-text-tertiary hover:text-dark"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-text-secondary hover:text-dark"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -429,70 +452,81 @@ export function ReceiptLedger({ initialProjectId = null }: { initialProjectId?: 
 
         {preset === "custom" && (
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <Input type="date" value={from} max={to || undefined} onChange={(e) => setFrom(e.target.value)} className="w-auto" aria-label="시작일" />
+            <Input type="date" value={from} max={to || undefined} onChange={(e) => setFrom(e.target.value)} className="w-auto bg-card" aria-label="시작일" />
             <span className="text-sm text-text-secondary">~</span>
-            <Input type="date" value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} className="w-auto" aria-label="종료일" />
+            <Input type="date" value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} className="w-auto bg-card" aria-label="종료일" />
             {range.invalid && <span className="text-xs text-destructive">시작일이 종료일보다 늦습니다</span>}
-            {!from && !to && <span className="text-xs text-text-tertiary">시작일·종료일 중 하나만 넣어도 됩니다</span>}
+            {!from && !to && <span className="text-xs text-text-secondary">시작일 또는 종료일만 입력 가능</span>}
           </div>
         )}
 
         {anyFilter && (
-          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-warm-tan/60 pt-3 text-xs text-text-secondary">
+          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-text-secondary">
             <span className="[word-break:keep-all]">조회 조건: {scopeText}</span>
             <button type="button" onClick={resetFilters} className="font-medium text-dark underline-offset-2 hover:underline">
               조건 초기화
             </button>
           </div>
         )}
-      </AdminCard>
+      </div>
 
       {/* 요약 */}
-      <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatTile label="조회된 증빙" value={`${receipts.length.toLocaleString("ko-KR")}건`} sub={loading ? "불러오는 중…" : scopeText} />
-        <StatTile
+      <SummaryStrip className="mb-4">
+        <SummaryItem
+          label="조회된 증빙"
+          value={`${receipts.length.toLocaleString("ko-KR")}건`}
+          sub={loading ? "불러오는 중" : scopeText}
+        />
+        <SummaryItem
           label="합계 금액"
           value={formatWon(sums.total)}
-          sub={`공급가액 ${wonNumber(sums.supply)} · 부가세 ${wonNumber(sums.vat)}`}
+          sub={<DotList items={[`공급가액 ${wonNumber(sums.supply)}`, `부가세 ${wonNumber(sums.vat)}`]} />}
         />
         {selectedProject ? (
           <>
-            <StatTile
-              label="프로젝트 집행률 (전체 기준)"
-              value={formatRate(usageRate(selectedProject.spent_total, selectedProject.total_budget))}
+            <SummaryItem
+              label="집행률"
+              value={<RateValue rate={projectRate} className="font-bold" />}
               sub={
                 selectedProject.total_budget === null
-                  ? "총사업비를 넣으면 집행률이 계산됩니다"
+                  ? "총사업비 미입력"
                   : `집행 ${wonNumber(selectedProject.spent_total)} / 총사업비 ${wonNumber(selectedProject.total_budget)}`
               }
             >
-              <RateBar rate={usageRate(selectedProject.spent_total, selectedProject.total_budget)} className="mt-2 h-1.5" />
-            </StatTile>
-            <StatTile
+              <UsageBar className="mt-2" rate={projectRate} />
+            </SummaryItem>
+            <SummaryItem
               label="남은 예산"
-              value={
-                selectedProject.total_budget === null ? "-" : formatWon(selectedProject.total_budget - selectedProject.spent_total)
-              }
+              value={projectRemain === null ? "-" : formatWon(projectRemain)}
+              tone={projectRemain !== null && projectRemain < 0 ? "danger" : "default"}
               sub={`저장된 증빙 ${selectedProject.receipt_count.toLocaleString("ko-KR")}건`}
-              danger={selectedProject.total_budget !== null && selectedProject.total_budget < selectedProject.spent_total}
             />
           </>
         ) : (
-          <StatTile
+          <SummaryItem
+            wide
             label="프로젝트별"
-            value={`${sums.byProject.length}개 프로젝트`}
-            sub={
-              sums.byProject.length > 0
-                ? sums.byProject
-                    .slice(0, 2)
-                    .map((p) => `${p.name} ${wonNumber(p.total)}`)
-                    .join(" · ") + (sums.byProject.length > 2 ? " 외" : "")
-                : "프로젝트를 고르면 예산 대비 집행을 볼 수 있어요"
-            }
-            className="lg:col-span-2"
-          />
+            value={`${sums.byProject.length}개`}
+            sub={sums.byProject.length === 0 ? "프로젝트 선택 시 예산 대비 집행 표시" : undefined}
+          >
+            {topProjects.length > 0 && (
+              <ul className="mt-1 space-y-0.5 text-sm">
+                {topProjects.map((p, i) => (
+                  <li key={`${i}-${p.name}`} className="flex justify-between gap-3">
+                    <span className="min-w-0 truncate text-dark" title={p.name}>
+                      {p.name}
+                    </span>
+                    <Money value={p.total} />
+                  </li>
+                ))}
+              </ul>
+            )}
+            {sums.byProject.length > 3 && (
+              <p className="mt-0.5 text-xs text-text-secondary">외 {sums.byProject.length - 3}개</p>
+            )}
+          </SummaryItem>
         )}
-      </div>
+      </SummaryStrip>
 
       {selectedProject && (
         <div className="mb-4">
@@ -505,110 +539,202 @@ export function ReceiptLedger({ initialProjectId = null }: { initialProjectId?: 
       )}
 
       {/* 목록 */}
-      <AdminCard>
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-warm-tan bg-warm-beige/40 px-4 py-2.5">
-          <div className="flex items-center gap-2 text-sm">
-            <span className="font-semibold text-dark">증빙 목록</span>
-            {loading ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin text-text-tertiary" aria-label="불러오는 중" />
-            ) : (
-              receipts.length > 0 && <span className="hidden text-xs text-text-secondary sm:inline">행을 누르면 내용을 고칠 수 있습니다</span>
-            )}
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={!selectedProject || downloading !== null || selectedProject.receipt_count === 0}
-              onClick={() => void download("xlsx")}
-              title={selectedProject ? "이 프로젝트의 전체 증빙을 엑셀로 내려받습니다" : "프로젝트를 먼저 고르세요"}
-            >
-              {downloading === "xlsx" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileSpreadsheet className="h-3.5 w-3.5" />}
-              엑셀 다운로드
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={!selectedProject || downloading !== null || selectedProject.receipt_count === 0}
-              onClick={() => void download("zip")}
-              title={selectedProject ? "이 프로젝트의 증빙 원본 파일을 zip으로 묶어 내려받습니다" : "프로젝트를 먼저 고르세요"}
-            >
-              {downloading === "zip" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileArchive className="h-3.5 w-3.5" />}
-              증빙 파일 zip
-            </Button>
-          </div>
-        </div>
-        <p className="border-b border-warm-tan/60 px-4 py-1.5 text-[11px] text-text-tertiary [word-break:keep-all]">
-          {selectedProject
-            ? downloading === "zip"
-              ? "원본 파일을 모으는 중입니다. 증빙이 많으면 1분 정도 걸릴 수 있어요."
-              : "엑셀·zip은 기간·검색 조건과 관계없이 이 프로젝트의 전체 증빙을 담습니다."
-            : "엑셀·zip 다운로드는 위에서 프로젝트를 고르면 쓸 수 있습니다."}
-        </p>
+      <Panel>
+        <PanelHeader
+          title="증빙 목록"
+          count={loading && receipts.length === 0 ? undefined : `${receipts.length.toLocaleString("ko-KR")}건`}
+          meta={listMeta}
+          actions={
+            <>
+              {loading && receipts.length > 0 && <BusyText>불러오는 중</BusyText>}
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={downloadDisabled}
+                onClick={() => void download("xlsx")}
+                title={selectedProject ? "프로젝트 전체 증빙 엑셀" : "프로젝트를 선택하세요"}
+              >
+                {downloading === "xlsx" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileSpreadsheet className="h-3.5 w-3.5" />}
+                엑셀 다운로드
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={downloadDisabled}
+                onClick={() => void download("zip")}
+                title={selectedProject ? "프로젝트 전체 원본 zip" : "프로젝트를 선택하세요"}
+              >
+                {downloading === "zip" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileArchive className="h-3.5 w-3.5" />}
+                원본 zip
+              </Button>
+            </>
+          }
+        />
 
         {error ? (
-          <div className="px-6 py-12 text-center">
-            <TriangleAlert className="mx-auto h-8 w-8 text-destructive" />
-            <p className="mt-3 text-sm font-medium text-dark">증빙 목록을 불러오지 못했습니다</p>
-            <p className="mt-1 text-sm text-text-secondary">{error}</p>
-            <Button className="mt-4" variant="outline" onClick={() => setReloadKey((k) => k + 1)}>
-              <RefreshCw className="h-4 w-4" />
-              다시 시도
-            </Button>
-          </div>
+          <EmptyState
+            title="증빙 목록을 불러오지 못했습니다"
+            description={error}
+            action={
+              <Button variant="outline" onClick={() => setReloadKey((k) => k + 1)}>
+                <RefreshCw className="h-4 w-4" />
+                다시 시도
+              </Button>
+            }
+          />
         ) : loading && receipts.length === 0 ? (
-          <div className="grid gap-2 p-4" aria-busy="true">
-            {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="h-10 animate-pulse rounded-md bg-warm-beige/50" />
-            ))}
-          </div>
+          <p className="px-4 py-8 text-center" aria-busy="true">
+            <BusyText>불러오는 중</BusyText>
+          </p>
         ) : receipts.length === 0 ? (
           filtersActive ? (
-            <div className="px-6 py-12 text-center">
-              <SearchX className="mx-auto h-9 w-9 text-text-tertiary" />
-              <p className="mt-3 text-sm font-medium text-dark">조건에 맞는 증빙이 없습니다</p>
-              <p className="mt-1 text-sm text-text-secondary">기간을 넓히거나 검색어를 바꿔 보세요.</p>
-              <Button className="mt-4" variant="outline" onClick={resetFilters}>
-                조건 초기화
-              </Button>
-            </div>
+            <EmptyState
+              title="조건에 맞는 증빙 없음"
+              description="기간 또는 검색어를 변경하세요."
+              action={
+                <Button variant="outline" onClick={resetFilters}>
+                  조건 초기화
+                </Button>
+              }
+            />
           ) : (
-            <div className="px-6 py-12 text-center">
-              <Inbox className="mx-auto h-9 w-9 text-text-tertiary" />
-              <p className="mt-3 text-sm font-medium text-dark">
-                {selectedProject ? "이 프로젝트로 저장된 증빙이 아직 없습니다" : "아직 저장된 증빙이 없습니다"}
-              </p>
-              <p className="mt-1 text-sm text-text-secondary [word-break:keep-all]">
-                영수증·카드전표를 올리면 AI가 내용을 읽어 표로 정리해 드립니다. 확인 후 저장하면 여기에 쌓입니다.
-              </p>
-              <Button asChild className="mt-4">
-                <Link href="/admin/expenses">
-                  <Upload className="h-4 w-4" />
-                  증빙 올리러 가기
-                </Link>
-              </Button>
-            </div>
+            <EmptyState
+              title="저장된 증빙 없음"
+              description="증빙 올리기에서 저장한 증빙이 여기에 표시됩니다."
+              action={
+                <Button asChild>
+                  <Link href="/admin/expenses">증빙 올리기</Link>
+                </Button>
+              }
+            />
           )
         ) : (
-          <div className={loading ? "opacity-60 transition-opacity" : "transition-opacity"}>
-            <Table className="min-w-[980px]">
-              <TableHeader>
-                <TableRow className="bg-warm-ivory/60 hover:bg-warm-ivory/60">
-                  <TableHead className="w-[104px] pl-4">거래일자</TableHead>
-                  <TableHead className="w-[104px]">문서 종류</TableHead>
-                  <TableHead>거래처</TableHead>
-                  <TableHead className="w-[110px]">비목</TableHead>
-                  <TableHead>적요</TableHead>
-                  <TableHead className="w-[120px] text-right">합계</TableHead>
-                  <TableHead className="w-[76px]">결제</TableHead>
-                  <TableHead className="w-[150px]">프로젝트</TableHead>
-                  <TableHead className="w-[64px]">파일</TableHead>
-                  <TableHead className="w-[48px] pr-4">
-                    <span className="sr-only">삭제</span>
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+          <div className={cn("transition-opacity", loading && "opacity-60")}>
+            {/* md 이상: 표 */}
+            <TableFrame className="hidden md:block">
+              <table className="w-full min-w-[900px] caption-bottom text-sm">
+                <TableHeader>
+                  <TableRow className="border-0 hover:bg-transparent">
+                    <TableHead className={TH("w-[104px] pl-4")}>거래일자</TableHead>
+                    <TableHead className={TH("w-[104px]")}>문서 종류</TableHead>
+                    <TableHead className={TH()}>거래처</TableHead>
+                    <TableHead className={TH("w-[150px]")}>비목</TableHead>
+                    <TableHead className={TH()}>적요</TableHead>
+                    <TableHead className={TH("w-[128px] text-right")}>합계</TableHead>
+                    <TableHead className={TH("w-[80px]")}>결제</TableHead>
+                    {showProjectCol && <TableHead className={TH("w-[180px]")}>프로젝트</TableHead>}
+                    <TableHead className={TH("w-[72px]")}>파일</TableHead>
+                    <TableHead className={TH("w-[48px] pr-4")}>
+                      <span className="sr-only">삭제</span>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {receipts.map((r) => {
+                    const mismatch = amountMismatch(r)
+                    const offBudget =
+                      selectedProject !== null &&
+                      selectedProject.budget_items.length > 0 &&
+                      r.budget_item.trim() !== "" &&
+                      !budgetNameSet.has(normalizeName(r.budget_item))
+                    return (
+                      <TableRow
+                        key={r.id}
+                        tabIndex={0}
+                        onClick={() => setEditing(r)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault()
+                            setEditing(r)
+                          }
+                        }}
+                        className={cn(TABLE_CLASS.row, "cursor-pointer focus-visible:bg-warm-beige/60 focus-visible:outline-none")}
+                        title="클릭하여 수정"
+                      >
+                        <TableCell className={TD("pl-4 tabular-nums text-dark")}>{r.issue_date}</TableCell>
+                        <TableCell className={TD("text-text-secondary")}>{DOC_TYPE_LABELS[r.doc_type] ?? r.doc_type}</TableCell>
+                        <TableCell
+                          className={TD("max-w-[220px]")}
+                          title={r.vendor_biz_no ? `${r.vendor_name} · 사업자번호 ${r.vendor_biz_no}` : r.vendor_name}
+                        >
+                          <div className="truncate font-medium text-dark">{r.vendor_name}</div>
+                        </TableCell>
+                        <TableCell className={TD()}>
+                          {r.budget_item ? (
+                            <span className="inline-flex items-center gap-1.5">
+                              <span className={offBudget ? "text-amber-800" : "text-dark"}>{r.budget_item}</span>
+                              {offBudget && <Chip tone="warning">예산 외</Chip>}
+                            </span>
+                          ) : (
+                            <Chip tone="warning">비목 미지정</Chip>
+                          )}
+                        </TableCell>
+                        <TableCell className={TD("max-w-[260px]")}>
+                          <div className="truncate text-text-secondary" title={r.purpose || undefined}>
+                            {r.purpose || "-"}
+                          </div>
+                        </TableCell>
+                        <TableCell className={TD(TABLE_CLASS.num)}>
+                          <Money value={r.total_amount} strong flag={mismatch ? "금액 불일치: 공급가액+부가세 ≠ 합계" : null} />
+                        </TableCell>
+                        <TableCell className={TD("text-text-secondary")}>{PAYMENT_LABELS[r.payment_method] ?? r.payment_method}</TableCell>
+                        {showProjectCol && (
+                          <TableCell className={TD("max-w-[180px]")}>
+                            <div className="truncate text-sm text-dark" title={r.project_name}>
+                              {r.project_name}
+                            </div>
+                          </TableCell>
+                        )}
+                        <TableCell className={TD()}>
+                          <a
+                            href={fileUrl(r.file_pathname)}
+                            target="_blank"
+                            rel="noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            onKeyDown={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1 rounded px-1.5 py-1 text-sm text-dark underline-offset-2 hover:underline"
+                            title={`${r.file_name} 원본 보기`}
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                            보기
+                          </a>
+                        </TableCell>
+                        <TableCell className={TD("pr-4")}>
+                          <button
+                            type="button"
+                            aria-label={`${r.vendor_name} 증빙 삭제`}
+                            title="증빙 삭제"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setDeleteTarget(r)
+                            }}
+                            onKeyDown={(e) => e.stopPropagation()}
+                            className="rounded p-1.5 text-text-secondary hover:bg-destructive/10 hover:text-destructive"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+                <TableFooter className="border-t-0 bg-transparent">
+                  <TableRow className={cn(TABLE_CLASS.foot, "hover:bg-warm-ivory")}>
+                    <TableCell colSpan={5} className={TD("pl-4")}>
+                      합계 {receipts.length.toLocaleString("ko-KR")}건
+                    </TableCell>
+                    <TableCell className={TD(TABLE_CLASS.num)}>
+                      <Money value={sums.total} strong />
+                    </TableCell>
+                    <TableCell colSpan={showProjectCol ? 4 : 3} className={TD()} />
+                  </TableRow>
+                </TableFooter>
+              </table>
+            </TableFrame>
+
+            {/* md 미만: 카드 목록 */}
+            <div className="md:hidden">
+              <ul className="space-y-2 p-3">
                 {receipts.map((r) => {
                   const mismatch = amountMismatch(r)
                   const offBudget =
@@ -617,106 +743,51 @@ export function ReceiptLedger({ initialProjectId = null }: { initialProjectId?: 
                     r.budget_item.trim() !== "" &&
                     !budgetNameSet.has(normalizeName(r.budget_item))
                   return (
-                    <TableRow
-                      key={r.id}
-                      tabIndex={0}
-                      onClick={() => setEditing(r)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault()
-                          setEditing(r)
-                        }
-                      }}
-                      className="cursor-pointer hover:bg-warm-beige/40 focus-visible:bg-warm-beige/60 focus-visible:outline-none"
-                      title="눌러서 수정"
-                    >
-                      <TableCell className="pl-4 tabular-nums text-dark">{r.issue_date}</TableCell>
-                      <TableCell>
-                        <span className="rounded bg-warm-beige/70 px-1.5 py-0.5 text-[11px] text-text-secondary">
-                          {DOC_TYPE_LABELS[r.doc_type] ?? r.doc_type}
-                        </span>
-                      </TableCell>
-                      <TableCell className="max-w-[200px]">
-                        <div className="truncate font-medium text-dark" title={r.vendor_name}>
-                          {r.vendor_name}
-                        </div>
-                        {r.vendor_biz_no && <div className="text-[11px] tabular-nums text-text-tertiary">{r.vendor_biz_no}</div>}
-                      </TableCell>
-                      <TableCell>
-                        {r.budget_item ? (
-                          <span className={offBudget ? "text-amber-800" : "text-dark"} title={offBudget ? "예산표에 없는 비목" : undefined}>
-                            {r.budget_item}
-                            {offBudget && <TriangleAlert className="ml-1 inline h-3 w-3" />}
-                          </span>
-                        ) : (
-                          <span className="text-xs text-text-tertiary">미지정</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="max-w-[240px]">
-                        <div className="truncate text-text-secondary" title={r.purpose}>
-                          {r.purpose || <span className="text-text-tertiary">-</span>}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <span className="font-semibold tabular-nums text-dark">{wonNumber(r.total_amount)}</span>
-                        {mismatch && (
-                          <TriangleAlert
-                            className="ml-1 inline h-3.5 w-3.5 text-amber-700"
-                            aria-label="공급가액과 부가세의 합이 합계와 다릅니다"
+                    <li key={r.id}>
+                      <RecordCard
+                        title={r.vendor_name}
+                        amount={<Money value={r.total_amount} unit flag={mismatch ? "금액 불일치: 공급가액+부가세 ≠ 합계" : null} />}
+                        meta={
+                          <DotList
+                            items={[r.issue_date, DOC_TYPE_LABELS[r.doc_type] ?? r.doc_type, PAYMENT_LABELS[r.payment_method] ?? r.payment_method]}
                           />
-                        )}
-                      </TableCell>
-                      <TableCell className="text-text-secondary">{PAYMENT_LABELS[r.payment_method] ?? r.payment_method}</TableCell>
-                      <TableCell className="max-w-[150px]">
-                        <div className="truncate text-xs text-text-secondary" title={r.project_name}>
-                          {r.project_name}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <a
-                          href={fileUrl(r.file_pathname)}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          onKeyDown={(e) => e.stopPropagation()}
-                          className="inline-flex items-center gap-1 rounded px-1.5 py-1 text-xs text-dark hover:bg-warm-beige hover:text-gold"
-                          title={`${r.file_name} 원본 보기`}
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                          보기
-                        </a>
-                      </TableCell>
-                      <TableCell className="pr-4">
-                        <button
-                          type="button"
-                          aria-label={`${r.vendor_name} 증빙 삭제`}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setDeleteTarget(r)
-                          }}
-                          onKeyDown={(e) => e.stopPropagation()}
-                          className="rounded p-1.5 text-text-tertiary hover:bg-destructive/10 hover:text-destructive"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </TableCell>
-                    </TableRow>
+                        }
+                        footer={
+                          <>
+                            {r.budget_item ? (
+                              <span className={offBudget ? "text-amber-800" : "text-dark"}>{r.budget_item}</span>
+                            ) : (
+                              <Chip tone="warning">비목 미지정</Chip>
+                            )}
+                            {offBudget && <Chip tone="warning">예산 외</Chip>}
+                            {showProjectCol && <span className="min-w-0 basis-full truncate text-text-secondary">{r.project_name}</span>}
+                          </>
+                        }
+                        onOpen={() => setEditing(r)}
+                        openLabel={`${r.vendor_name} 증빙 수정`}
+                        trailing={
+                          <button
+                            type="button"
+                            aria-label={`${r.vendor_name} 증빙 삭제`}
+                            onClick={() => setDeleteTarget(r)}
+                            className="-mr-1 rounded p-2 text-text-secondary hover:bg-destructive/10 hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        }
+                      />
+                    </li>
                   )
                 })}
-              </TableBody>
-              <TableFooter>
-                <TableRow className="bg-warm-beige/40 hover:bg-warm-beige/40">
-                  <TableCell colSpan={5} className="pl-4 text-sm font-semibold text-dark">
-                    합계 {receipts.length.toLocaleString("ko-KR")}건
-                  </TableCell>
-                  <TableCell className="text-right font-bold tabular-nums text-dark">{wonNumber(sums.total)}</TableCell>
-                  <TableCell colSpan={4} />
-                </TableRow>
-              </TableFooter>
-            </Table>
+              </ul>
+              <p className="flex items-center justify-between gap-3 border-t border-warm-tan px-3 py-3 text-sm font-semibold text-dark">
+                <span>합계 {receipts.length.toLocaleString("ko-KR")}건</span>
+                <Money value={sums.total} unit strong />
+              </p>
+            </div>
           </div>
         )}
-      </AdminCard>
+      </Panel>
 
       <ReceiptEditSheet
         receipt={editing}
@@ -733,19 +804,16 @@ export function ReceiptLedger({ initialProjectId = null }: { initialProjectId?: 
       <AlertDialog open={deleteTarget !== null} onOpenChange={(o) => !o && !deleting && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>이 증빙을 삭제할까요?</AlertDialogTitle>
+            <AlertDialogTitle>증빙 삭제</AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="grid gap-2 text-sm text-text-secondary [word-break:keep-all]">
                 {deleteTarget && (
                   <p className="rounded-md bg-warm-beige/50 px-3 py-2 text-dark">
-                    {deleteTarget.issue_date} · {deleteTarget.vendor_name} · <b>{formatWon(deleteTarget.total_amount)}</b>
-                    <span className="block text-xs text-text-secondary">{deleteTarget.project_name}</span>
+                    {deleteTarget.issue_date} · {deleteTarget.vendor_name} · <b className="tabular-nums">{formatWon(deleteTarget.total_amount)}</b>
+                    <span className="block text-xs text-dark/70">{deleteTarget.project_name}</span>
                   </p>
                 )}
-                <p>
-                  삭제하면 되돌릴 수 없고 프로젝트 집행액에서도 빠집니다. 원본 파일도 함께 지워집니다(같은 파일에서 나온 다른 증빙이 있으면 파일은
-                  남습니다).
-                </p>
+                <p>삭제 후 복구할 수 없으며 집행액에서 제외됩니다. 원본 파일도 삭제됩니다(같은 파일의 다른 증빙이 있으면 유지).</p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -771,40 +839,6 @@ export function ReceiptLedger({ initialProjectId = null }: { initialProjectId?: 
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
-  )
-}
-
-function StatTile({
-  label,
-  value,
-  sub,
-  danger = false,
-  className = "",
-  children,
-}: {
-  label: string
-  value: string
-  sub?: string
-  danger?: boolean
-  className?: string
-  children?: React.ReactNode
-}) {
-  return (
-    <div className={`rounded-xl border border-warm-tan bg-card px-4 py-3 shadow-sm ${className}`}>
-      <p className="text-xs text-text-secondary">{label}</p>
-      <p
-        className={`mt-0.5 truncate text-xl font-bold tabular-nums ${danger ? "text-destructive" : "text-dark"}`}
-        title={value}
-      >
-        {value}
-      </p>
-      {sub && (
-        <p className="mt-0.5 truncate text-[11px] text-text-tertiary" title={sub}>
-          {sub}
-        </p>
-      )}
-      {children}
     </div>
   )
 }

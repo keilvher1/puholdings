@@ -64,16 +64,16 @@ export async function POST(request: Request) {
   try {
     formData = await request.formData()
   } catch {
-    return fail("파일을 받지 못했습니다. 4MB 이하 파일로 다시 시도해 주세요.", 400)
+    return fail("파일을 받지 못했습니다. 4MB 이하 파일로 다시 시도하세요.", 400)
   }
   const files = formData.getAll("file").filter((f): f is File => f instanceof File)
-  if (files.length === 0) return fail("증빙 파일(사진 또는 PDF)을 올려 주세요", 400)
-  if (files.length > 1) return fail("한 번에 파일 1개씩 보내 주세요", 400)
+  if (files.length === 0) return fail("증빙 파일(사진 또는 PDF)을 올리세요", 400)
+  if (files.length > 1) return fail("한 번에 파일 1개씩 보내세요", 400)
   const file = files[0]
 
   const checked = await checkUpload(file, SCAN_MIME_TYPES, MAX_SCAN_FILE_BYTES)
   if (!checked.ok) return fail(checked.error, 400)
-  if (checked.kind === "text") return fail("텍스트 파일은 증빙으로 올릴 수 없습니다. 사진이나 PDF로 올려 주세요.", 400)
+  if (checked.kind === "text") return fail("텍스트 파일은 증빙으로 올릴 수 없습니다. 사진이나 PDF로 올리세요.", 400)
   const kind = checked.kind
 
   // 1) 원본 보관 — 저장할 때 이 경로를 증빙과 연결한다.
@@ -90,7 +90,7 @@ export async function POST(request: Request) {
     fileMeta = { pathname, name: displayName, type: checked.mime, size: checked.buffer.length, hash }
   } catch (error) {
     console.error("Receipt store error:", error)
-    return fail("파일을 보관하지 못했습니다. 잠시 후 '다시 시도'를 눌러 주세요.", 500)
+    return fail("파일을 보관하지 못했습니다. 잠시 후 '다시 시도'를 누르세요.", 500)
   }
 
   // 2) 같은 파일로 이미 저장된 증빙 + AI에 알려줄 활성 프로젝트
@@ -100,12 +100,12 @@ export async function POST(request: Request) {
     ;[duplicates, projects] = await Promise.all([findDuplicatesByHash(sql, [hash, sentHash]), listProjects(sql, { activeOnly: true })])
   } catch (error) {
     console.error("Receipt scan DB error:", error)
-    return fail(dbErrorMessage(error, "증빙 정보를 확인하지 못했습니다. 잠시 후 '다시 시도'를 눌러 주세요."), 500)
+    return fail(dbErrorMessage(error, "증빙 정보를 확인하지 못했습니다. 잠시 후 '다시 시도'를 누르세요."), 500)
   }
 
   if (!hasExpenseAiKey()) {
     return fail(
-      "AI 판독이 아직 설정되지 않았습니다(관리자에게 OPENAI_API_KEY 설정 요청). 파일은 보관했으니 표에서 직접 입력해 주세요.",
+      "자동 인식이 설정되지 않았습니다(OPENAI_API_KEY). 파일은 보관되었으니 표에서 직접 입력하세요.",
       503,
       { needs_setup: true, file: fileMeta, duplicates },
     )
@@ -144,7 +144,7 @@ export async function POST(request: Request) {
     if (drafts.length === 0) {
       drafts = [
         manualDraft([
-          "AI가 이 파일에서 증빙을 찾지 못했습니다. 직접 입력하거나 필요 없으면 행을 삭제하세요.",
+          "인식된 내용 없음 · 직접 입력하거나 행을 삭제하세요.",
           ...fileWarnings,
         ]),
       ]
@@ -169,9 +169,9 @@ export async function POST(request: Request) {
     }
     return NextResponse.json(body)
   } catch (error) {
-    const e = error instanceof ExpenseAiError ? error : new ExpenseAiError("증빙 판독에 실패했습니다. 잠시 후 '다시 시도'를 눌러 주세요.", 500)
+    const e = error instanceof ExpenseAiError ? error : new ExpenseAiError("증빙 인식에 실패했습니다. 잠시 후 '다시 시도'를 누르세요.", 500)
     if (!(error instanceof ExpenseAiError)) console.error("Receipt scan error:", error)
-    const message = e.needsSetup ? e.message : `${e.message} 파일은 보관했으니 표에서 직접 입력할 수도 있습니다.`
+    const message = e.needsSetup ? e.message : `${e.message} (파일 보관됨 · 직접 입력 가능)`
     return fail(message, e.status, {
       ...(e.needsSetup ? { needs_setup: true } : {}),
       file: fileMeta,

@@ -1,22 +1,10 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import {
-  CheckCircle2,
-  FileText,
-  FileUp,
-  ImageIcon,
-  Loader2,
-  PenLine,
-  RotateCcw,
-  Sparkles,
-  TriangleAlert,
-  X,
-} from "lucide-react"
+import { Loader2, RotateCcw, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { HelpNote } from "@/components/admin/admin-ui"
 import {
   ProjectForm,
   formToInput,
@@ -26,23 +14,32 @@ import {
   type ProjectFormErrors,
   type ProjectFormState,
 } from "@/components/admin/expenses/project-form"
-import { formatBytes, normalizeName, requestJson } from "@/components/admin/expenses/client-helpers"
+import { formatBytes, formatPeriod, normalizeName, requestJson } from "@/components/admin/expenses/client-helpers"
+import {
+  BusyText,
+  DotList,
+  HelpDetails,
+  InlineNotice,
+  Money,
+  Panel,
+  SectionTitle,
+  StatusChip,
+} from "@/components/admin/expenses/ui"
 import { ClientImageError, compressImage, isHeicLike, isImageFile, isPdfFile } from "@/lib/client-image"
 import {
   CONFIDENCE_LABELS,
   MAX_PROJECT_DOC_FILES,
   PROJECT_DOC_ACCEPT,
   type AnalyzeProjectsResponse,
-  type Confidence,
   type ProjectDraft,
   type ProjectInput,
 } from "@/lib/expenses"
 import type { Attachment } from "@/lib/db"
 
-// "사업 자료로 자동 입력(AI)" — 사업계획서·협약서·선정 공문을 올리면 AI가 프로젝트 초안을 만든다.
+// "자료에서 불러오기": 사업계획서·협약서·선정 공문을 자동 분석(lib/expense-ai)해 프로젝트 초안을 만든다.
 // 초안은 제안일 뿐이다. 관리자가 폼에서 확인·수정하고 "이 프로젝트 등록"을 눌러야 저장된다.
 
-// 서버 한도(각 4MB, 합계 4.4MB — Vercel 요청 본문 4.5MB 안쪽)와 같게 맞춘다.
+// 서버 한도(각 4MB, 합계 4.4MB. Vercel 요청 본문 4.5MB 안쪽)와 같게 맞춘다.
 const MAX_DOC_BYTES = 4 * 1024 * 1024
 const MAX_TOTAL_BYTES = Math.floor(4.4 * 1024 * 1024)
 
@@ -72,11 +69,7 @@ interface DraftCard {
   error: string
 }
 
-const CONFIDENCE_CLASS: Record<Confidence, string> = {
-  high: "border-green-200 bg-green-50 text-green-800",
-  medium: "border-amber-200 bg-amber-50 text-amber-800",
-  low: "border-destructive/30 bg-destructive/10 text-destructive",
-}
+const KIND_LABEL: Record<PickedDoc["kind"], string> = { image: "사진", pdf: "PDF", text: "텍스트" }
 
 let keySeq = 0
 const nextKey = (p: string) => `${p}${++keySeq}-${Date.now()}`
@@ -92,18 +85,16 @@ function isTextLike(file: File): boolean {
 }
 
 function unsupportedReason(file: File): string {
-  if (/\.(hwp|hwpx)$/i.test(file.name)) return "한글(HWP) 파일은 바로 읽을 수 없습니다. 한글에서 'PDF로 저장'한 뒤 올려 주세요."
+  if (/\.(hwp|hwpx)$/i.test(file.name)) return "한글(HWP) 파일은 바로 읽을 수 없습니다. 한글에서 'PDF로 저장'한 뒤 올리세요."
   if (/\.(docx?|xlsx?|pptx?)$/i.test(file.name))
-    return "워드·엑셀·파워포인트 파일은 바로 읽을 수 없습니다. 'PDF로 저장(인쇄 → PDF)'한 뒤 올려 주세요."
-  if (/\.zip$/i.test(file.name)) return "압축 파일은 풀어서 PDF·사진만 올려 주세요."
+    return "워드·엑셀·파워포인트 파일은 바로 읽을 수 없습니다. 'PDF로 저장(인쇄 → PDF)'한 뒤 올리세요."
+  if (/\.zip$/i.test(file.name)) return "압축 파일은 풀어서 PDF·사진만 올리세요."
   return "PDF, 사진(JPG·PNG), 텍스트 파일만 올릴 수 있습니다."
 }
 
+// 실제 진행 단계를 알 수 없으므로 단계를 지어내지 않는다. 경과 초는 아래 줄에 따로 보인다.
 function progressText(sec: number): string {
-  if (sec < 8) return "자료를 올리고 있습니다…"
-  if (sec < 30) return "AI가 자료를 읽고 있습니다…"
-  if (sec < 75) return "과제명·기간·예산표를 정리하고 있습니다…"
-  return "자료가 많아 조금 더 걸리고 있습니다. 창을 닫지 말고 기다려 주세요…"
+  return sec < 75 ? "자료 분석 중" : "자료 분석 중 · 창을 닫지 마세요"
 }
 
 export function ProjectAiImport({
@@ -161,7 +152,7 @@ export function ProjectAiImport({
       for (const f of list.slice(room)) {
         bad.push({
           name: f.name,
-          reason: `한 번에 ${MAX_PROJECT_DOC_FILES}개까지 분석할 수 있습니다. 목록에서 필요 없는 자료를 빼고 다시 올려 주세요.`,
+          reason: `한 번에 ${MAX_PROJECT_DOC_FILES}개까지 분석할 수 있습니다. 목록에서 필요 없는 자료를 빼고 다시 올리세요.`,
         })
       }
       setPreparing((n) => n + accepted.length)
@@ -172,7 +163,7 @@ export function ProjectAiImport({
           if (isImageFile(f) || isHeicLike(f)) {
             const small = await compressImage(f)
             if (small.size > MAX_DOC_BYTES) {
-              bad.push({ name: f.name, reason: "사진을 줄여도 4MB가 넘습니다. 화면을 캡처해 다시 올려 주세요." })
+              bad.push({ name: f.name, reason: "압축 후에도 4MB를 넘습니다. 화면을 캡처해 다시 올리세요." })
               continue
             }
             ready.push({ key: nextKey("d"), file: small, originalName: f.name, originalSize: f.size, kind: "image" })
@@ -180,7 +171,7 @@ export function ProjectAiImport({
             if (f.size > MAX_DOC_BYTES) {
               bad.push({
                 name: f.name,
-                reason: `PDF가 4MB를 넘습니다(${formatBytes(f.size)}). 필요한 쪽(사업 개요·예산표)만 따로 PDF로 저장하거나 압축해서 올려 주세요.`,
+                reason: `PDF 용량 초과(${formatBytes(f.size)} / 최대 4MB). 필요한 쪽(사업 개요·예산표)만 PDF로 저장해 올리세요.`,
               })
               continue
             }
@@ -188,7 +179,7 @@ export function ProjectAiImport({
             ready.push({ key: nextKey("d"), file: pdf, originalName: f.name, originalSize: f.size, kind: "pdf" })
           } else if (isTextLike(f)) {
             if (f.size > MAX_DOC_BYTES) {
-              bad.push({ name: f.name, reason: "텍스트 파일이 4MB를 넘습니다. 필요한 부분만 남겨 주세요." })
+              bad.push({ name: f.name, reason: "텍스트 파일 용량 초과(최대 4MB). 필요한 부분만 남기세요." })
               continue
             }
             const txt = f.type === "text/plain" ? f : new File([f], f.name, { type: "text/plain" })
@@ -199,7 +190,7 @@ export function ProjectAiImport({
         } catch (e) {
           bad.push({
             name: f.name,
-            reason: e instanceof ClientImageError ? e.message : "파일을 읽지 못했습니다. 다른 파일로 다시 시도해 주세요.",
+            reason: e instanceof ClientImageError ? e.message : "파일을 읽지 못했습니다. 다른 파일로 다시 시도하세요.",
           })
         } finally {
           // 받지 못한 파일은 예약한 자리를 돌려준다.
@@ -315,7 +306,7 @@ export function ProjectAiImport({
   const register = async (card: DraftCard) => {
     const errors = validateProjectForm(card.form)
     if (hasErrors(errors)) {
-      updateCard(card.key, { errors, error: "빨간색으로 표시된 칸을 확인해 주세요." })
+      updateCard(card.key, { errors, error: "빨간 칸을 확인하세요." })
       return
     }
     updateCard(card.key, { status: "saving", errors: {}, error: "" })
@@ -330,33 +321,25 @@ export function ProjectAiImport({
     const allHandled = cards.length > 0 && cards.every((c) => c.status === "saved" || c.status === "skipped")
     return (
       <div className="grid gap-4">
-        <div className="rounded-md border border-gold/40 bg-gold/5 px-4 py-3 text-sm leading-relaxed text-text-secondary [word-break:keep-all]">
-          <div className="flex items-center gap-2 font-semibold text-dark">
-            <Sparkles className="h-4 w-4 text-gold" />
-            {cards.length > 0 ? `AI가 프로젝트 ${cards.length}개를 찾았습니다` : "자료에서 프로젝트 정보를 찾지 못했습니다"}
-          </div>
-          <p className="mt-1">
-            {cards.length > 0 ? (
-              <>
-                AI가 채운 값은 <b className="text-dark">제안</b>입니다. 원본 자료와 비교해 틀린 곳을 고친 뒤
-                <b className="text-dark"> “이 프로젝트 등록”</b>을 누르세요.
-                {cards.length > 1 && " 우리 과제가 아닌 초안은 “건너뛰기” 하면 됩니다."}
-              </>
-            ) : (
-              "사업계획서의 개요·예산표가 들어간 쪽을 올리면 더 잘 찾습니다. 직접 입력으로 계속해도 됩니다."
-            )}
+        <div>
+          <SectionTitle count={cards.length > 0 ? `${cards.length}건` : undefined}>
+            {cards.length > 0 ? "초안" : "프로젝트 정보 없음"}
+          </SectionTitle>
+          <p className="mt-1 text-sm text-text-secondary [word-break:keep-all]">
+            {cards.length > 0
+              ? `원본 자료와 대조한 뒤 등록하세요.${cards.length > 1 ? " 해당 없는 초안은 건너뛰세요." : ""}`
+              : "사업계획서 개요·예산표 쪽을 포함해 다시 분석하거나 직접 입력하세요."}
           </p>
         </div>
 
         {result.warnings.length > 0 && (
-          <ul className="grid gap-1 rounded-md border border-amber-200 bg-amber-50 px-3 py-2">
-            {result.warnings.map((w, i) => (
-              <li key={i} className="flex gap-1.5 text-xs text-amber-800 [word-break:keep-all]">
-                <TriangleAlert className="mt-0.5 h-3 w-3 shrink-0" />
-                {w}
-              </li>
-            ))}
-          </ul>
+          <InlineNotice tone="warning">
+            <ul className="space-y-0.5">
+              {result.warnings.map((w, i) => (
+                <li key={i}>{w}</li>
+              ))}
+            </ul>
+          </InlineNotice>
         )}
 
         {cards.map((card, i) => (
@@ -375,10 +358,7 @@ export function ProjectAiImport({
 
         {(cards.length === 0 || (allHandled && saved === 0)) && (
           <div className="flex flex-wrap gap-2">
-            <Button onClick={() => onManual(result.files)}>
-              <PenLine className="h-4 w-4" />
-              직접 입력으로 계속
-            </Button>
+            <Button onClick={() => onManual(result.files)}>직접 입력</Button>
             <Button variant="outline" onClick={restart}>
               <RotateCcw className="h-4 w-4" />
               다른 자료로 다시 분석
@@ -386,19 +366,14 @@ export function ProjectAiImport({
           </div>
         )}
         {cards.length > 0 && !allHandled && (
-          <div className="flex flex-wrap items-center gap-3 text-xs text-text-secondary">
-            <button type="button" onClick={restart} className="inline-flex items-center gap-1 underline-offset-2 hover:text-dark hover:underline">
-              <RotateCcw className="h-3 w-3" />
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={restart} className="-ml-2">
+              <RotateCcw className="h-3.5 w-3.5" />
               다른 자료로 다시 분석
-            </button>
-            <button
-              type="button"
-              onClick={() => onManual(result.files)}
-              className="inline-flex items-center gap-1 underline-offset-2 hover:text-dark hover:underline"
-            >
-              <PenLine className="h-3 w-3" />
-              AI 초안 없이 직접 입력
-            </button>
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => onManual(result.files)}>
+              직접 입력
+            </Button>
           </div>
         )}
       </div>
@@ -408,24 +383,16 @@ export function ProjectAiImport({
   // ── 화면: 분석 중 ─────────────────────────────────────────────────────────
   if (analyzing) {
     return (
-      <div className="rounded-lg border border-warm-tan bg-card px-5 py-8 text-center">
-        <Loader2 className="mx-auto h-8 w-8 animate-spin text-gold" />
-        <p className="mt-3 text-sm font-medium text-dark" aria-live="polite">
+      <Panel className="px-5 py-8 text-center">
+        <p className="inline-flex items-center gap-2 text-sm font-medium text-dark" aria-live="polite">
+          <Loader2 className="h-4 w-4 shrink-0 animate-spin text-text-secondary" aria-hidden />
           {progressText(elapsed)}
         </p>
-        <p className="mt-1 text-xs text-text-secondary">
-          {elapsed}초 경과 · 보통 20초~1분, 자료가 많으면 2~3분 걸립니다
-        </p>
-        <div className="mx-auto mt-4 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-warm-beige">
-          <div
-            className="h-full rounded-full bg-gold transition-[width] duration-1000 ease-out"
-            style={{ width: `${Math.min(95, 8 + elapsed * 1.4)}%` }}
-          />
-        </div>
-        <Button variant="ghost" size="sm" className="mt-4" onClick={cancel}>
+        <p className="mt-1 text-xs tabular-nums text-text-secondary">{elapsed}초 경과 · 보통 20초~1분</p>
+        <Button variant="outline" size="sm" className="mt-4" onClick={cancel}>
           취소
         </Button>
-      </div>
+      </Panel>
     )
   }
 
@@ -447,7 +414,7 @@ export function ProjectAiImport({
       <div
         role="button"
         tabIndex={0}
-        aria-label="사업 자료 파일 고르기"
+        aria-label="사업 자료 파일 선택"
         onClick={() => inputRef.current?.click()}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -465,135 +432,119 @@ export function ProjectAiImport({
           setDragOver(false)
           void addFiles(Array.from(e.dataTransfer.files ?? []))
         }}
-        className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed px-4 py-8 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold ${
-          dragOver ? "border-gold bg-gold/10" : "border-warm-tan bg-warm-beige/30 hover:border-gold hover:bg-gold/5"
+        className={`flex cursor-pointer flex-col items-center justify-center rounded-md border border-dashed px-4 py-6 text-center transition-colors focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 ${
+          dragOver ? "border-dark bg-warm-ivory" : "border-dark/50 bg-card hover:border-dark/70 hover:bg-warm-ivory/60"
         }`}
       >
-        <FileUp className={`h-8 w-8 ${dragOver ? "text-gold" : "text-text-tertiary"}`} />
-        <p className="mt-2 text-sm font-medium text-dark">
-          {dragOver ? "여기에 놓으세요" : "사업 자료를 끌어다 놓거나, 눌러서 고르세요"}
-        </p>
+        <p className="text-sm font-semibold text-dark">{dragOver ? "놓으면 추가됩니다" : "사업 자료를 끌어다 놓거나 선택하세요"}</p>
         <p className="mt-1 text-xs text-text-secondary [word-break:keep-all]">
-          사업계획서 · 협약서 · 선정 공문 · 예산표 (PDF, 사진, 텍스트) · 최대 {MAX_PROJECT_DOC_FILES}개 · 캡처 이미지는 Ctrl+V로 붙여넣기
+          사업계획서 · 협약서 · 선정 공문 · 예산표(PDF·사진·텍스트) · 최대 {MAX_PROJECT_DOC_FILES}개 · Ctrl+V 붙여넣기
         </p>
       </div>
 
       {rejected.length > 0 && (
-        <div className="rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2">
-          <div className="flex items-start justify-between gap-2">
-            <p className="text-xs font-medium text-destructive">올리지 못한 파일이 있습니다</p>
-            <button
-              type="button"
-              aria-label="안내 닫기"
-              onClick={() => setRejected([])}
-              className="text-text-tertiary hover:text-dark"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </div>
-          <ul className="mt-1 grid gap-0.5">
+        <InlineNotice tone="danger" onClose={() => setRejected([])}>
+          <p className="font-medium">추가하지 못한 파일</p>
+          <ul className="mt-1 grid gap-0.5 text-xs">
             {rejected.map((r, i) => (
-              <li key={i} className="text-xs text-text-secondary [word-break:keep-all]">
-                <b className="text-dark">{r.name}</b> — {r.reason}
+              <li key={i}>
+                <b className="font-semibold text-dark">{r.name}</b>: <span className="text-text-secondary">{r.reason}</span>
               </li>
             ))}
           </ul>
-        </div>
+        </InlineNotice>
       )}
 
       {(docs.length > 0 || preparing > 0) && (
         <ul className="grid gap-2 sm:grid-cols-2">
           {docs.map((d) => (
             <li key={d.key} className="flex items-center gap-2.5 rounded-md border border-warm-tan bg-card px-3 py-2">
-              {d.kind === "image" ? (
-                <ImageIcon className="h-4 w-4 shrink-0 text-text-secondary" />
-              ) : (
-                <FileText className="h-4 w-4 shrink-0 text-text-secondary" />
-              )}
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm text-dark" title={d.originalName}>
                   {d.originalName}
                 </p>
-                <p className="text-[11px] text-text-tertiary">
-                  {d.kind === "image" && d.file.size < d.originalSize
-                    ? `${formatBytes(d.originalSize)} → ${formatBytes(d.file.size)}로 줄임`
-                    : formatBytes(d.file.size)}
+                <p className="text-xs tabular-nums text-text-secondary">
+                  <DotList
+                    items={[
+                      KIND_LABEL[d.kind],
+                      d.kind === "image" && d.file.size < d.originalSize
+                        ? `${formatBytes(d.originalSize)} → ${formatBytes(d.file.size)}`
+                        : formatBytes(d.file.size),
+                    ]}
+                  />
                 </p>
               </div>
               <button
                 type="button"
-                aria-label={`${d.originalName} 빼기`}
+                aria-label={`${d.originalName} 제거`}
+                title="제거"
                 onClick={() => removeDoc(d.key)}
-                className="rounded p-1 text-text-tertiary hover:bg-warm-beige hover:text-destructive"
+                className="rounded-sm p-1 text-text-secondary outline-none hover:bg-warm-beige hover:text-destructive focus-visible:ring-[3px] focus-visible:ring-ring/50"
               >
                 <X className="h-4 w-4" />
               </button>
             </li>
           ))}
           {preparing > 0 && (
-            <li className="flex items-center gap-2 rounded-md border border-dashed border-warm-tan px-3 py-2 text-xs text-text-secondary">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              사진 {preparing}장을 보내기 좋게 줄이는 중…
+            <li className="flex items-center rounded-md border border-warm-tan bg-card px-3 py-2">
+              <BusyText>사진 {preparing}장 압축 중</BusyText>
             </li>
           )}
         </ul>
       )}
 
       {overTotal && (
-        <p className="flex gap-1.5 text-xs text-destructive [word-break:keep-all]">
-          <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          파일 합계가 {formatBytes(totalBytes)}입니다. 한 번에 4.4MB까지 보낼 수 있으니 파일을 빼거나 나눠서 분석해 주세요.
-        </p>
+        <InlineNotice tone="danger">
+          파일 합계 <span className="tabular-nums">{formatBytes(totalBytes)}</span> · 한 번에 4.4MB까지 가능합니다. 파일을 빼거나 나눠서
+          분석하세요.
+        </InlineNotice>
       )}
 
       <div className="grid gap-1.5">
-        <Label htmlFor="ai-hint">AI에게 알려 줄 내용 (선택)</Label>
+        <Label htmlFor="ai-hint">참고 사항 (선택)</Label>
         <Input
           id="ai-hint"
           value={hint}
           maxLength={500}
           onChange={(e) => setHint(e.target.value)}
-          placeholder="예: 우리 회사 과제는 ‘스마트 물류’ 하나입니다. 2차년도 예산만 봐 주세요."
+          placeholder="예: 과제명 ‘스마트 물류’ · 2차년도 예산만"
         />
       </div>
 
       {error && (
-        <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-sm text-destructive [word-break:keep-all]">
+        <InlineNotice tone="danger">
           {error}
-          {!needsSetup && (
-            <p className="mt-1 text-xs text-text-secondary">같은 자료로 다시 시도하거나, 직접 입력으로 계속할 수 있습니다.</p>
-          )}
+          {!needsSetup && <p className="mt-1 text-xs text-text-secondary">다시 시도하거나 직접 입력하세요.</p>}
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <Button size="sm" variant="outline" onClick={() => onManual(keptFiles)}>
-              <PenLine className="h-3.5 w-3.5" />
-              직접 입력으로 계속
+              직접 입력
             </Button>
             {keptFiles.length > 0 && (
-              <span className="text-xs text-text-secondary">올린 자료 {keptFiles.length}개는 프로젝트에 함께 보관됩니다</span>
+              <span className="text-xs text-text-secondary">올린 자료 {keptFiles.length}개는 프로젝트에 보관됩니다</span>
             )}
           </div>
-        </div>
+        </InlineNotice>
       )}
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-3">
         <Button onClick={analyze} disabled={docs.length === 0 || overTotal || preparing > 0}>
-          <Sparkles className="h-4 w-4" />
-          {error && !needsSetup ? "다시 분석하기" : "AI로 분석하기"}
+          {error && !needsSetup && <RotateCcw className="h-4 w-4" />}
+          {error && !needsSetup ? "다시 분석" : "자료 분석"}
         </Button>
-        {docs.length === 0 && <span className="text-xs text-text-tertiary">먼저 자료를 1개 이상 올려 주세요</span>}
+        {docs.length === 0 && <span className="text-xs text-text-secondary">자료를 1개 이상 올리세요</span>}
       </div>
 
-      <HelpNote title="어떤 자료를 올리면 좋나요?">
-        <ul className="list-disc space-y-0.5 pl-4">
-          <li>
-            <b>협약서·사업계획서의 첫 장(과제명·기간)</b>과 <b>예산표(비목별 금액)</b>가 들어간 쪽이면 충분합니다.
-          </li>
-          <li>PDF가 너무 크면 필요한 쪽만 따로 저장하거나, 해당 화면을 캡처해 붙여넣으세요.</li>
-          <li>자료에 과제가 여러 개 있으면 초안도 여러 개 만들어집니다. 우리 과제만 골라 등록하세요.</li>
-          <li>올린 자료는 프로젝트에 함께 보관되어 나중에 “사업·프로젝트”에서 다시 내려받을 수 있습니다.</li>
-          <li>AI는 자료에 없는 값을 지어내지 않도록 되어 있습니다. 빈칸은 직접 채우거나 비워 두세요.</li>
-        </ul>
-      </HelpNote>
+      <HelpDetails
+        title="자료 안내"
+        className="mt-0"
+        items={[
+          "필요한 쪽: 협약서·사업계획서 첫 장(과제명·기간), 예산표(비목별 금액)",
+          "큰 PDF는 필요한 쪽만 저장하거나 캡처해 붙여넣기",
+          "과제가 여러 개면 초안도 여러 건 생성 · 해당 과제만 등록",
+          "올린 자료는 프로젝트에 보관(사업·프로젝트에서 다운로드)",
+          "자료에 없는 값은 빈칸으로 남습니다.",
+        ]}
+      />
     </div>
   )
 }
@@ -617,26 +568,26 @@ function DraftCardView({
   onSkip: () => void
   onUndoSkip: () => void
 }) {
-  const label = total > 1 ? `초안 ${index + 1}` : "AI 초안"
+  const label = total > 1 ? `초안 ${index + 1}` : "초안"
+  const f = card.form
+  const confidence = card.draft.confidence
 
   if (card.status === "saved") {
     return (
-      <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
-        <CheckCircle2 className="h-4 w-4 shrink-0" />
-        <span className="[word-break:keep-all]">
-          <b>{card.form.name}</b> 프로젝트를 등록했습니다.
-        </span>
-      </div>
+      <InlineNotice tone="success">
+        <b className="font-semibold">{f.name}</b> 등록 완료
+      </InlineNotice>
     )
   }
 
   if (card.status === "skipped") {
     return (
-      <div className="flex items-center justify-between gap-2 rounded-lg border border-dashed border-warm-tan px-4 py-3 text-sm text-text-secondary">
-        <span className="truncate">
-          {label} · {card.form.name || "(이름 없음)"} — 건너뜀
+      <div className="flex items-center justify-between gap-2 rounded-md border border-warm-tan bg-warm-ivory px-4 py-2.5 text-sm text-text-secondary">
+        <span className="min-w-0 truncate">
+          <DotList items={[label, f.name || "(이름 없음)", "건너뜀"]} />
         </span>
         <Button variant="ghost" size="sm" onClick={onUndoSkip}>
+          <RotateCcw className="h-3.5 w-3.5" />
           되돌리기
         </Button>
       </div>
@@ -644,42 +595,50 @@ function DraftCardView({
   }
 
   const saving = card.status === "saving"
+  const headerItems = [
+    f.name.trim() && <span className="text-dark">{f.name.trim()}</span>,
+    typeof f.total_budget === "number" && <Money value={f.total_budget} unit className="inline" />,
+    (f.start_date || f.end_date) && <span className="tabular-nums">{formatPeriod(f.start_date || null, f.end_date || null)}</span>,
+  ].filter(Boolean)
   return (
-    <div className="overflow-hidden rounded-lg border border-warm-tan bg-card shadow-sm">
-      <div className="flex flex-wrap items-center gap-2 border-b border-warm-tan bg-warm-beige/40 px-4 py-2.5">
+    <Panel as="article">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-warm-tan px-4 py-2.5">
         <span className="text-sm font-semibold text-dark">{label}</span>
-        <span className={`rounded border px-1.5 py-0.5 text-[11px] ${CONFIDENCE_CLASS[card.draft.confidence]}`}>
-          AI 확신도 {CONFIDENCE_LABELS[card.draft.confidence]}
+        <span className="order-last w-full min-w-0 text-sm text-text-secondary [word-break:keep-all] sm:order-none sm:w-auto sm:flex-1">
+          {headerItems.map((item, i) => (
+            <span key={i}>
+              {item}
+              {/* 구분점은 앞 항목 끝에 붙인다(U+2060로 줄바꿈 금지): 줄이 바뀌어도 "·"로 시작하지 않게 */}
+              {i < headerItems.length - 1 && (
+                <span aria-hidden className="ml-1.5 mr-0.5 text-text-tertiary">
+                  {"\u2060·"}
+                </span>
+              )}{" "}
+            </span>
+          ))}
         </span>
+        {confidence === "low" ? (
+          <StatusChip status="review" className="ml-auto sm:ml-0">
+            신뢰도 낮음
+          </StatusChip>
+        ) : (
+          <span className="ml-auto text-xs text-text-secondary sm:ml-0">신뢰도 {CONFIDENCE_LABELS[confidence]}</span>
+        )}
       </div>
       <div className="grid gap-4 p-4">
-        {(card.draft.note || card.draft.confidence === "low") && (
-          <div className="flex gap-2 rounded-md bg-warm-beige/40 px-3 py-2 text-xs leading-relaxed text-text-secondary [word-break:keep-all]">
-            <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gold" />
-            <div>
-              {card.draft.note && <p>AI 메모: {card.draft.note}</p>}
-              {card.draft.confidence === "low" && (
-                <p className="font-medium text-amber-800">
-                  확실하지 않은 값이 많습니다. 원본 자료와 한 칸씩 대조해 주세요.
-                </p>
-              )}
-            </div>
+        {(card.draft.note || confidence === "low") && (
+          <div className="grid gap-0.5 text-xs [word-break:keep-all]">
+            {confidence === "low" && <p className="font-medium text-amber-800">불확실한 값 다수 · 원본 대조 필요</p>}
+            {card.draft.note && <p className="text-text-secondary">비고: {card.draft.note}</p>}
           </div>
         )}
 
-        <ProjectForm value={card.form} onChange={onChange} errors={card.errors} idPrefix={card.key} disabled={saving} />
+        <ProjectForm value={f} onChange={onChange} errors={card.errors} idPrefix={card.key} disabled={saving} />
 
-        {duplicateName && (
-          <p className="flex gap-1.5 text-xs text-amber-800 [word-break:keep-all]">
-            <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            같은 이름의 프로젝트가 이미 있습니다. 중복 등록이 아닌지 확인하세요(이름을 조금 바꾸면 구분하기 쉽습니다).
-          </p>
-        )}
-        {card.error && (
-          <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive [word-break:keep-all]">{card.error}</p>
-        )}
+        {duplicateName && <InlineNotice tone="warning">같은 이름의 프로젝트가 이미 있습니다.</InlineNotice>}
+        {card.error && <InlineNotice tone="danger">{card.error}</InlineNotice>}
 
-        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-warm-tan/60 pt-3">
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-warm-tan pt-3">
           {total > 1 && (
             <Button variant="ghost" onClick={onSkip} disabled={saving}>
               건너뛰기
@@ -697,6 +656,6 @@ function DraftCardView({
           </Button>
         </div>
       </div>
-    </div>
+    </Panel>
   )
 }

@@ -1,23 +1,14 @@
 "use client"
 
 import { useRef, useState } from "react"
-import {
-  Calculator,
-  Download,
-  ExternalLink,
-  FileText,
-  Loader2,
-  Plus,
-  Sparkles,
-  Trash2,
-  TriangleAlert,
-} from "lucide-react"
+import { Calculator, Download, ExternalLink, Loader2, Plus, Trash2, TriangleAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { cn } from "@/lib/utils"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,9 +20,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { WonInput } from "@/components/admin/expenses/won-input"
+import { CELL_TONE_CLASS, InlineNotice } from "@/components/admin/expenses/ui"
 import { fileUrl, formatBytes, jsonInit, normalizeName, requestJson, wonNumber } from "@/components/admin/expenses/client-helpers"
 import {
-  CONFIDENCE_LABELS,
   DOC_TYPE_LABELS,
   EXPENSE_DOC_TYPES,
   PAYMENT_LABELS,
@@ -110,7 +101,8 @@ export function ReceiptEditSheet({
   return (
     <>
       <Sheet open={receipt !== null} onOpenChange={(o) => !o && requestClose()}>
-        <SheetContent side="right" className="w-full gap-0 p-0 sm:max-w-xl">
+        {/* 열 때 첫 입력칸에 금색 포커스 링이 먼저 잡히지 않게 한다(검토 창과 같은 방식). Tab을 누르면 첫 칸부터 이동한다. */}
+        <SheetContent side="right" className="w-full gap-0 p-0 sm:max-w-xl" onOpenAutoFocus={(e) => e.preventDefault()}>
           {receipt && (
             <EditBody
               key={`${receipt.id}-${receipt.updated_at}`}
@@ -132,8 +124,8 @@ export function ReceiptEditSheet({
       <AlertDialog open={confirmClose} onOpenChange={setConfirmClose}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>저장하지 않은 수정 내용이 있습니다</AlertDialogTitle>
-            <AlertDialogDescription>지금 닫으면 고친 내용이 사라집니다. 닫을까요?</AlertDialogDescription>
+            <AlertDialogTitle>저장하지 않은 수정 내용</AlertDialogTitle>
+            <AlertDialogDescription>닫으면 수정 내용이 사라집니다.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>계속 수정</AlertDialogCancel>
@@ -216,7 +208,7 @@ function EditBody({
       items: fields.items.filter((i) => i.name.trim() || i.amount !== null || i.unit_price !== null),
     }
     const errs = validateReceiptFields(clean)
-    if (!projectId) errs.unshift("어느 프로젝트의 증빙인지 선택하세요")
+    if (!projectId) errs.unshift("프로젝트를 선택하세요")
     setErrors(errs)
     if (errs.length > 0) return
     setSaving(true)
@@ -236,7 +228,7 @@ function EditBody({
     )
   }
 
-  const ring = (k: FieldKey) => (invalid.has(k) ? "border-destructive ring-1 ring-destructive/30" : "")
+  const ring = (k: FieldKey) => (invalid.has(k) ? CELL_TONE_CLASS.invalid : "")
 
   return (
     <form
@@ -255,7 +247,7 @@ function EditBody({
 
       <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-5">
         {/* 원본 미리보기 */}
-        <div className="overflow-hidden rounded-lg border border-warm-tan bg-warm-beige/30">
+        <div className="overflow-hidden rounded-md border border-warm-tan bg-warm-beige/30">
           {isImage ? (
             <a href={fileUrl(receipt.file_pathname)} target="_blank" rel="noreferrer" title="원본 크게 보기">
               {/* next/image는 쿼리스트링 로컬 src에서 SSR 예외가 나므로 일반 img를 쓴다 */}
@@ -268,10 +260,7 @@ function EditBody({
               />
             </a>
           ) : (
-            <div className="flex items-center gap-3 px-4 py-5">
-              <FileText className="h-8 w-8 shrink-0 text-text-tertiary" />
-              <p className="text-sm text-text-secondary">PDF 원본은 새 창에서 확인하세요.</p>
-            </div>
+            <p className="px-4 py-5 text-sm text-dark/70">PDF 원본은 새 창에서 확인하세요.</p>
           )}
           <div className="flex flex-wrap items-center gap-2 border-t border-warm-tan/60 bg-card px-3 py-2 text-xs">
             <span className="min-w-0 flex-1 truncate text-text-secondary" title={receipt.file_name}>
@@ -281,25 +270,23 @@ function EditBody({
               href={fileUrl(receipt.file_pathname)}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1 text-dark hover:text-gold"
+              className="inline-flex items-center gap-1 text-dark underline-offset-2 hover:underline"
             >
               <ExternalLink className="h-3 w-3" />새 창
             </a>
             <a
               href={fileUrl(receipt.file_pathname, { download: true, name: receipt.file_name })}
-              className="inline-flex items-center gap-1 text-dark hover:text-gold"
+              className="inline-flex items-center gap-1 text-dark underline-offset-2 hover:underline"
             >
               <Download className="h-3 w-3" />
               내려받기
             </a>
           </div>
         </div>
-        {receipt.ai_confidence && (
-          <p className="mt-2 flex items-center gap-1.5 text-xs text-text-secondary">
-            <Sparkles className="h-3 w-3 text-gold" />
-            AI 판독 확신도 {CONFIDENCE_LABELS[receipt.ai_confidence]}
-            {receipt.ai_confidence === "low" && " — 원본과 한 번 더 대조해 보세요"}
-          </p>
+        {receipt.ai_confidence === "low" && (
+          <InlineNotice tone="warning" className="mt-2">
+            인식 신뢰도 낮음 · 원본 대조 필요
+          </InlineNotice>
         )}
 
         <div className="mt-5 grid gap-4">
@@ -314,8 +301,8 @@ function EditBody({
                 setProjectId(Number(v))
               }}
             >
-              <SelectTrigger id="re-project" className={`w-full ${ring("project_id")}`}>
-                <SelectValue placeholder="프로젝트를 고르세요" />
+              <SelectTrigger id="re-project" className={cn("w-full", ring("project_id"))}>
+                <SelectValue placeholder="프로젝트 선택" />
               </SelectTrigger>
               <SelectContent>
                 {choices.map((p) => (
@@ -327,7 +314,7 @@ function EditBody({
               </SelectContent>
             </Select>
             {projectId !== receipt.project_id && (
-              <p className="text-xs text-amber-800">저장하면 이 증빙이 다른 프로젝트로 옮겨지고, 두 프로젝트의 집행액이 함께 바뀝니다.</p>
+              <p className="text-xs text-amber-800">저장 시 다른 프로젝트로 이동하며 양쪽 집행액이 바뀝니다.</p>
             )}
           </div>
 
@@ -409,7 +396,7 @@ function EditBody({
           </div>
 
           <div className="grid gap-1.5">
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               <div className="grid gap-1.5">
                 <Label htmlFor="re-supply" className="text-xs">
                   공급가액
@@ -434,7 +421,7 @@ function EditBody({
                   onChange={(v) => set("vat_amount", v)}
                 />
               </div>
-              <div className="grid gap-1.5">
+              <div className="col-span-2 grid gap-1.5 sm:col-span-1">
                 <Label htmlFor="re-total" className="text-xs">
                   합계 <span className="text-destructive">*</span>
                 </Label>
@@ -449,15 +436,17 @@ function EditBody({
               </div>
             </div>
             {mismatch && (
-              <div className="flex flex-wrap items-center gap-2 text-xs text-amber-800">
-                <TriangleAlert className="h-3.5 w-3.5" />
-                공급가액 + 부가세({wonNumber((fields.supply_amount ?? 0) + (fields.vat_amount ?? 0))}원)가 합계와 다릅니다.
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-amber-800">
+                <TriangleAlert className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                <span>
+                  금액 불일치: 공급가액+부가세 <b className="tabular-nums">{wonNumber((fields.supply_amount ?? 0) + (fields.vat_amount ?? 0))}원</b> ≠ 합계
+                </span>
                 <button
                   type="button"
                   className="font-medium underline underline-offset-2"
                   onClick={() => set("total_amount", (fields.supply_amount ?? 0) + (fields.vat_amount ?? 0))}
                 >
-                  합계를 맞추기
+                  합계 맞추기
                 </button>
               </div>
             )}
@@ -467,8 +456,8 @@ function EditBody({
                 onClick={splitVat}
                 className="inline-flex w-fit items-center gap-1 text-xs text-text-secondary underline-offset-2 hover:text-dark hover:underline"
               >
-                <Calculator className="h-3 w-3" />
-                합계에서 공급가액·부가세(10%) 나눠 채우기
+                <Calculator className="h-3.5 w-3.5" />
+                합계로 공급가액·부가세(10%) 계산
               </button>
             )}
           </div>
@@ -479,7 +468,7 @@ function EditBody({
               id="re-approval"
               value={fields.approval_no}
               maxLength={50}
-              placeholder="카드 승인번호 등 (없으면 비워 두세요)"
+              placeholder="카드 승인번호"
               onChange={(e) => set("approval_no", e.target.value)}
             />
           </div>
@@ -491,7 +480,7 @@ function EditBody({
               list={listId}
               value={fields.budget_item}
               maxLength={100}
-              placeholder={budgetNames.length > 0 ? "아래에서 고르거나 직접 입력" : "예: 재료비, 회의비"}
+              placeholder={budgetNames.length > 0 ? "선택 또는 직접 입력" : "예: 재료비, 회의비"}
               className={ring("budget_item")}
               onChange={(e) => set("budget_item", e.target.value)}
             />
@@ -508,10 +497,14 @@ function EditBody({
                     <button
                       key={n}
                       type="button"
+                      aria-pressed={on}
                       onClick={() => set("budget_item", n)}
-                      className={`rounded-full border px-2.5 py-0.5 text-xs transition-colors ${
-                        on ? "border-gold bg-gold/15 font-medium text-dark" : "border-warm-tan text-text-secondary hover:border-gold hover:text-dark"
-                      }`}
+                      className={cn(
+                        "h-6 rounded-sm border px-2 text-xs transition-colors",
+                        on
+                          ? "border-dark/60 bg-warm-beige font-semibold text-dark"
+                          : "border-warm-tan bg-card text-text-secondary hover:border-dark/40 hover:text-dark"
+                      )}
                     >
                       {n}
                     </button>
@@ -520,7 +513,7 @@ function EditBody({
               </div>
             )}
             {!budgetKnown && budgetNames.length > 0 && (
-              <p className="text-xs text-amber-800">이 프로젝트의 예산표에 없는 비목입니다. 비목별 집행률에서 따로 표시됩니다.</p>
+              <p className="text-xs text-amber-800">예산 외 비목</p>
             )}
           </div>
 
@@ -562,7 +555,7 @@ function EditBody({
               id="re-memo"
               rows={2}
               value={fields.memo}
-              placeholder="내부 확인용 메모 (선택)"
+              placeholder="내부 메모"
               onChange={(e) => set("memo", e.target.value)}
             />
           </div>
@@ -571,14 +564,16 @@ function EditBody({
 
       <div className="border-t border-warm-tan bg-card px-4 py-3 sm:px-5">
         {errors.length > 0 && (
-          <ul className="mb-2 grid gap-0.5 rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive">
+          <ul className="mb-2 grid gap-0.5 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
             {errors.map((e) => (
               <li key={e}>· {e}</li>
             ))}
           </ul>
         )}
         {serverError && (
-          <p className="mb-2 rounded-md bg-destructive/10 px-3 py-2 text-xs text-destructive [word-break:keep-all]">{serverError}</p>
+          <p role="alert" className="mb-2 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive [word-break:keep-all]">
+            {serverError}
+          </p>
         )}
         <div className="flex items-center gap-2">
           <Button type="button" variant="ghost" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={onRequestDelete} disabled={saving}>
@@ -619,10 +614,10 @@ function ItemsEditor({
   const sum = items.reduce((s, it) => s + (typeof it.amount === "number" ? it.amount : 0), 0)
   return (
     <div className="border-t border-warm-tan/60 px-3 py-2.5">
-      {items.length === 0 && <p className="pb-2 text-xs text-text-secondary">등록된 품목이 없습니다. 필요하면 추가하세요(선택).</p>}
+      {items.length === 0 && <p className="pb-2 text-xs text-text-secondary">품목 없음</p>}
       <ul className="grid gap-2.5">
         {items.map((it, i) => (
-          <li key={i} className="grid gap-1.5 rounded-md bg-warm-beige/30 p-2">
+          <li key={i} className="grid gap-1.5 rounded-md border border-warm-tan/70 p-2">
             <div className="flex gap-1.5">
               <Input
                 value={it.name}
@@ -690,7 +685,7 @@ function ItemsEditor({
           <span className="text-xs text-text-secondary">
             품목 합계 <b className="tabular-nums text-dark">{wonNumber(sum)}원</b>
             {typeof total === "number" && sum > 0 && sum !== total && (
-              <span className="ml-1 text-text-tertiary">(합계 {wonNumber(total)}원과 다름 · 할인·부가세 차이일 수 있어요)</span>
+              <span className="ml-1 text-text-secondary">(합계 {wonNumber(total)}원과 다름)</span>
             )}
           </span>
         )}

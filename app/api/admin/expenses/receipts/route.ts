@@ -87,7 +87,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: true, receipts })
   } catch (error) {
     console.error("Expense receipts list error:", error)
-    return fail(dbErrorMessage(error, "증빙 내역을 불러오지 못했습니다. 새로고침해 주세요."), 500)
+    return fail(dbErrorMessage(error, "증빙 내역을 불러오지 못했습니다. 새로고침하세요."), 500)
   }
 }
 
@@ -100,7 +100,7 @@ export async function POST(request: Request) {
   const list = body?.receipts
   if (!Array.isArray(list)) return fail("요청 형식이 올바르지 않습니다(receipts 배열 필요)", 400)
   if (list.length === 0) return fail("저장할 증빙이 없습니다. 표에서 저장할 행을 선택하세요.", 400)
-  if (list.length > MAX_BATCH) return fail(`한 번에 ${MAX_BATCH}건까지 저장할 수 있습니다. 나눠서 저장해 주세요.`, 400)
+  if (list.length > MAX_BATCH) return fail(`한 번에 ${MAX_BATCH}건까지 저장할 수 있습니다. 나눠서 저장하세요.`, 400)
 
   try {
     const rawRows = list.map((r) => (r && typeof r === "object" && !Array.isArray(r) ? (r as Record<string, unknown>) : {}))
@@ -160,7 +160,7 @@ export async function POST(request: Request) {
         const k = rest(p.fields)
         const keys = [`p:${p.file.pathname}|${k}`, ...(p.file.hash ? [`h:${p.file.hash}|${k}`] : [])]
         if (keys.some((key) => seenInBatch.has(key))) {
-          addError(p.index, "같은 증빙(같은 파일·거래일·거래처·합계)이 이번 저장에 두 번 들어 있습니다. 한 건만 남기고 빼 주세요")
+          addError(p.index, "같은 증빙(같은 파일·거래일·거래처·합계)이 이번 저장에 두 번 들어 있습니다. 한 건만 남기고 제외하세요")
         }
         for (const key of keys) seenInBatch.add(key)
       }
@@ -206,14 +206,14 @@ export async function POST(request: Request) {
       }
       for (const p of prepared) {
         if (missing.has(p.file.pathname)) {
-          addError(p.index, "원본 파일이 삭제되어 이 행을 저장할 수 없습니다. 원본 파일을 다시 올려 새 행으로 저장해 주세요")
+          addError(p.index, "원본 파일이 삭제되어 이 행을 저장할 수 없습니다. 원본 파일을 다시 올려 새 행으로 저장하세요")
         }
       }
     }
 
     if (rowErrors.length > 0) {
       rowErrors.sort((a, b) => a.index - b.index)
-      return fail(`${rowErrors.length}건에 확인이 필요한 항목이 있어 저장하지 않았습니다. 표에 표시된 내용을 고쳐 주세요.`, 400, {
+      return fail(`${rowErrors.length}건에 확인이 필요한 항목이 있어 저장하지 않았습니다. 표에 표시된 내용을 수정하세요.`, 400, {
         row_errors: rowErrors,
       })
     }
@@ -257,7 +257,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, ids, skipped })
   } catch (error) {
     console.error("Expense receipts create error:", error)
-    return fail(dbErrorMessage(error, "증빙을 저장하지 못했습니다(한 건도 저장되지 않았습니다). 잠시 후 다시 시도해 주세요."), 500)
+    return fail(dbErrorMessage(error, "증빙을 저장하지 못했습니다(한 건도 저장되지 않았습니다). 잠시 후 다시 시도하세요."), 500)
   }
 }
 
@@ -273,7 +273,7 @@ export async function PUT(request: Request) {
 
   try {
     const existing = await getReceipt(sql, id)
-    if (!existing) return fail("이미 삭제되었거나 없는 증빙입니다. 새로고침해 주세요.", 404)
+    if (!existing) return fail("이미 삭제되었거나 없는 증빙입니다. 새로고침하세요.", 404)
 
     // 보낸 필드만 덮어쓰고 전체를 다시 검증한다.
     const merged: Record<string, unknown> = {}
@@ -313,7 +313,7 @@ export async function PUT(request: Request) {
     return NextResponse.json({ success: true, receipt })
   } catch (error) {
     console.error("Expense receipt update error:", error)
-    return fail(dbErrorMessage(error, "증빙을 수정하지 못했습니다. 잠시 후 다시 시도해 주세요."), 500)
+    return fail(dbErrorMessage(error, "증빙을 수정하지 못했습니다. 잠시 후 다시 시도하세요."), 500)
   }
 }
 
@@ -328,7 +328,7 @@ export async function DELETE(request: Request) {
 
   try {
     const rows = await sql`DELETE FROM expense_receipts WHERE id = ${id} RETURNING file_pathname`
-    if (rows.length === 0) return fail("이미 삭제되었거나 없는 증빙입니다. 새로고침해 주세요.", 404)
+    if (rows.length === 0) return fail("이미 삭제되었거나 없는 증빙입니다. 새로고침하세요.", 404)
     const pathname = String(rows[0].file_pathname)
 
     // 한 파일에 증빙이 여러 장이면 다른 행이 같은 원본을 쓴다 — 마지막 행일 때만 원본을 지운다.
@@ -341,6 +341,6 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("Expense receipt delete error:", error)
-    return fail(dbErrorMessage(error, "증빙을 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요."), 500)
+    return fail(dbErrorMessage(error, "증빙을 삭제하지 못했습니다. 잠시 후 다시 시도하세요."), 500)
   }
 }

@@ -83,7 +83,7 @@ export async function GET(request: Request) {
 
   try {
     const project = await getProject(sql, projectId)
-    if (!project) return fail("없는 프로젝트입니다. 새로고침해 주세요.", 404)
+    if (!project) return fail("없는 프로젝트입니다. 새로고침하세요.", 404)
     const receipts = await listReceipts(sql, {
       projectId,
       from: isValidDate(from) ? from : null,
@@ -112,7 +112,7 @@ export async function GET(request: Request) {
       return { pathname, label: `${r.issue_date} ${r.vendor_name} (${r.file_name})`, entry: uniqueName(used, base, extFor(r)) }
     })
     if (totalBytes > MAX_TOTAL_BYTES) {
-      return fail("원본 파일이 너무 많아 한 번에 묶을 수 없습니다. 기간을 나눠(예: 월별로) 내려받아 주세요.", 413)
+      return fail("원본 파일이 너무 많아 한 번에 묶을 수 없습니다. 기간을 나눠(예: 월별로) 내려받으세요.", 413)
     }
 
     const data: (Uint8Array | null)[] = new Array(jobs.length).fill(null)
@@ -136,7 +136,7 @@ export async function GET(request: Request) {
       else failed.push(job.label)
     })
     if (Object.keys(files).length === 0) {
-      return fail("증빙 원본 파일을 하나도 읽지 못했습니다. 잠시 후 다시 시도해 주세요.", 500)
+      return fail("증빙 원본 파일을 하나도 읽지 못했습니다. 잠시 후 다시 시도하세요.", 500)
     }
     if (failed.length > 0) {
       files["_안내.txt"] = new TextEncoder().encode(
@@ -157,6 +157,6 @@ export async function GET(request: Request) {
     })
   } catch (error) {
     console.error("Expense zip error:", error)
-    return fail(dbErrorMessage(error, "증빙 파일 묶음을 만들지 못했습니다. 잠시 후 다시 시도해 주세요."), 500)
+    return fail(dbErrorMessage(error, "증빙 파일 묶음을 만들지 못했습니다. 잠시 후 다시 시도하세요."), 500)
   }
 }

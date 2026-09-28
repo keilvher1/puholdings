@@ -1,6 +1,6 @@
 "use client"
 
-import { Plus, Trash2, CheckCircle2, TriangleAlert, Paperclip, Download } from "lucide-react"
+import { Plus, Trash2, CheckCircle2, TriangleAlert, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -10,7 +10,7 @@ import { daysBetween, fileUrl, formatBytes, normalizeName, wonNumber } from "@/c
 import { isValidDate, isWholeWon, type ProjectInput } from "@/lib/expenses"
 import type { Attachment } from "@/lib/db"
 
-// 프로젝트 등록·수정 폼. 온보딩(직접 입력·AI 초안)과 수정 Dialog가 같은 폼을 쓴다.
+// 프로젝트 등록·수정 폼. 온보딩(직접 입력·자료에서 불러온 초안)과 수정 Dialog가 같은 폼을 쓴다.
 // 폼 상태는 부모가 들고 있고(value/onChange), 저장은 부모가 formToInput()으로 바꿔 보낸다.
 
 export interface BudgetRow {
@@ -120,7 +120,7 @@ export function validateProjectForm(f: ProjectFormState): ProjectFormErrors {
     const name = normalizeName(b.name)
     if (!name && b.amount === null) continue
     if (!name) {
-      e.budget_items = "금액을 넣은 비목에는 이름도 적어 주세요"
+      e.budget_items = "금액을 넣은 비목에는 이름을 입력하세요"
       break
     }
     if (name.length > 100) {
@@ -132,7 +132,7 @@ export function validateProjectForm(f: ProjectFormState): ProjectFormErrors {
       break
     }
     if (seen.has(name)) {
-      e.budget_items = `'${name}' 비목이 두 번 들어 있습니다. 하나로 합쳐 주세요`
+      e.budget_items = `'${name}' 비목이 두 번 들어 있습니다. 하나로 합치세요`
       break
     }
     seen.add(name)
@@ -186,10 +186,10 @@ export function ProjectForm({
           disabled={disabled}
           aria-invalid={Boolean(errors.name) || undefined}
           onChange={(e) => set("name", e.target.value)}
-          placeholder="예: AI 기반 공정 불량 예측 솔루션 사업화"
+          placeholder="예: 공정 불량 예측 솔루션 사업화"
         />
         <FieldError message={errors.name} />
-        {!errors.name && <Hint>증빙을 올릴 때 이 이름으로 고릅니다. 알아보기 쉬운 이름이면 충분합니다.</Hint>}
+        {!errors.name && <Hint>증빙 등록 시 선택 목록에 표시</Hint>}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -246,7 +246,7 @@ export function ProjectForm({
           <Hint>
             {period !== null
               ? `총 ${period.toLocaleString("ko-KR")}일 · 약 ${Math.max(1, Math.round(period / 30.44))}개월`
-              : "협약서에 적힌 협약(수행) 기간을 넣으세요. 모르면 비워 두고 나중에 채워도 됩니다."}
+              : "협약(수행) 기간"}
           </Hint>
         )}
       </div>
@@ -262,7 +262,7 @@ export function ProjectForm({
           placeholder="0"
         />
         <FieldError message={errors.total_budget} />
-        {!errors.total_budget && <Hint>집행률을 계산하는 기준입니다. 모르면 비워 두세요.</Hint>}
+        {!errors.total_budget && <Hint>집행률 계산 기준</Hint>}
       </div>
 
       <BudgetItemsEditor
@@ -283,7 +283,7 @@ export function ProjectForm({
           value={value.description}
           disabled={disabled}
           onChange={(e) => set("description", e.target.value)}
-          placeholder="사업 목적, 담당자, 정산 시 주의할 점 등을 자유롭게 적어 두세요"
+          placeholder="사업 목적, 담당자, 정산 유의사항"
         />
       </div>
 
@@ -295,13 +295,12 @@ export function ProjectForm({
               <li key={f.pathname}>
                 <a
                   href={fileUrl(f.pathname, { download: true, name: f.name })}
-                  className="inline-flex max-w-[260px] items-center gap-1.5 rounded-md border border-warm-tan bg-warm-beige/40 px-2.5 py-1 text-xs text-dark hover:border-gold"
+                  className="inline-flex max-w-[260px] items-center gap-1.5 rounded-md border border-warm-tan bg-card px-2.5 py-1 text-xs text-dark transition-colors hover:border-dark/40 hover:bg-warm-ivory/60"
                   title={`${f.name} 내려받기`}
                 >
-                  <Paperclip className="h-3 w-3 shrink-0 text-text-secondary" />
                   <span className="truncate">{f.name}</span>
-                  <span className="shrink-0 text-text-tertiary">{formatBytes(f.size)}</span>
-                  <Download className="h-3 w-3 shrink-0 text-text-secondary" />
+                  <span className="shrink-0 tabular-nums text-text-secondary">{formatBytes(f.size)}</span>
+                  <Download className="h-3 w-3 shrink-0 text-text-secondary" aria-hidden />
                 </a>
               </li>
             ))}
@@ -312,7 +311,7 @@ export function ProjectForm({
   )
 }
 
-// 비목별 예산 표 — 행 추가/삭제, 자주 쓰는 비목 빠른 추가, 합계와 총사업비 차이 안내.
+// 비목별 예산 표: 행 추가/삭제, 자주 쓰는 비목 빠른 추가, 합계와 총사업비 차이 안내.
 function BudgetItemsEditor({
   rows,
   totalBudget,
@@ -351,7 +350,7 @@ function BudgetItemsEditor({
     if (totalBudget === null) {
       status = (
         <span className="flex flex-wrap items-center gap-2 text-text-secondary">
-          총사업비가 비어 있습니다.
+          총사업비 미입력
           {!disabled && (
             <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={() => onFillTotal(sum)}>
               비목 합계({wonNumber(sum)}원)로 채우기
@@ -361,22 +360,22 @@ function BudgetItemsEditor({
       )
     } else if (sum === totalBudget) {
       status = (
-        <span className="flex items-center gap-1 text-green-700">
-          <CheckCircle2 className="h-3.5 w-3.5" />
-          총사업비와 같습니다
+        <span className="flex items-center gap-1 font-medium text-green-700">
+          <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
+          총사업비와 일치
         </span>
       )
     } else if (sum < totalBudget) {
       status = (
         <span className="text-text-secondary">
-          총사업비보다 <b className="text-dark">{wonNumber(totalBudget - sum)}원</b> 적습니다(아직 비목에 나누지 않은 금액).
+          <b className="font-semibold tabular-nums text-dark">{wonNumber(totalBudget - sum)}원</b> 미배분
         </span>
       )
     } else {
       status = (
-        <span className="flex items-center gap-1 text-amber-800">
-          <TriangleAlert className="h-3.5 w-3.5" />
-          총사업비보다 {wonNumber(sum - totalBudget)}원 많습니다. 금액을 확인해 주세요.
+        <span className="flex items-center gap-1 font-medium text-amber-800">
+          <TriangleAlert className="h-3.5 w-3.5" aria-hidden />
+          <span className="tabular-nums">{wonNumber(sum - totalBudget)}원</span> 초과
         </span>
       )
     }
@@ -386,9 +385,7 @@ function BudgetItemsEditor({
     <div className="grid gap-2">
       <div>
         <Label>비목별 예산 (선택)</Label>
-        <Hint>
-          비목별로 예산을 나눠 두면 증빙마다 비목을 고를 수 있고, 증빙 내역에서 비목별 집행률을 볼 수 있습니다.
-        </Hint>
+        <Hint>입력 시 증빙 내역에 비목별 집행률 표시</Hint>
       </div>
 
       <datalist id={listId}>
@@ -399,7 +396,7 @@ function BudgetItemsEditor({
 
       {rows.length > 0 && (
         <div className="overflow-hidden rounded-md border border-warm-tan">
-          <div className="hidden grid-cols-[1fr_11rem_2.25rem] gap-2 bg-warm-beige/50 px-3 py-1.5 text-xs font-medium text-text-secondary sm:grid">
+          <div className="hidden grid-cols-[1fr_11rem_2.25rem] gap-2 border-b border-warm-tan bg-warm-beige px-3 py-1.5 text-xs font-semibold text-dark sm:grid">
             <span>비목</span>
             <span className="text-right">예산</span>
             <span />
@@ -440,9 +437,9 @@ function BudgetItemsEditor({
               </li>
             ))}
           </ul>
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-warm-tan bg-warm-beige/30 px-3 py-2 text-xs">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-warm-tan bg-warm-ivory px-3 py-2 text-xs">
             <span className="text-text-secondary">
-              비목 합계 <b className="tabular-nums text-dark">{wonNumber(sum)}원</b>
+              비목 합계 <b className="font-semibold tabular-nums text-dark">{wonNumber(sum)}원</b>
             </span>
             {status}
           </div>
@@ -459,13 +456,13 @@ function BudgetItemsEditor({
           </Button>
           {quick.length > 0 && (
             <>
-              <span className="ml-1 text-xs text-text-tertiary">자주 쓰는 비목:</span>
+              <span className="ml-1 text-xs text-text-secondary">빠른 추가:</span>
               {quick.slice(0, 8).map((n) => (
                 <button
                   key={n}
                   type="button"
                   onClick={() => add(n)}
-                  className="rounded-full border border-warm-tan bg-card px-2.5 py-0.5 text-xs text-text-secondary transition-colors hover:border-gold hover:text-dark"
+                  className="rounded-sm border border-warm-tan bg-card px-2 py-0.5 text-xs text-dark transition-colors hover:border-dark/40 hover:bg-warm-ivory/60 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
                 >
                   + {n}
                 </button>

@@ -43,7 +43,7 @@ export async function POST(request: Request) {
   if (!(await getSession())) return fail("인증이 필요합니다", 401)
   if (!hasExpenseAiKey()) {
     return fail(
-      "AI 자동 입력이 아직 설정되지 않았습니다(관리자에게 OPENAI_API_KEY 설정 요청). 지금은 '직접 입력'으로 프로젝트를 등록할 수 있습니다.",
+      "자료 분석이 설정되지 않았습니다(OPENAI_API_KEY). '직접 입력'으로 등록하세요.",
       503,
       { needs_setup: true },
     )
@@ -53,19 +53,19 @@ export async function POST(request: Request) {
   try {
     formData = await request.formData()
   } catch {
-    return fail("파일을 받지 못했습니다. 합계 4.4MB 이하로 다시 올려 주세요.", 400)
+    return fail("파일을 받지 못했습니다. 합계 4.4MB 이하로 다시 올리세요.", 400)
   }
   const files = formData.getAll("files").filter((f): f is File => f instanceof File)
   const hint = String(formData.get("hint") ?? "").slice(0, 1000)
 
-  if (files.length === 0) return fail("사업 자료 파일을 1개 이상 올려 주세요", 400)
+  if (files.length === 0) return fail("사업 자료 파일을 1개 이상 올리세요", 400)
   if (files.length > MAX_PROJECT_DOC_FILES) {
-    return fail(`사업 자료는 한 번에 ${MAX_PROJECT_DOC_FILES}개까지 분석할 수 있습니다. 핵심 자료(사업계획서·협약서)만 골라 주세요.`, 400)
+    return fail(`사업 자료는 한 번에 ${MAX_PROJECT_DOC_FILES}개까지 분석할 수 있습니다. 핵심 자료(사업계획서·협약서)만 선택하세요.`, 400)
   }
   const total = files.reduce((s, f) => s + f.size, 0)
   if (total > MAX_TOTAL_BYTES) {
     return fail(
-      `한 번에 올릴 수 있는 용량(${formatBytes(MAX_TOTAL_BYTES)})을 넘습니다(현재 ${formatBytes(total)}). 파일 수를 줄이거나 PDF 용량을 줄여 주세요.`,
+      `한 번에 올릴 수 있는 용량(${formatBytes(MAX_TOTAL_BYTES)})을 넘습니다(현재 ${formatBytes(total)}). 파일 수를 줄이거나 PDF 용량을 줄이세요.`,
       400,
     )
   }
@@ -109,7 +109,7 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof ExpenseAiError) return fail(error.message, error.status)
     console.error("Project doc prepare error:", error)
-    return fail("파일을 읽는 중 문제가 생겼습니다. 다시 시도해 주세요.", 500)
+    return fail("파일을 읽는 중 문제가 생겼습니다. 다시 시도하세요.", 500)
   }
 
   // 원본 보관 — 실패해도 분석은 계속한다(등록 시 첨부만 빠진다).
@@ -125,7 +125,7 @@ export async function POST(request: Request) {
         return { name: p.name, pathname, size: p.stored.length, type: p.mime.split(";")[0] }
       } catch (error) {
         console.error("Project doc store error:", p.name, error)
-        warnings.push(`'${p.name}' 원본 보관에 실패했습니다(분석은 계속합니다). 등록 후 자료를 다시 첨부하려면 한 번 더 분석해 주세요.`)
+        warnings.push(`'${p.name}' 원본 보관에 실패했습니다(분석은 계속합니다). 등록 후 자료를 다시 첨부하려면 한 번 더 분석하세요.`)
         return null
       }
     }),
@@ -145,7 +145,7 @@ export async function POST(request: Request) {
     }
     return NextResponse.json(body)
   } catch (error) {
-    const e = error instanceof ExpenseAiError ? error : new ExpenseAiError("사업 자료 분석에 실패했습니다. 잠시 후 다시 시도해 주세요.", 500)
+    const e = error instanceof ExpenseAiError ? error : new ExpenseAiError("자료 분석에 실패했습니다. 잠시 후 다시 시도하세요.", 500)
     if (!(error instanceof ExpenseAiError)) console.error("Project analyze error:", error)
     // 보관된 자료는 돌려준다 — 화면에서 '직접 입력'으로 등록하면서 첨부할 수 있다.
     return fail(e.message, e.status, { ...(e.needsSetup ? { needs_setup: true } : {}), files: savedFiles, warnings })

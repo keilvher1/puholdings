@@ -48,7 +48,7 @@ export async function GET() {
     return NextResponse.json({ success: true, projects })
   } catch (error) {
     console.error("Expense projects list error:", error)
-    return fail(dbErrorMessage(error, "프로젝트 목록을 불러오지 못했습니다. 새로고침해 주세요."), 500)
+    return fail(dbErrorMessage(error, "프로젝트 목록을 불러오지 못했습니다. 새로고침하세요."), 500)
   }
 }
 
@@ -71,7 +71,7 @@ export async function POST(request: Request) {
       LIMIT 1
     `
     if (dup.length > 0) {
-      return fail(`'${p.name}' 프로젝트가 이미 등록되어 있습니다. 목록에서 확인해 주세요.`, 409, { existing_id: Number(dup[0].id) })
+      return fail(`'${p.name}' 프로젝트가 이미 등록되어 있습니다. 목록에서 확인하세요.`, 409, { existing_id: Number(dup[0].id) })
     }
 
     const rows = await sql`
@@ -86,7 +86,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, project })
   } catch (error) {
     console.error("Expense project create error:", error)
-    return fail(dbErrorMessage(error, "프로젝트를 저장하지 못했습니다. 잠시 후 다시 시도해 주세요."), 500)
+    return fail(dbErrorMessage(error, "프로젝트를 저장하지 못했습니다. 잠시 후 다시 시도하세요."), 500)
   }
 }
 
@@ -108,7 +108,7 @@ export async function PUT(request: Request) {
 
   try {
     const existing = await getProject(sql, id)
-    if (!existing) return fail("이미 삭제되었거나 없는 프로젝트입니다. 새로고침해 주세요.", 404)
+    if (!existing) return fail("이미 삭제되었거나 없는 프로젝트입니다. 새로고침하세요.", 404)
 
     // 보낸 필드만 덮어쓰고 나머지는 기존 값을 유지한 뒤 전체를 다시 검증한다.
     const merged: Record<string, unknown> = {}
@@ -137,7 +137,7 @@ export async function PUT(request: Request) {
     return NextResponse.json({ success: true, project })
   } catch (error) {
     console.error("Expense project update error:", error)
-    return fail(dbErrorMessage(error, "프로젝트를 수정하지 못했습니다. 잠시 후 다시 시도해 주세요."), 500)
+    return fail(dbErrorMessage(error, "프로젝트를 수정하지 못했습니다. 잠시 후 다시 시도하세요."), 500)
   }
 }
 
@@ -152,7 +152,7 @@ export async function DELETE(request: Request) {
 
   try {
     const existing = await getProject(sql, id)
-    if (!existing) return fail("이미 삭제되었거나 없는 프로젝트입니다. 새로고침해 주세요.", 404)
+    if (!existing) return fail("이미 삭제되었거나 없는 프로젝트입니다. 새로고침하세요.", 404)
     if (existing.receipt_count > 0) {
       return fail("증빙이 있는 프로젝트는 삭제할 수 없습니다(종료 처리하세요)", 409, { receipt_count: existing.receipt_count })
     }
@@ -184,6 +184,6 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error("Expense project delete error:", error)
-    return fail(dbErrorMessage(error, "프로젝트를 삭제하지 못했습니다. 잠시 후 다시 시도해 주세요."), 500)
+    return fail(dbErrorMessage(error, "프로젝트를 삭제하지 못했습니다. 잠시 후 다시 시도하세요."), 500)
   }
 }

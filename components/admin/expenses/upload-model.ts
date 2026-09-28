@@ -237,7 +237,7 @@ export function rowsFromScan(
   if (drafts.length === 0) {
     return [
       blankRow(fileKey, file, projects, defaultProjectId, {
-        warning: "AI가 이 파일에서 증빙 내용을 찾지 못했습니다. 직접 입력하거나, 증빙이 아니면 행을 지우세요.",
+        warning: "인식된 내용 없음 · 직접 입력하거나 행을 삭제하세요.",
         duplicates,
       }),
     ]
@@ -287,8 +287,14 @@ export function toSimilarList(v: unknown): SimilarReceipt[] {
   return out
 }
 
+// 표 안내 줄에 붙는 짧은 근거(SAME_TX_REASON_LABELS의 문장형 대신 명사형)
+const SIMILAR_REASON_SHORT: Record<SameTxReason, string> = {
+  approval: "승인번호 일치",
+  amount_party_date: "거래처·합계 일치, 날짜 근접",
+}
+
 export function similarReasonLabel(reason: SameTxReason): string {
-  return SAME_TX_REASON_LABELS[reason]
+  return SIMILAR_REASON_SHORT[reason] ?? SAME_TX_REASON_LABELS[reason]
 }
 
 // ── 표 안의 행끼리 같은 증빙·같은 거래 찾기(이중 계상 방지) ─────────────────────
@@ -307,9 +313,9 @@ export interface TableMatch {
 
 // "{N}번 행과 ___" 뒤에 붙는 설명
 export const TABLE_MATCH_TEXT: Record<TableMatchKind, string> = {
-  same_file: "같은 파일입니다(같은 파일을 두 번 올림)",
-  approval: "승인번호가 같아 같은 거래로 보입니다",
-  amount_party_date: "거래처·합계가 같고 날짜가 가까워 같은 거래로 보입니다",
+  same_file: "같은 파일",
+  approval: "같은 거래로 보임(승인번호 일치)",
+  amount_party_date: "같은 거래로 보임(거래처·합계 일치, 날짜 근접)",
 }
 
 function rowLabel(r: DraftRow): string {
@@ -444,7 +450,7 @@ export function normalizeFields(f: ReceiptFields): ReceiptFields {
   }
 }
 
-export const PROJECT_REQUIRED = "어느 프로젝트의 증빙인지 선택하세요"
+export const PROJECT_REQUIRED = "프로젝트를 선택하세요"
 
 export function rowErrors(row: DraftRow): string[] {
   const errors = validateReceiptFields(normalizeFields(row.fields))
@@ -475,19 +481,19 @@ export function rowNotices(row: DraftRow, project: UploaderProject | undefined):
   const f = row.fields
   if (amountMismatch(f)) {
     const sum = (f.supply_amount ?? 0) + (f.vat_amount ?? 0)
-    notes.push(`공급가액+부가세(${formatWon(sum)})가 합계(${formatWon(f.total_amount)})와 다릅니다`)
+    notes.push(`금액 불일치: 공급가액+부가세 ${formatWon(sum)} ≠ 합계 ${formatWon(f.total_amount)}`)
   }
   if (project && isValidDate(f.issue_date)) {
     if (project.start_date && f.issue_date < project.start_date) {
-      notes.push(`거래일자가 프로젝트 시작일(${project.start_date})보다 앞입니다`)
+      notes.push(`사업 기간 전 거래(시작일 ${project.start_date})`)
     } else if (project.end_date && f.issue_date > project.end_date) {
-      notes.push(`거래일자가 프로젝트 종료일(${project.end_date})보다 뒤입니다`)
+      notes.push(`사업 기간 후 거래(종료일 ${project.end_date})`)
     }
   }
   if (project && f.budget_item.trim() && project.budget_items.length > 0) {
     const names = project.budget_items.map((b) => b.name.trim())
     if (!names.includes(f.budget_item.trim())) {
-      notes.push(`'${f.budget_item.trim()}'은(는) 이 프로젝트의 비목 목록에 없습니다`)
+      notes.push(`예산 외 비목: ${f.budget_item.trim()}`)
     }
   }
   return notes
@@ -561,10 +567,10 @@ export function normalizeFileMeta(v: UploadedFileMeta): UploadedFileMeta {
 
 export function httpErrorMessage(status: number, fallback?: string): string {
   if (status === 401) return "로그인이 만료되었습니다. 새 탭에서 관리자 로그인을 다시 한 뒤 이 화면에서 다시 시도하세요(입력한 내용은 그대로 있습니다)."
-  if (status === 413) return "파일이 너무 커서 서버가 받지 못했습니다. 4MB 이하로 줄여 다시 올려 주세요."
-  if (status === 504 || status === 524) return "AI 분석 시간이 너무 오래 걸려 중단되었습니다. 잠시 후 다시 시도해 주세요."
-  if (status === 429) return "AI 요청이 몰려 잠시 쉬어야 합니다. 1분쯤 뒤에 다시 시도해 주세요."
-  if (status >= 500) return fallback || "서버에서 오류가 났습니다. 잠시 후 다시 시도해 주세요."
+  if (status === 413) return "파일이 너무 커서 서버가 받지 못했습니다. 4MB 이하로 줄여 다시 올리세요."
+  if (status === 504 || status === 524) return "인식 시간 초과로 중단되었습니다. 다시 시도하세요."
+  if (status === 429) return "요청이 많아 일시 제한되었습니다. 1분 후 다시 시도하세요."
+  if (status >= 500) return fallback || "서버 오류가 발생했습니다. 잠시 후 다시 시도하세요."
   return fallback || `요청이 실패했습니다 (오류 ${status})`
 }
 

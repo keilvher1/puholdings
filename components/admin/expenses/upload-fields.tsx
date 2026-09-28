@@ -3,9 +3,8 @@
 import { useLayoutEffect, useRef, useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
-import { Plus, Sparkles, Trash2 } from "lucide-react"
+import { Plus, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DOC_TYPE_LABELS,
@@ -19,18 +18,19 @@ import {
   type ReceiptItem,
 } from "@/lib/expenses"
 import { formatNumberText, parseQuantityText, parseWonText, type UploaderProject } from "./upload-model"
+import { CELL_TONE_CLASS } from "./ui"
 
 // 증빙 표·검토 창에서 함께 쓰는 입력 칸.
-// - low: AI가 확신하지 못한 칸(노란 테두리) · invalid: 저장할 수 없는 값(빨간 테두리)
+// - low: 인식이 불확실한 칸(확인 필요) · invalid: 저장할 수 없는 값(입력 오류)
 // - grid: 표에서 Enter로 아래 행 같은 칸으로 이동하기 위한 좌표(data-grid-row/col)
 
 export type CellState = { low?: boolean; invalid?: boolean }
 
 export function cellClass({ low, invalid }: CellState, extra = ""): string {
   return cn(
-    "h-8 rounded-md px-2 text-sm shadow-none",
-    low && !invalid && "border-amber-400 bg-amber-50/70 focus-visible:border-amber-500 focus-visible:ring-amber-300/60",
-    invalid && "border-destructive bg-destructive/5",
+    "h-8 rounded-md bg-card px-2 text-sm shadow-none",
+    low && !invalid && cn(CELL_TONE_CLASS.review, "focus-visible:ring-[3px] focus-visible:ring-amber-600/40"),
+    invalid && CELL_TONE_CLASS.invalid,
     extra
   )
 }
@@ -40,25 +40,7 @@ export interface GridProps {
   "data-grid-col"?: string
 }
 
-// AI가 확신하지 못한 칸 오른쪽 위의 작은 표시(마우스를 올리면 설명)
-export function LowConfidenceMark({ show }: { show?: boolean }) {
-  if (!show) return null
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span
-          aria-label="AI가 확신하지 못했습니다"
-          className="absolute -right-1 -top-1 z-[1] flex h-3.5 w-3.5 cursor-help items-center justify-center rounded-full bg-amber-400 text-[9px] font-bold text-white"
-        >
-          ?
-        </span>
-      </TooltipTrigger>
-      <TooltipContent side="top">AI가 확신하지 못했습니다 — 원본과 비교해 확인하세요</TooltipContent>
-    </Tooltip>
-  )
-}
-
-const LOW_TITLE = "AI가 확신하지 못했습니다 — 원본과 비교해 확인하세요"
+const LOW_TITLE = "인식 불확실 · 원본과 대조하세요"
 
 // ── 금액(천 단위 콤마, 오른쪽 정렬) ──────────────────────────────────────────
 // 입력하는 동안에도 콤마를 붙이고, 커서가 튀지 않도록 "커서 앞 숫자 개수"를 기준으로 위치를 되돌린다.
@@ -195,6 +177,7 @@ export function TextCell({
   maxLength,
   placeholder,
   inputMode,
+  title,
   ...rest
 }: {
   value: string
@@ -207,6 +190,7 @@ export function TextCell({
   maxLength?: number
   placeholder?: string
   inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"]
+  title?: string
   "aria-label"?: string
   id?: string
 }) {
@@ -219,7 +203,7 @@ export function TextCell({
       maxLength={maxLength}
       placeholder={placeholder}
       inputMode={inputMode}
-      title={state.low && !state.invalid ? LOW_TITLE : undefined}
+      title={state.low && !state.invalid ? LOW_TITLE : title}
       aria-invalid={state.invalid || undefined}
       onChange={(e) => onChange(e.target.value)}
       onBlur={onBlur}
@@ -231,13 +215,14 @@ export function TextCell({
 }
 
 // 사업자등록번호: 숫자 10자리를 입력하면 칸을 벗어날 때 000-00-00000으로 맞춘다.
-export function BizNoInput(props: Omit<Parameters<typeof TextCell>[0], "inputMode" | "maxLength" | "placeholder">) {
+export function BizNoInput(props: Omit<Parameters<typeof TextCell>[0], "inputMode" | "maxLength" | "placeholder" | "title">) {
   return (
     <TextCell
       {...props}
       inputMode="numeric"
       maxLength={12}
-      placeholder="000-00-00000"
+      placeholder="-"
+      title="000-00-00000"
       className={cn("tabular-nums", props.className)}
       onChange={(v) => props.onChange(v.replace(/[^\d-]/g, ""))}
       onBlur={() => {
@@ -289,13 +274,13 @@ export function DateCell({
 const triggerClass = (state: CellState, extra?: string) =>
   cn(
     "h-8 w-full min-w-0 bg-card px-2 text-sm shadow-none data-[size=default]:h-8",
-    state.low && !state.invalid && "border-amber-400 bg-amber-50/70",
-    state.invalid && "border-destructive bg-destructive/5",
+    state.low && !state.invalid && cn(CELL_TONE_CLASS.review, "focus-visible:ring-[3px] focus-visible:ring-amber-600/40"),
+    state.invalid && CELL_TONE_CLASS.invalid,
     extra
   )
 
-// onSeen: 목록을 열었다 닫거나 칸을 벗어나면 "사람이 봤다"로 보고 노란(AI 불확실) 표시를 끈다.
-// 같은 값을 다시 고르면 onValueChange가 불리지 않으므로, AI 값이 맞을 때도 표시를 끌 수 있게 하려는 것이다.
+// onSeen: 목록을 열었다 닫거나 칸을 벗어나면 "사람이 봤다"로 보고 노란(인식 불확실) 표시를 끈다.
+// 같은 값을 다시 고르면 onValueChange가 불리지 않으므로, 인식 값이 맞을 때도 표시를 끌 수 있게 하려는 것이다.
 export function DocTypeSelect({
   value,
   onChange,
@@ -376,7 +361,7 @@ export function projectLabel(p: Pick<UploaderProject, "name" | "program_name">):
   return p.program_name ? `${p.name} · ${p.program_name}` : p.name
 }
 
-// 프로젝트 선택(필수). aiSuggested면 이름 옆에 반짝이 표시.
+// 프로젝트 선택(필수). suggested: 선택값이 자동 추천이면 이름 뒤에 '추천'. 비어 있으면 빨간 테두리로 입력 필요를 알린다.
 export function ProjectSelect({
   value,
   onChange,
@@ -385,6 +370,8 @@ export function ProjectSelect({
   placeholder = "프로젝트 선택",
   className,
   aiSuggestedId,
+  suggested = false,
+  title,
   ...rest
 }: {
   value: number | null
@@ -394,35 +381,51 @@ export function ProjectSelect({
   placeholder?: string
   className?: string
   aiSuggestedId?: number | null
+  suggested?: boolean
+  title?: string
   "aria-label"?: string
   id?: string
 }) {
   const selected = value ? projects.find((p) => p.id === value) : undefined
   return (
     <Select value={selected ? String(selected.id) : ""} onValueChange={(v) => onChange(Number(v))}>
-      <SelectTrigger className={triggerClass(state, className)} aria-invalid={state.invalid || undefined} {...rest}>
+      <SelectTrigger
+        className={triggerClass(
+          state,
+          cn(
+            !selected && "data-[placeholder]:font-medium data-[placeholder]:text-dark",
+            !selected && !state.invalid && "border-destructive/60",
+            className
+          )
+        )}
+        title={title}
+        aria-invalid={state.invalid || undefined}
+        {...rest}
+      >
         {/* 칸이 좁으므로 선택된 값은 프로젝트명만 보여 준다 */}
-        <SelectValue placeholder={placeholder}>{selected ? <span className="truncate">{selected.name}</span> : null}</SelectValue>
+        <SelectValue placeholder={placeholder}>
+          {selected ? (
+            <>
+              <span className="min-w-0 truncate">{selected.name}</span>
+              {suggested && <span className="shrink-0 text-xs text-text-secondary">추천</span>}
+            </>
+          ) : null}
+        </SelectValue>
       </SelectTrigger>
       <SelectContent className="max-w-[min(90vw,420px)]">
         <SelectGroup>
-          <SelectLabel>어느 프로젝트의 증빙인가요?</SelectLabel>
+          <SelectLabel>프로젝트</SelectLabel>
           {projects.map((p) => (
             <SelectItem key={p.id} value={String(p.id)}>
               <span className="flex min-w-0 flex-col items-start">
                 <span className="max-w-[320px] truncate">{p.name}</span>
                 {(p.program_name || p.agency) && (
-                  <span className="max-w-[320px] truncate text-xs text-text-tertiary">
+                  <span className="max-w-[320px] truncate text-xs text-text-secondary">
                     {[p.program_name, p.agency].filter(Boolean).join(" · ")}
                   </span>
                 )}
               </span>
-              {aiSuggestedId === p.id && (
-                <span className="ml-1 inline-flex items-center gap-0.5 rounded bg-gold/15 px-1 text-[10px] font-medium text-dark">
-                  <Sparkles className="h-2.5 w-2.5 text-gold" />
-                  AI 추천
-                </span>
-              )}
+              {aiSuggestedId === p.id && <span className="ml-1 shrink-0 text-xs text-text-secondary">(추천)</span>}
             </SelectItem>
           ))}
         </SelectGroup>
@@ -451,7 +454,7 @@ export function ItemsEditor({
   return (
     <div className="space-y-1.5">
       {items.length === 0 ? (
-        <p className="text-xs text-text-tertiary">품목 정보가 없습니다. 필요하면 아래 버튼으로 추가하세요(선택 사항).</p>
+        <p className="text-xs text-text-secondary">품목 없음(선택 입력)</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[340px] text-xs">
@@ -484,7 +487,7 @@ export function ItemsEditor({
                       type="button"
                       onClick={() => onChange(items.filter((_, idx) => idx !== i))}
                       aria-label={`품목 ${i + 1} 지우기`}
-                      className="rounded p-1 text-text-tertiary hover:bg-destructive/10 hover:text-destructive"
+                      className="rounded p-1 text-text-secondary hover:bg-destructive/10 hover:text-destructive"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -509,7 +512,7 @@ export function ItemsEditor({
         {hasAmounts && (
           <span className={cn("text-xs tabular-nums", mismatch ? "text-amber-700" : "text-text-secondary")}>
             품목 금액 합계 {formatWon(sum)}
-            {mismatch && ` · 합계(${formatWon(total)})와 다릅니다`}
+            {mismatch && ` · 합계 ${formatWon(total)}와 다름`}
           </span>
         )}
       </div>

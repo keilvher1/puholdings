@@ -63,7 +63,7 @@ export async function prepareImageForAi(buf: Buffer): Promise<string> {
       .toBuffer()
     return out.toString("base64")
   } catch {
-    throw new ExpenseAiError("사진 파일을 열 수 없습니다(손상되었거나 일부만 올라간 파일). 사진을 다시 찍거나 다시 저장해 올려 주세요.", 400)
+    throw new ExpenseAiError("사진 파일을 열 수 없습니다(손상되었거나 일부만 올라간 파일). 사진을 다시 찍거나 다시 저장해 올리세요.", 400)
   }
 }
 
@@ -124,46 +124,46 @@ export function isValidBizNoChecksum(bizNo: string): boolean {
 function toFriendlyError(error: unknown): ExpenseAiError {
   if (error instanceof ExpenseAiError) return error
   if (error instanceof OpenAI.APIConnectionTimeoutError) {
-    return new ExpenseAiError("AI 분석이 너무 오래 걸려 중단했습니다. 잠시 후 '다시 시도'를 누르거나 파일을 나눠 올려 주세요.", 504)
+    return new ExpenseAiError("자동 인식 시간이 초과되어 중단했습니다. '다시 시도'를 누르거나 파일을 나눠 올리세요.", 504)
   }
   if (error instanceof OpenAI.APIConnectionError) {
-    return new ExpenseAiError("AI 서버에 연결하지 못했습니다. 잠시 후 '다시 시도'를 눌러 주세요.", 502)
+    return new ExpenseAiError("자동 인식 서버에 연결하지 못했습니다. 잠시 후 '다시 시도'를 누르세요.", 502)
   }
   if (error instanceof OpenAI.APIError) {
     const status = error.status ?? 0
     const code = String(error.code ?? "")
     if (status === 401 || status === 403) {
       return new ExpenseAiError(
-        "AI(OpenAI) API 키가 올바르지 않거나 권한이 없습니다. 관리자에게 OPENAI_API_KEY 설정 확인을 요청하세요. 지금은 직접 입력으로 계속할 수 있습니다.",
+        "OpenAI API 키(OPENAI_API_KEY)가 올바르지 않거나 권한이 없습니다. 시스템 관리자에게 확인을 요청하세요. 직접 입력은 가능합니다.",
         503,
         true,
       )
     }
     if (status === 429 && code === "insufficient_quota") {
       return new ExpenseAiError(
-        "AI(OpenAI) 사용 한도가 모두 소진되었습니다. 관리자에게 OpenAI 결제·한도 확인을 요청하세요. 지금은 직접 입력으로 계속할 수 있습니다.",
+        "OpenAI 사용 한도가 소진되었습니다. 시스템 관리자에게 결제·한도 확인을 요청하세요. 직접 입력은 가능합니다.",
         503,
         true,
       )
     }
     if (status === 429) {
-      return new ExpenseAiError("AI 요청이 한꺼번에 몰려 잠시 제한되었습니다. 1분쯤 뒤 '다시 시도'를 눌러 주세요.", 429)
+      return new ExpenseAiError("요청이 많아 일시 제한되었습니다. 1분 후 '다시 시도'를 누르세요.", 429)
     }
     if (status === 404 || code === "model_not_found" || (status === 400 && /model/i.test(error.message))) {
       return new ExpenseAiError(
-        `설정된 AI 모델(${model()})을 사용할 수 없습니다. 관리자에게 OPENAI_MODEL 설정 확인을 요청하세요. 지금은 직접 입력으로 계속할 수 있습니다.`,
+        `설정된 모델(${model()})을 사용할 수 없습니다. 시스템 관리자에게 OPENAI_MODEL 확인을 요청하세요. 직접 입력은 가능합니다.`,
         503,
         true,
       )
     }
     if (status === 400 || status === 413 || status === 422) {
-      return new ExpenseAiError("AI가 이 파일을 읽지 못했습니다(형식·용량 문제). 사진을 다시 찍거나 PDF를 다시 저장해 올려 주세요.", 422)
+      return new ExpenseAiError("파일을 인식하지 못했습니다(형식·용량 문제). 사진을 다시 찍거나 PDF를 다시 저장해 올리세요.", 422)
     }
     if (status >= 500) {
-      return new ExpenseAiError("AI 서버에 일시적인 문제가 있습니다. 잠시 후 '다시 시도'를 눌러 주세요.", 502)
+      return new ExpenseAiError("자동 인식 서버에 일시적인 문제가 있습니다. 잠시 후 '다시 시도'를 누르세요.", 502)
     }
   }
-  return new ExpenseAiError("AI 분석 중 알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.", 500)
+  return new ExpenseAiError("자동 인식 중 알 수 없는 오류가 발생했습니다. 잠시 후 다시 시도하세요.", 500)
 }
 
 function inputContent(inputs: AiInput[], labelPrefix: string): OpenAI.Responses.ResponseInputContent[] {
@@ -190,7 +190,7 @@ async function callStructured<T>(opts: {
   content: OpenAI.Responses.ResponseInputContent[]
   schemaName: string
   schema: Record<string, unknown>
-  what: string // 오류 문구용: "영수증 판독", "사업 자료 분석"
+  what: string // 오류 문구용: "증빙 인식", "사업 자료 분석"
   timeoutMs: number
   maxRetries: number
 }): Promise<T> {
@@ -216,26 +216,26 @@ async function callStructured<T>(opts: {
   if (response.status === "incomplete") {
     const reason = response.incomplete_details?.reason
     if (reason === "content_filter") {
-      throw new ExpenseAiError(`AI 안전 필터 때문에 ${opts.what}을(를) 끝내지 못했습니다. 이 파일은 직접 입력해 주세요.`, 422)
+      throw new ExpenseAiError(`안전 필터로 ${opts.what}을(를) 완료하지 못했습니다. 이 파일은 직접 입력하세요.`, 422)
     }
-    throw new ExpenseAiError(`${opts.what} 결과가 너무 길어 중간에 잘렸습니다. 파일을 나눠서(페이지를 줄여) 올려 주세요.`, 422)
+    throw new ExpenseAiError(`${opts.what} 결과가 너무 길어 중간에 잘렸습니다. 파일을 나눠서(페이지를 줄여) 올리세요.`, 422)
   }
   for (const item of response.output ?? []) {
     if (item.type !== "message") continue
     for (const part of item.content) {
       if (part.type === "refusal") {
-        throw new ExpenseAiError(`AI가 이 파일의 ${opts.what}을(를) 거절했습니다. 지출 증빙이 맞는지 확인하고, 맞다면 직접 입력해 주세요.`, 422)
+        throw new ExpenseAiError(`이 파일의 ${opts.what}을(를) 처리할 수 없습니다. 지출 증빙이 맞으면 직접 입력하세요.`, 422)
       }
     }
   }
   const raw = response.output_text
   if (!raw || !raw.trim()) {
-    throw new ExpenseAiError(`${opts.what} 결과가 비어 있습니다. 파일이 선명한지 확인하고 다시 시도해 주세요.`, 502)
+    throw new ExpenseAiError(`${opts.what} 결과가 비어 있습니다. 파일이 선명한지 확인하고 다시 시도하세요.`, 502)
   }
   try {
     return JSON.parse(raw) as T
   } catch {
-    throw new ExpenseAiError(`${opts.what} 결과를 해석하지 못했습니다. 다시 시도해 주세요.`, 502)
+    throw new ExpenseAiError(`${opts.what} 결과를 해석하지 못했습니다. 다시 시도하세요.`, 502)
   }
 }
 
@@ -393,7 +393,7 @@ function normalizeProject(raw: RawProject): ProjectDraft | null {
     note: noteParts.join(" "),
   }
   if (!draft.name && !draft.program_name && draft.total_budget === null && draft.budget_items.length === 0) return null
-  if (!draft.name) draft.note = `${draft.note ? `${draft.note} ` : ""}프로젝트명을 찾지 못했습니다 — 직접 입력하세요.`.trim()
+  if (!draft.name) draft.note = `${draft.note ? `${draft.note} ` : ""}프로젝트명을 찾지 못했습니다. 직접 입력하세요.`.trim()
   return draft
 }
 
@@ -434,7 +434,7 @@ export async function analyzeProjectDocs(
     .map((w) => str(w, 300))
     .filter(Boolean)
   if (drafts.length === 0) {
-    warnings.push("자료에서 프로젝트 정보를 찾지 못했습니다. '직접 입력'으로 등록해 주세요.")
+    warnings.push("자료에서 프로젝트 정보를 찾지 못했습니다. '직접 입력'으로 등록하세요.")
   }
   return { drafts, warnings }
 }
@@ -830,7 +830,7 @@ export async function scanReceipt(
     content,
     schemaName: "expense_receipt_scan",
     schema: RECEIPT_SCHEMA as unknown as Record<string, unknown>,
-    what: "증빙 판독",
+    what: "증빙 인식",
     // 증빙 1개는 보통 1분 안에 끝난다. 일시 오류(429·5xx)는 한 번 더 시도한다.
     timeoutMs: 130_000,
     maxRetries: 1,

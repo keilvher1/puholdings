@@ -5,21 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
-import {
-  AlertCircle,
-  AlertTriangle,
-  ChevronLeft,
-  ChevronRight,
-  Copy,
-  Download,
-  ExternalLink,
-  RotateCw,
-  Sparkles,
-  Trash2,
-  ZoomIn,
-  ZoomOut,
-} from "lucide-react"
-import { CONFIDENCE_LABELS, formatWon, type ReceiptFields } from "@/lib/expenses"
+import { ChevronLeft, ChevronRight, Download, ExternalLink, RotateCw, Trash2, ZoomIn, ZoomOut } from "lucide-react"
+import { CONFIDENCE_LABELS, type ReceiptFields } from "@/lib/expenses"
 import {
   BizNoInput,
   DateCell,
@@ -31,7 +18,7 @@ import {
   TextCell,
   type CellState,
 } from "./upload-fields"
-import { SimilarNote, TableMatchNote, budgetListId, type ReceiptTableActions } from "./receipt-table"
+import { CheckNotes, DuplicateNote, SimilarNote, TableMatchNote, budgetListId, type ReceiptTableActions } from "./receipt-table"
 import {
   fileUrl,
   invalidFields,
@@ -42,6 +29,7 @@ import {
   type TableMatch,
   type UploaderProject,
 } from "./upload-model"
+import { RowNote } from "./ui"
 
 // 원본을 크게 보면서 한 건씩 확인·수정하는 창. 이전/다음(←/→)으로 넘기며 검토한다.
 
@@ -82,11 +70,12 @@ function Preview({ row }: { row: DraftRow }) {
           </a>
         </Button>
       </div>
-      <div className={cn("min-h-0 flex-1 overflow-auto", !zoom && "flex items-center justify-center p-3")}>
+      {/* 모바일: 미리보기 칸이 낮아 글자가 작아지지 않도록 폭에 맞춰 보이고 칸 안에서 세로로 넘긴다. md 이상: 칸에 맞춤. */}
+      <div className={cn("min-h-0 flex-1 overflow-auto", !zoom && "flex items-start justify-center p-3 md:items-center")}>
         {image ? (
           broken ? (
-            <p className="p-6 text-center text-sm text-text-secondary">
-              미리보기를 불러오지 못했습니다. 위의 &lsquo;새 탭&rsquo;이나 &lsquo;받기&rsquo;로 열어 보세요.
+            <p className="p-6 text-center text-sm text-text-secondary [word-break:keep-all]">
+              미리보기를 불러오지 못했습니다. &lsquo;새 탭&rsquo; 또는 &lsquo;받기&rsquo;로 확인하세요.
             </p>
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
@@ -98,7 +87,9 @@ function Preview({ row }: { row: DraftRow }) {
               style={{ transform: rotate ? `rotate(${rotate}deg)` : undefined }}
               className={cn(
                 "select-none transition-transform",
-                zoom ? "max-w-none cursor-zoom-out" : "max-h-full max-w-full cursor-zoom-in object-contain"
+                zoom
+                  ? "max-w-none cursor-zoom-out"
+                  : "h-auto w-full cursor-zoom-in md:max-h-full md:w-auto md:max-w-full md:object-contain"
               )}
             />
           )
@@ -110,7 +101,7 @@ function Preview({ row }: { row: DraftRow }) {
   )
 }
 
-function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+function Field({ label, required, children }: { label: React.ReactNode; required?: boolean; children: React.ReactNode }) {
   return (
     <label className="block">
       <span className="mb-1 block text-xs font-medium text-text-secondary">
@@ -162,7 +153,12 @@ export function UploadReviewDialog({
     <Dialog open={!!row} onOpenChange={(o) => !o && onClose()}>
       <DialogContent
         onKeyDown={onKeyDown}
-        className="flex h-[92vh] max-w-[calc(100%-1rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[min(1200px,calc(100%-2rem))]"
+        // 첫 버튼(원본 크기)에 포커스 링이 먼저 잡히지 않도록 창 자체에 포커스를 둔다(← → 이동은 그대로 동작).
+        onOpenAutoFocus={(e) => {
+          e.preventDefault()
+          ;(e.currentTarget as HTMLElement | null)?.focus()
+        }}
+        className="flex h-[92vh] max-w-[calc(100%-1rem)] flex-col gap-0 overflow-hidden rounded-md p-0 shadow-none outline-none sm:max-w-[min(1200px,calc(100%-2rem))]"
       >
         {row && (
           <ReviewBody
@@ -177,7 +173,7 @@ export function UploadReviewDialog({
           />
         )}
         {row && (
-          <div className="flex shrink-0 flex-wrap items-center gap-2 border-t border-warm-tan bg-card px-4 py-3">
+          <div className="flex shrink-0 flex-nowrap items-center gap-2 border-t border-warm-tan bg-card px-4 py-3">
             <Button type="button" variant="outline" size="sm" disabled={!prev} onClick={() => prev && onNavigate(prev.key)}>
               <ChevronLeft className="h-4 w-4" />
               이전
@@ -186,13 +182,14 @@ export function UploadReviewDialog({
               다음
               <ChevronRight className="h-4 w-4" />
             </Button>
-            <span className="hidden text-xs text-text-tertiary sm:inline">키보드 ← → 로도 넘길 수 있어요</span>
+            <span className="hidden text-xs text-text-secondary sm:inline">← → 이동</span>
             <div className="ml-auto flex items-center gap-2">
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
                 className="text-text-secondary hover:text-destructive"
+                aria-label="이 행 삭제"
                 disabled={saving}
                 onClick={() => {
                   const target = next ?? prev
@@ -201,12 +198,13 @@ export function UploadReviewDialog({
                   else onClose()
                 }}
               >
-                <Trash2 className="h-4 w-4" />이 행 빼기
+                <Trash2 className="h-4 w-4" />
+                <span className="hidden sm:inline">행 삭제</span>
               </Button>
               <Button
                 type="button"
                 size="sm"
-                title="이 건의 노란 칸(AI가 확신하지 못한 값)을 모두 확인한 것으로 표시합니다"
+                title="노란 칸을 모두 확인 완료로 표시"
                 onClick={() => {
                   // 원본과 비교해 확인했다는 뜻이므로 노란 표시를 모두 끈다(값이 맞으면 고치지 않아도 된다).
                   if (!saving) actions.checkAll(row.key)
@@ -255,23 +253,22 @@ function ReviewBody({
   })
   const lowCount = row.lowFields.filter((x) => !row.checkedFields.includes(x)).length
   const matchInfo = !!matches && matches.some((m) => m.otherSelected)
+  const aiSuggested = row.projectSource === "ai" && !!row.project_id
 
   return (
     <>
       <div className="shrink-0 border-b border-warm-tan px-5 py-3 pr-12">
         <DialogTitle className="text-base">
-          증빙 확인 <span className="tabular-nums text-text-tertiary">{index + 1}/{total}</span>
+          증빙 확인 <span className="font-normal tabular-nums text-text-secondary">{index + 1}/{total}</span>
         </DialogTitle>
-        <DialogDescription className="mt-0.5 text-xs [word-break:keep-all]">
-          원본과 입력값을 비교해 틀린 곳만 고치세요. 고친 내용은 표에 바로 반영됩니다.
-          {lowCount > 0 && (
-            <span className="text-amber-800"> 노란 칸 {lowCount}개는 AI가 확신하지 못한 값입니다 — 맞으면 그대로 두고 아래 &lsquo;확인&rsquo;을 누르세요.</span>
-          )}
-          {saving && <span className="font-medium text-dark"> 저장하는 중이라 잠시 고칠 수 없습니다.</span>}
+        <DialogDescription className="mt-0.5 text-xs text-text-secondary [word-break:keep-all]">
+          수정 내용은 표에 바로 반영됩니다.
+          {lowCount > 0 && <span className="font-medium text-amber-800"> 확인 필요 {lowCount}칸.</span>}
+          {saving && <span className="font-medium text-dark"> 저장 중(편집 잠금).</span>}
         </DialogDescription>
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)] grid-rows-[minmax(38vh,1fr)_auto] overflow-y-auto md:grid-cols-[minmax(0,1fr)_400px] md:grid-rows-1 md:overflow-hidden">
+      <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)] grid-rows-[minmax(34vh,1fr)_auto] overflow-y-auto md:grid-cols-[minmax(0,1fr)_400px] md:grid-rows-1 md:overflow-hidden">
         <Preview row={row} />
 
         <fieldset
@@ -286,53 +283,39 @@ function ReviewBody({
             matchInfo ||
             notices.length > 0 ||
             row.warnings.length > 0) && (
-            <div className="space-y-1 rounded-md border border-warm-tan bg-warm-ivory/60 p-2.5 text-xs [word-break:keep-all]">
+            <div className="space-y-1 rounded-md border border-warm-tan bg-card p-2.5">
               {row.serverErrors.map((e, i) => (
-                <p key={`s${i}`} className="flex gap-1.5 text-destructive">
-                  <AlertCircle className="mt-px h-3.5 w-3.5 shrink-0" />
+                <RowNote key={`s${i}`} label="서버 확인" tone="danger">
                   {e}
-                </p>
+                </RowNote>
               ))}
-              {row.showErrors &&
-                errors.map((e) => (
-                  <p key={e} className="flex gap-1.5 text-destructive">
-                    <AlertCircle className="mt-px h-3.5 w-3.5 shrink-0" />
-                    {e}
-                  </p>
-                ))}
-              {row.duplicates.map((d) => (
-                <p key={d.id} className="flex gap-1.5 text-destructive">
-                  <Copy className="mt-px h-3.5 w-3.5 shrink-0" />
-                  이미 저장된 증빙과 같은 파일입니다({d.project_name} · {d.issue_date} · {formatWon(d.total_amount)})
-                </p>
-              ))}
+              {row.showErrors && errors.length > 0 && (
+                <RowNote label="입력 필요" tone="danger">
+                  {errors.join(" · ")}
+                </RowNote>
+              )}
+              <DuplicateNote row={row} />
               <SimilarNote row={row} />
               <TableMatchNote row={row} matches={matches} />
-              {[...notices, ...row.warnings].map((w, i) => (
-                <p key={`w${i}`} className="flex gap-1.5 text-amber-800">
-                  <AlertTriangle className="mt-px h-3.5 w-3.5 shrink-0" />
-                  {w}
-                </p>
-              ))}
+              <CheckNotes items={[...notices, ...row.warnings]} />
             </div>
           )}
 
-          <div className="rounded-md border border-gold/40 bg-gold/5 p-2.5">
-            <Field label="어느 프로젝트의 증빙인가요?" required>
+          <div>
+            <Field label="프로젝트" required>
               <ProjectSelect
                 value={row.project_id}
                 onChange={(id) => actions.setProject(key, id)}
                 projects={projects}
                 aiSuggestedId={row.aiRaw?.suggested_project_id ?? null}
+                suggested={aiSuggested}
                 state={{ invalid: row.showErrors && !row.project_id }}
+                placeholder="프로젝트 선택 필요"
                 className="h-9 w-full"
               />
             </Field>
-            {row.projectSource === "ai" && row.project_id && (
-              <p className="mt-1.5 flex gap-1 text-[11px] text-text-secondary [word-break:keep-all]">
-                <Sparkles className="mt-px h-3 w-3 shrink-0 text-gold" />
-                AI 추천{row.projectReason ? ` — ${row.projectReason}` : ""}
-              </p>
+            {aiSuggested && (
+              <p className="mt-1 text-xs text-text-secondary [word-break:keep-all]">추천 근거: {row.projectReason || "증빙 내용"}</p>
             )}
           </div>
 
@@ -347,7 +330,13 @@ function ReviewBody({
           <Field label="거래처(가맹점)" required>
             <TextCell value={f.vendor_name} onChange={(v) => patch({ vendor_name: v })} onBlur={seen("vendor_name")} state={st("vendor_name")} maxLength={200} />
           </Field>
-          <Field label="사업자등록번호">
+          <Field
+            label={
+              <>
+                사업자등록번호 <span className="font-normal text-text-secondary">000-00-00000</span>
+              </>
+            }
+          >
             <BizNoInput value={f.vendor_biz_no} onChange={(v) => patch({ vendor_biz_no: v })} onBlur={seen("vendor_biz_no")} state={st("vendor_biz_no")} />
           </Field>
           <div className="grid grid-cols-3 gap-2">
@@ -376,7 +365,7 @@ function ReviewBody({
             <TextCell value={f.purpose} onChange={(v) => patch({ purpose: v })} onBlur={seen("purpose")} state={st("purpose")} placeholder="예: 시제품 제작용 부품 구입" />
           </Field>
           <Field label="메모">
-            <TextCell value={f.memo} onChange={(v) => patch({ memo: v })} onBlur={seen("memo")} state={st("memo")} placeholder="내부 참고용(선택)" />
+            <TextCell value={f.memo} onChange={(v) => patch({ memo: v })} onBlur={seen("memo")} state={st("memo")} placeholder="내부 메모" />
           </Field>
           <div>
             <p className="mb-1 text-xs font-medium text-text-secondary">품목</p>
@@ -388,7 +377,9 @@ function ReviewBody({
               <Checkbox checked={row.selected} onCheckedChange={(v) => actions.setSelected(key, v === true)} />
               저장 대상에 포함
             </label>
-            {row.confidence && <span>AI 신뢰도 {CONFIDENCE_LABELS[row.confidence]}</span>}
+            {row.confidence && (
+              <span className={cn(row.confidence === "low" && "font-medium text-amber-800")}>인식 신뢰도 {CONFIDENCE_LABELS[row.confidence]}</span>
+            )}
           </div>
         </fieldset>
       </div>

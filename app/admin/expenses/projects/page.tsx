@@ -16,10 +16,7 @@ export default async function AdminExpenseProjectsPage({
 
   return (
     <div className="p-5 md:p-8">
-      <AdminPageHeader
-        title="사업비 정산"
-        description="증빙을 모을 사업·과제를 등록하고, 예산 대비 집행 현황을 확인합니다"
-      />
+      <AdminPageHeader title="사업비 정산" />
       <ExpensesNav />
       <ProjectManager initialOnboarding={onboarding} />
     </div>

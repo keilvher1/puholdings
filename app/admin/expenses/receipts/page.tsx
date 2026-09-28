@@ -17,10 +17,7 @@ export default async function AdminExpenseReceiptsPage({
 
   return (
     <div className="p-5 md:p-8">
-      <AdminPageHeader
-        title="사업비 정산"
-        description="저장된 증빙을 찾아보고 고치며, 엑셀·원본 파일로 내려받습니다"
-      />
+      <AdminPageHeader title="사업비 정산" />
       <ExpensesNav />
       <ReceiptLedger initialProjectId={initialProjectId} />
     </div>
