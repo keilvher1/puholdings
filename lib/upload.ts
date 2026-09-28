@@ -31,17 +31,71 @@ const ALLOWED_EXTENSIONS = [
   ".txt", ".csv", ".zip", ".hwp", ".hwpx",
 ]
 
-// Blob pathname 안전성 검사 — 경로 이동(..), 이중 슬래시, 선행 슬래시, 역슬래시를 거부한다.
-// fetch/undici가 URL 정규화 시 dot-segment를 해석해 프리픽스 검사를 우회할 수 있기 때문에
-// 프리픽스 비교 전에 반드시 이 검사를 거쳐야 한다.
+// 잘못된 %-인코딩(예: '100%.jpg')이면 원문 그대로 둔다.
+function decodeLoose(s: string): string {
+  try {
+    return decodeURIComponent(s)
+  } catch {
+    return s
+  }
+}
+
+// eslint-disable-next-line no-control-regex
+const CONTROL_CHARS = /[\u0000-\u001f\u007f]/
+
+// Blob pathname 안전성 검사 — 프리픽스 비교(/api/file의 canAccess 등) 전에 반드시 거친다.
+// @vercel/blob get()은 `https://{store}.blob.vercel-storage.com/${pathname}`을 그대로 만들어 fetch에 넘기고,
+// fetch(WHATWG URL 파서)는 './', '%2e%2e', '.\t.' 같은 dot-segment를 풀어 버린다. 그러면
+// './expenses/…'나 'news/%2e%2e/expenses/…'처럼 글자로는 다른 프리픽스인 경로가 실제로는 보호된 파일을 가리킨다.
+// 그래서 글자 그대로의 '..'·'//'·'\'·선행 '/'뿐 아니라 아래를 모두 거부한다.
+// - 제어문자(탭·개행은 URL 파서가 지워 '.\t.' → '..'가 된다)와 '?'·'#'(경로를 끊는다)
+// - %-인코딩(두 번 인코딩 포함)으로 숨긴 '.'·'..' 세그먼트와 '/'·'\'
+// - URL 파서로 해석한 경로가 원래 경로와 달라지는 모든 경우(보조 방어)
+// 한글·공백·괄호가 든 정상 파일명('news/…-보고서 최종 (1).docx')은 통과한다.
 export function isSafePathname(pathname: string): boolean {
-  return (
-    pathname.length > 0 &&
-    !pathname.includes("..") &&
-    !pathname.includes("//") &&
-    !pathname.includes("\\") &&
-    !pathname.startsWith("/")
-  )
+  if (
+    typeof pathname !== "string" ||
+    pathname.length === 0 ||
+    pathname.length > 1024 ||
+    pathname.includes("..") ||
+    pathname.includes("//") ||
+    pathname.includes("\\") ||
+    pathname.startsWith("/") ||
+    CONTROL_CHARS.test(pathname) ||
+    /[?#]/.test(pathname)
+  ) {
+    return false
+  }
+  for (const segment of pathname.split("/")) {
+    let s = segment
+    for (let i = 0; i < 3; i++) {
+      const d = decodeLoose(s)
+      if (d === "." || d === ".." || d.includes("/") || d.includes("\\") || CONTROL_CHARS.test(d) || /[?#]/.test(d)) {
+        return false
+      }
+      if (d === s) break
+      s = d
+    }
+  }
+  let resolved: string
+  try {
+    resolved = new URL(pathname, "https://blob.invalid/").pathname.slice(1)
+  } catch {
+    return false
+  }
+  return decodeLoose(resolved) === decodeLoose(pathname)
+}
+
+// 저장 경로에 쓸 파일명 — isSafePathname을 통과하도록 경로를 끊거나 바꾸는 글자를 '_'로 바꾼다.
+// ('#'·'?'·'%'가 든 이름은 예전에도 /api/file에서 열리지 않았다: Blob 주소에서 조각·쿼리로 잘리거나 %-해석된다.)
+// 한글·공백·괄호 등은 그대로 둔다.
+export function safeUploadName(name: string): string {
+  const cleaned = name
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\u0000-\u001f\u007f#?%\\/]/g, "_")
+    .replace(/\.{2,}/g, ".")
+    .trim()
+  return cleaned || "file"
 }
 
 export function validateUploadFile(file: File): { ok: true } | { ok: false; error: string } {
@@ -70,7 +124,7 @@ export async function storeUpload(
   if (!validation.ok) return validation
 
   const timestamp = Date.now()
-  const filename = `${folder}/${timestamp}-${file.name}`
+  const filename = `${folder}/${timestamp}-${safeUploadName(file.name)}`
   const blob = await put(filename, file, { access: "private" })
 
   if (!needsConversion(file.name)) {

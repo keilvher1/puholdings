@@ -38,6 +38,10 @@ async function canAccess(pathname: string): Promise<boolean> {
   if (pathname.startsWith('billing/')) {
     return !!(await getSession())
   }
+  // expenses/ — 사업비 정산 증빙(영수증·카드전표 등)과 사업 자료. 관리자만.
+  if (pathname.startsWith('expenses/')) {
+    return !!(await getSession())
+  }
   // invoices/{period}/{tenant_id}.pdf — 관리자이거나 본인 기업만.
   if (pathname.startsWith('invoices/')) {
     const adminSession = await getSession()
@@ -60,6 +64,7 @@ async function canAccess(pathname: string): Promise<boolean> {
       // 매핑을 못 찾으면 안전하게 차단
       if (!source) return false
       if (source.startsWith('submissions/')) return canAccessSubmission(source)
+      if (source.startsWith('expenses/')) return !!(await getSession())
       return true
     } catch (error) {
       console.error('preview access check error:', error)

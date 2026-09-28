@@ -19,6 +19,7 @@ import {
   LogOut,
   ExternalLink,
   Menu,
+  Wallet,
 } from "lucide-react"
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import type { AdminUser } from "@/lib/auth"
@@ -50,6 +51,10 @@ const NAV_SECTIONS: {
       { href: "/admin/billing", label: "관리비 정산", icon: Receipt },
       { href: "/admin/programs", label: "프로그램", icon: ClipboardList },
     ],
+  },
+  {
+    label: "사업비 정산",
+    items: [{ href: "/admin/expenses", label: "사업비 정산", icon: Wallet }],
   },
   {
     label: "시스템",
