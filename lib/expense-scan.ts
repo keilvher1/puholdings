@@ -5,6 +5,7 @@
 import {
   MAX_SCAN_FILE_BYTES,
   SCAN_MIME_TYPES,
+  convertToKrw,
   emptyReceiptFields,
   type DuplicateReceipt,
   type ExpenseProject,
@@ -26,6 +27,7 @@ import {
 } from "./expense-db"
 import { ExpenseAiError, hasExpenseAiKey, prepareImageForAi, scanReceipt, type AiInput } from "./expense-ai"
 import type { SimilarReceipt } from "./expense-dedupe"
+import { formatForeignWithCode, fxConversionLine, getExchangeRate, isForeignCurrency, type FxOptions, type FxRate } from "./fx"
 
 export const SCAN_NOT_CONFIGURED_MESSAGE =
   "자동 인식이 설정되지 않았습니다(OPENAI_API_KEY). 파일은 보관되었으니 표에서 직접 입력하세요."
@@ -40,6 +42,76 @@ export function manualDraft(warnings: string[]): ReceiptDraft {
     low_confidence_fields: ["issue_date", "vendor_name", "total_amount"],
     warnings,
   }
+}
+
+// 외화 초안을 결제일(issue_date) 환율로 원화 환산한다. 원화 초안은 통화 기본값만 채운다.
+// - 성공: exchange_rate·exchange_rate_date·exchange_rate_source 채움, total_amount = 환산 원화, supply/vat null,
+//         warnings에 "USD 20.00 × 1,388.10원(2026-09-18 기준, 유럽중앙은행) = 27,762원" 한 줄.
+// - 거래일자 없음·외화 금액 없음·환율 조회 실패: total null + 경고 + low_confidence_fields에 total_amount.
+// 결과는 초안(제안값)이다. 저장은 사람이 확인한 뒤에만 한다.
+export async function applyFxToDrafts(drafts: ReceiptDraft[], fxOpts: FxOptions = {}): Promise<ReceiptDraft[]> {
+  const memo = new Map<string, ReturnType<typeof getExchangeRate>>()
+  const lookup = (currency: string, date: string) => {
+    const key = `${currency}|${date}`
+    let p = memo.get(key)
+    if (!p) {
+      p = getExchangeRate(currency, date, fxOpts)
+      memo.set(key, p)
+    }
+    return p
+  }
+  return Promise.all(
+    drafts.map(async (d): Promise<ReceiptDraft> => {
+      // 예전 초안(대기함에 저장된 것 등)에는 통화 필드가 없을 수 있다.
+      const base: ReceiptDraft = {
+        ...d,
+        currency: isForeignCurrency(d.currency) ? d.currency : "KRW",
+        foreign_amount: d.foreign_amount ?? null,
+        exchange_rate: null,
+        exchange_rate_date: "",
+        exchange_rate_source: "",
+        payroll_month: d.payroll_month ?? "",
+      }
+      if (base.currency === "KRW") return { ...base, foreign_amount: null }
+
+      const currency = base.currency
+      const foreign = base.foreign_amount
+      const low = new Set(base.low_confidence_fields)
+      const warnings = [...base.warnings]
+      const done = (fx: FxRate | null, total: number | null): ReceiptDraft => ({
+        ...base,
+        supply_amount: null,
+        vat_amount: null,
+        total_amount: total,
+        exchange_rate: fx?.rate ?? null,
+        exchange_rate_date: fx?.rate_date ?? "",
+        exchange_rate_source: fx?.source ?? "",
+        low_confidence_fields: [...low],
+        warnings: [...new Set(warnings)],
+      })
+
+      if (foreign === null || !(foreign > 0)) {
+        low.add("foreign_amount")
+        low.add("total_amount")
+        warnings.push(`${currency} 금액을 읽지 못했습니다. 외화 금액을 입력하면 결제일 환율로 원화를 계산합니다.`)
+        return done(null, null)
+      }
+      if (!base.issue_date) {
+        low.add("total_amount")
+        warnings.push(`거래일자가 없어 환율을 적용하지 못했습니다(${formatForeignWithCode(currency, foreign)}). 거래일자를 입력하면 결제일 환율로 계산합니다.`)
+        return done(null, null)
+      }
+      const fx = await lookup(currency, base.issue_date)
+      if (!fx) {
+        low.add("total_amount")
+        warnings.push(`${formatForeignWithCode(currency, foreign)} — 환율을 가져오지 못했습니다. 환율 또는 원화 금액을 직접 입력하세요.`)
+        return done(null, null)
+      }
+      const krw = convertToKrw(foreign, fx.rate)
+      warnings.unshift(fxConversionLine(currency, foreign, fx, krw))
+      return done(fx, krw)
+    }),
+  )
 }
 
 // 64자 hex(소문자로 맞춤)만 인정한다.
@@ -142,6 +214,8 @@ export async function scanUploadedReceipt(sql: Sql, formData: FormData): Promise
     if (drafts.length === 0) {
       drafts = [manualDraft(["인식된 내용 없음 · 직접 입력하거나 행을 삭제하세요.", ...fileWarnings])]
     }
+    // 외화 증빙은 결제일 환율로 원화 환산(실패해도 초안은 그대로 돌려준다).
+    drafts = await applyFxToDrafts(drafts, { sql })
 
     // 4) 파일은 다르지만 같은 거래로 보이는 저장된 증빙(세금계산서 + 이체확인증 등 이중 계상 방지).
     //    조회에 실패해도 판독 결과는 돌려준다(경고만 못 할 뿐).

@@ -4,7 +4,9 @@
 import {
   EXPENSE_DOC_TYPES,
   PAYMENT_METHODS,
+  SUPPORTED_CURRENCIES,
   amountMismatch,
+  convertToKrw,
   emptyReceiptFields,
   formatBizNo,
   formatWon,
@@ -12,7 +14,10 @@ import {
   isWholeWon,
   validateReceiptFields,
   type Confidence,
+  type CurrencyCode,
   type DuplicateReceipt,
+  type ExchangeRateSource,
+  type FxRateResponse,
   type ExpenseProject,
   type InboxItem,
   type ReceiptCreateInput,
@@ -88,7 +93,11 @@ export interface DraftRow {
   manual: boolean // AI 없이 만든 빈 행
   showErrors: boolean // 저장을 한 번 시도한 뒤부터 빨간 칸을 보여 준다
   serverErrors: string[]
+  // 외화 행의 결제일 환율 조회 상태(화면 전용, 임시 보관하지 않는다)
+  fx?: FxState | null
 }
+
+export type FxState = { status: "loading" } | { status: "error"; message: string }
 
 export function newKey(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID()
@@ -130,6 +139,12 @@ const FIELD_KEYS: (keyof ReceiptFields)[] = [
   "budget_item",
   "purpose",
   "memo",
+  "currency",
+  "foreign_amount",
+  "exchange_rate",
+  "exchange_rate_date",
+  "exchange_rate_source",
+  "payroll_month",
 ]
 
 function sanitizeItems(v: unknown): ReceiptItem[] {
@@ -143,6 +158,16 @@ function sanitizeItems(v: unknown): ReceiptItem[] {
       amount: toIntOrNull(it.amount),
     }))
 }
+
+function toDecimalOrNull(v: unknown, digits: number): number | null {
+  if (v === null || v === undefined || v === "") return null
+  const n = typeof v === "number" ? v : Number(String(v).replace(/[,\s]/g, ""))
+  if (!Number.isFinite(n)) return null
+  const f = 10 ** digits
+  return Math.round(n * f) / f
+}
+
+const FX_SOURCES: ExchangeRateSource[] = ["", "ecb", "koreaexim", "manual"]
 
 export function sanitizeFields(d: Partial<ReceiptFields> | null | undefined): ReceiptFields {
   const base = emptyReceiptFields()
@@ -166,7 +191,178 @@ export function sanitizeFields(d: Partial<ReceiptFields> | null | undefined): Re
     budget_item: toStr(d.budget_item).slice(0, 100),
     purpose: toStr(d.purpose),
     memo: toStr(d.memo),
+    ...sanitizeFx(d),
+    payroll_month: /^\d{4}-(0[1-9]|1[0-2])$/.test(toStr(d.payroll_month).trim()) ? toStr(d.payroll_month).trim() : "",
   }
+}
+
+// 통화·환율 칸 정리. 원화면 환율 칸은 비운다.
+function sanitizeFx(
+  d: Partial<ReceiptFields>
+): Pick<ReceiptFields, "currency" | "foreign_amount" | "exchange_rate" | "exchange_rate_date" | "exchange_rate_source"> {
+  const currency = SUPPORTED_CURRENCIES.includes(d.currency as never) ? (d.currency as CurrencyCode) : "KRW"
+  if (currency === "KRW") return { currency, foreign_amount: null, exchange_rate: null, exchange_rate_date: "", exchange_rate_source: "" }
+  const rate = toDecimalOrNull(d.exchange_rate, 6)
+  const rateDate = toStr(d.exchange_rate_date).trim()
+  const source = FX_SOURCES.includes(d.exchange_rate_source as never) ? (d.exchange_rate_source as ExchangeRateSource) : ""
+  return {
+    currency,
+    foreign_amount: toDecimalOrNull(d.foreign_amount, 2),
+    exchange_rate: rate !== null && rate > 0 ? rate : null,
+    exchange_rate_date: rate !== null && isValidDate(rateDate) ? rateDate : "",
+    exchange_rate_source: rate !== null ? source : "",
+  }
+}
+
+// ── 외화(결제일 환율) ─────────────────────────────────────────────────────────
+// 외화 행: 원화 합계(total_amount) = 외화 금액 × 결제일(issue_date) 환율.
+// 환율은 /api/admin/expenses/fx로 받는다. 사용자가 환율이나 원화 합계를 직접 고치면 source 'manual' — 이후 날짜를 바꿔도 환율을 유지한다.
+
+export function isForeign(f: Pick<ReceiptFields, "currency">): boolean {
+  return f.currency !== "KRW"
+}
+
+// 표·검토 창·편집 시트가 공통으로 쓰는 수정 규칙. patch를 적용한 새 필드를 돌려준다.
+// - 통화를 원화로: 환율 칸을 비우고 원화 합계는 그대로
+// - 통화를 외화로 바꾸거나 거래일자가 바뀜(직접 입력 환율이 아닐 때): 환율을 비워 다시 받게 한다(needsFxFetch)
+// - 외화 금액·환율이 바뀜: 원화 합계 재계산
+// - 환율 직접 입력: source 'manual'
+// - 외화 행의 원화 합계 직접 입력: source 'manual', 환율 = 합계 ÷ 외화 금액(소수 4자리)
+export function applyFieldPatch(prev: ReceiptFields, patch: Partial<ReceiptFields>): ReceiptFields {
+  const next: ReceiptFields = { ...prev, ...patch }
+  if (next.currency === "KRW") {
+    if (prev.currency !== "KRW") {
+      next.foreign_amount = null
+      next.exchange_rate = null
+      next.exchange_rate_date = ""
+      next.exchange_rate_source = ""
+    }
+    return next
+  }
+  const currencyChanged = "currency" in patch && patch.currency !== prev.currency
+  const dateChanged = "issue_date" in patch && patch.issue_date !== prev.issue_date
+  const rateTyped = "exchange_rate" in patch && patch.exchange_rate !== prev.exchange_rate
+  const totalTyped = "total_amount" in patch && patch.total_amount !== prev.total_amount
+
+  if (rateTyped) {
+    // 지우는 중(null)에도 manual로 둔다 — 비었다고 곧바로 조회 환율이 채워지면 입력이 끊긴다.
+    next.exchange_rate_source = "manual"
+    next.exchange_rate_date = next.exchange_rate !== null && isValidDate(next.issue_date) ? next.issue_date : ""
+  } else if (totalTyped) {
+    if (typeof next.total_amount === "number" && typeof next.foreign_amount === "number" && next.foreign_amount > 0) {
+      next.exchange_rate = Math.round((next.total_amount / next.foreign_amount) * 10000) / 10000
+      next.exchange_rate_source = "manual"
+      next.exchange_rate_date = isValidDate(next.issue_date) ? next.issue_date : ""
+    }
+    return next
+  } else if (currencyChanged || (dateChanged && next.exchange_rate_source !== "manual")) {
+    // 통화가 바뀌면 직접 입력한 환율도 의미가 없다.
+    next.exchange_rate = null
+    next.exchange_rate_date = ""
+    next.exchange_rate_source = ""
+  } else if (dateChanged && next.exchange_rate_source === "manual") {
+    next.exchange_rate_date = isValidDate(next.issue_date) ? next.issue_date : ""
+  }
+  if (currencyChanged && prev.currency === "KRW") {
+    // 원화 → 외화: 외화 증빙에는 한국 부가세가 없다. 기존 원화 합계는 환산될 때까지 그대로 둔다.
+    next.supply_amount = null
+    next.vat_amount = null
+  }
+  if (typeof next.foreign_amount === "number" && typeof next.exchange_rate === "number") {
+    next.total_amount = convertToKrw(next.foreign_amount, next.exchange_rate)
+  } else if (next.exchange_rate === null && typeof next.foreign_amount === "number" && (currencyChanged || dateChanged)) {
+    next.total_amount = null // 새 환율로 다시 계산될 때까지 비운다(예전 환율의 원화가 남지 않게)
+  }
+  return next
+}
+
+// 서버가 판독 시 붙이는 환산 안내("USD 20.00 × 1,388.10원(… 기준, …) = 27,762원")는 표의 금액 칸이 같은 내용을
+// 실시간으로 보여 주므로 뺀다(환율·금액을 고치면 옛 값이 남아 헷갈린다). 환율 조회 실패 경고는 그대로 둔다.
+export function isFxFormulaWarning(w: string): boolean {
+  return /^[A-Z]{3} [\d,.]+ × [\d,.]+원?\s*\(.*\)\s*= [\d,]+원$/.test(w.trim())
+}
+
+// 서버가 판독 때 환율을 못 붙였다는 경고(거래일자 없음·조회 실패). 화면이 결제일 환율을 받아 오면 더는 맞지 않으므로 뺀다.
+export function isFxFailureWarning(w: string): boolean {
+  return /환율을 가져오지 못했습니다|거래일자가 없어 환율을 적용하지 못했습니다/.test(w)
+}
+
+// 결제일 환율을 받아야 하는 행이면 요청 키('USD|2026-09-18'), 아니면 null
+export function fxRequestKey(f: ReceiptFields): string | null {
+  if (f.currency === "KRW" || f.exchange_rate_source === "manual" || f.exchange_rate !== null) return null
+  if (!isValidDate(f.issue_date)) return null
+  return `${f.currency}|${f.issue_date}`
+}
+
+// 조회한 환율을 적용한다(요청 뒤 통화·날짜가 바뀌었거나 직접 입력으로 바뀌었으면 그대로 둔다).
+export function applyFxRate(f: ReceiptFields, res: Extract<FxRateResponse, { success: true }>, requestedDate: string): ReceiptFields {
+  if (f.currency !== res.currency || f.issue_date !== requestedDate || f.exchange_rate_source === "manual") return f
+  return {
+    ...f,
+    exchange_rate: res.rate,
+    exchange_rate_date: res.rate_date,
+    exchange_rate_source: res.source,
+    total_amount: typeof f.foreign_amount === "number" ? convertToKrw(f.foreign_amount, res.rate) : f.total_amount,
+  }
+}
+
+// 직접 입력한 환율을 버리고 결제일 환율을 다시 받게 한다.
+export function resetFxRate(f: ReceiptFields): ReceiptFields {
+  return { ...f, exchange_rate: null, exchange_rate_date: "", exchange_rate_source: "" }
+}
+
+export function formatForeign(n: number | null, currency: CurrencyCode): string {
+  if (n === null || !Number.isFinite(n)) return ""
+  const min = currency === "JPY" ? 0 : 2
+  return n.toLocaleString("ko-KR", { minimumFractionDigits: min, maximumFractionDigits: 2 })
+}
+
+export function formatRate(n: number | null): string {
+  if (n === null || !Number.isFinite(n)) return ""
+  return n.toLocaleString("ko-KR", { minimumFractionDigits: 2, maximumFractionDigits: 4 })
+}
+
+// "USD 20.00 × 1,388.10 = 27,762원"
+export function fxFormula(f: ReceiptFields): string {
+  if (f.currency === "KRW") return ""
+  const head = `${f.currency} ${formatForeign(f.foreign_amount, f.currency) || "—"}`
+  if (f.exchange_rate === null) return head
+  return `${head} × ${formatRate(f.exchange_rate)} = ${f.total_amount !== null ? formatWon(f.total_amount) : "—"}`
+}
+
+// 환율 근거 한 줄: "2026-09-18 기준 · 유럽중앙은행" / "… · 매매기준율" / "직접 입력"
+export function fxSourceText(f: Pick<ReceiptFields, "exchange_rate_date" | "exchange_rate_source">): string {
+  if (f.exchange_rate_source === "manual") return f.exchange_rate_date ? `${f.exchange_rate_date} · 직접 입력` : "직접 입력"
+  const src = f.exchange_rate_source === "ecb" ? "유럽중앙은행" : f.exchange_rate_source === "koreaexim" ? "매매기준율" : ""
+  if (!src) return ""
+  return f.exchange_rate_date ? `${f.exchange_rate_date} 기준 · ${src}` : src
+}
+
+// 결제일 고시가 없어 직전 영업일 환율을 쓴 경우 안내
+export function fxDateNote(f: Pick<ReceiptFields, "issue_date" | "exchange_rate_date" | "exchange_rate_source">): string {
+  if (f.exchange_rate_source !== "ecb" && f.exchange_rate_source !== "koreaexim") return ""
+  if (!f.exchange_rate_date || !isValidDate(f.issue_date) || f.exchange_rate_date === f.issue_date) return ""
+  return f.exchange_rate_date < f.issue_date
+    ? `결제일(${f.issue_date}) 고시가 없어 직전 영업일 환율 적용`
+    : `결제일(${f.issue_date})이 아직 고시 전이라 최근 고시 환율 적용`
+}
+
+// /fx 응답 해석
+export function parseFxResponse(data: unknown): FxRateResponse {
+  if (!data || typeof data !== "object") return { success: false, error: "환율 응답을 읽지 못했습니다" }
+  const o = data as Record<string, unknown>
+  if (o.success === true && typeof o.rate === "number" && o.rate > 0 && typeof o.rate_date === "string") {
+    const source = o.source === "koreaexim" ? "koreaexim" : "ecb"
+    return {
+      success: true,
+      currency: SUPPORTED_CURRENCIES.includes(o.currency as never) ? (o.currency as CurrencyCode) : "USD",
+      requested_date: toStr(o.requested_date),
+      rate_date: o.rate_date,
+      rate: o.rate,
+      source,
+    }
+  }
+  return { success: false, error: typeof o.error === "string" && o.error ? o.error : "환율을 받지 못했습니다" }
 }
 
 // ── 프로젝트 초기 선택 ─────────────────────────────────────────────────────────
@@ -259,7 +455,7 @@ export function rowsFromScan(
       projectReason: toStr(d.project_reason),
       confidence: d.confidence === "high" || d.confidence === "medium" || d.confidence === "low" ? d.confidence : null,
       lowFields: low,
-      warnings: Array.isArray(d.warnings) ? d.warnings.map(toStr).filter(Boolean) : [],
+      warnings: Array.isArray(d.warnings) ? d.warnings.map(toStr).filter((w) => w && !isFxFormulaWarning(w)) : [],
       duplicates,
       similar: sim,
       aiRaw: d,
@@ -392,6 +588,7 @@ const DOC_TYPE_LABEL_SHORT: Record<ReceiptFields["doc_type"], string> = {
   tax_invoice: "세금계산서",
   invoice: "거래명세서",
   transfer: "이체확인증",
+  payroll: "인건비",
   other: "기타",
 }
 
@@ -498,8 +695,14 @@ export function resolveInsertConflicts(prev: DraftRow[], added: DraftRow[]): { p
 
 // ── 검증 ──────────────────────────────────────────────────────────────────────
 export function normalizeFields(f: ReceiptFields): ReceiptFields {
+  const krw = f.currency === "KRW"
   return {
     ...f,
+    foreign_amount: krw ? null : f.foreign_amount,
+    exchange_rate: krw ? null : f.exchange_rate,
+    exchange_rate_date: krw || f.exchange_rate === null ? "" : f.exchange_rate_date,
+    exchange_rate_source: krw || f.exchange_rate === null ? "" : f.exchange_rate_source,
+    payroll_month: f.payroll_month.trim(),
     issue_date: f.issue_date.trim(),
     vendor_name: f.vendor_name.trim(),
     vendor_biz_no: formatBizNo(f.vendor_biz_no.trim()),
@@ -533,6 +736,8 @@ export function invalidFields(row: DraftRow): InvalidMap {
     vendor_biz_no: !!f.vendor_biz_no && !/^\d{3}-?\d{2}-?\d{5}$/.test(f.vendor_biz_no),
     budget_item: f.budget_item.length > 100,
     project_id: !row.project_id,
+    foreign_amount: f.currency !== "KRW" && !(typeof f.foreign_amount === "number" && f.foreign_amount > 0),
+    exchange_rate: f.currency !== "KRW" && !(typeof f.exchange_rate === "number" && f.exchange_rate > 0),
   }
 }
 
@@ -645,7 +850,7 @@ export interface UploadBackup {
 }
 
 export function serializeBackup(rows: DraftRow[]): string {
-  const slim = rows.map((r) => ({ ...r, fileKey: null, showErrors: false, serverErrors: [] }))
+  const slim = rows.map((r) => ({ ...r, fileKey: null, showErrors: false, serverErrors: [], fx: null }))
   return JSON.stringify({ savedAt: Date.now(), rows: slim } satisfies UploadBackup)
 }
 

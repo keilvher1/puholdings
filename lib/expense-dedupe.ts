@@ -29,11 +29,13 @@ export const SAME_TX_MAX_DAYS = 7
 const SAME_APPROVAL_MAX_DAYS = 31
 const MIN_APPROVAL_LEN = 6
 
-// 한 거래를 증명하는 서류가 여럿이면 어느 쪽을 남길지 — 세금계산서 > 카드전표 > 영수증 > 이체확인증 > 거래명세서 > 기타
+// 한 거래를 증빙하는 서류가 여럿이면 어느 쪽을 남길지 — 세금계산서 > 카드전표 > 영수증 > 인건비 지급 > 이체확인증 > 거래명세서 > 기타
+// (인건비 지급은 귀속월 등 지급 내역을 담은 기록이라 같은 급여의 이체확인증보다 우선한다)
 export const DOC_TYPE_PRIORITY: Record<ExpenseDocType, number> = {
   tax_invoice: 5,
   card_slip: 4,
   receipt: 3,
+  payroll: 2.5,
   transfer: 2,
   invoice: 1,
   other: 0,

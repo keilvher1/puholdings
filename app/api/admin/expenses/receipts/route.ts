@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { BlobNotFoundError, del, head } from "@vercel/blob"
-import { isValidDate, type ExpenseReceipt, type ReceiptFields } from "@/lib/expenses"
+import { isValidDate, type ExpenseReceipt, type ReceiptFields, type UploadedFileMeta } from "@/lib/expenses"
 import {
   aiRawJson,
   dbErrorMessage,
@@ -20,11 +20,17 @@ import {
 //        month=YYYY-MM을 주면 그 달 1일~말일로 from/to를 채운다(from/to가 따로 오면 그것이 우선).
 // POST   { receipts: ReceiptCreateInput[] } (1~100건) → 전부 검증 후 한 트랜잭션으로 저장 → { success, ids, skipped }
 //        검증 실패 시 400 { success:false, error, row_errors: { index, errors[] }[] } — 한 건도 저장하지 않는다.
+//        file은 필수다. 단 인건비 지급(doc_type 'payroll')은 수기 등록이라 file: null을 허용한다.
+//        외화 증빙은 currency·foreign_amount·exchange_rate(·exchange_rate_date·exchange_rate_source)를 함께 보내고,
+//        total_amount는 원화 환산액(외화 금액 × 환율, 반올림)이어야 한다.
 //        같은 증빙(같은 원본 파일[경로 또는 해시]·거래일·거래처·합계)은 이미 저장돼 있거나 묶음 안에 두 번 있으면 막는다.
+//        파일 없는 인건비 행은 같은 프로젝트·지급일·대상자·금액이 이미 있거나 묶음 안에 두 번 있으면 막는다.
 //        원본 Blob이 지워진 경로(다른 행을 삭제하며 원본이 정리된 경우)도 막는다.
 //        skipped: 검증 뒤 저장 직전에 다른 창·다른 관리자가 같은 증빙을 먼저 저장해 건너뛴 행의 index 목록(보통 빈 배열).
 //        건너뛴 행도 이미 저장된 상태이므로 화면은 저장된 것으로 처리하면 된다.
-// PUT    { id, ...ReceiptFields, project_id } → { success, receipt } (보낸 필드만 바뀐다)
+// PUT    { id, ...ReceiptFields, project_id, file? } → { success, receipt } (보낸 필드만 바뀐다)
+//        file: UploadedFileMeta(/attach 결과)를 보내면 원본 파일이 없는 행(수기 등록한 인건비)에 첨부를 붙인다.
+//        원본이 이미 있는 행의 파일은 바꿀 수 없다. 파일 없는 행의 문서 종류는 '인건비 지급'만 가능하다.
 // DELETE { id } → 같은 원본 파일을 쓰는 다른 증빙이 없으면 Blob 원본도 지운다(실패해도 삭제는 성공).
 
 export const dynamic = "force-dynamic"
@@ -44,7 +50,24 @@ const FIELD_KEYS: (keyof ReceiptFields)[] = [
   "budget_item",
   "purpose",
   "memo",
+  "currency",
+  "foreign_amount",
+  "exchange_rate",
+  "exchange_rate_date",
+  "exchange_rate_source",
+  "payroll_month",
 ]
+
+const NO_FILE_ERROR = "원본 파일이 없습니다. 증빙 파일을 다시 올리세요(파일 없이 등록할 수 있는 것은 '인건비 지급'뿐입니다)"
+
+// 파일 없는(수기) 인건비의 같은 건 키: 프로젝트·지급일·대상자·금액
+function manualKey(projectId: number, p: { issue_date: string; vendor_name: string; total_amount: number | null }): string {
+  return `${projectId}|${p.issue_date}|${p.vendor_name}|${p.total_amount}`
+}
+
+function nullIfEmpty(s: string): string | null {
+  return s ? s : null
+}
 
 async function readJson(request: Request): Promise<Record<string, unknown> | null> {
   try {
@@ -112,7 +135,7 @@ export async function POST(request: Request) {
       index: number // 요청 receipts 배열에서의 위치(row_errors·skipped에 그대로 쓴다)
       projectId: number
       fields: ReceiptFields
-      file: { pathname: string; name: string; type: string; size: number; hash: string }
+      file: UploadedFileMeta | null // null = 수기 등록 인건비
       aiConfidence: string | null
       aiRaw: string | null
     }[] = []
@@ -126,9 +149,12 @@ export async function POST(request: Request) {
       else if (project.status !== "active") {
         errors.push(`'${project.name}' 프로젝트는 종료되어 증빙을 추가할 수 없습니다. 다른 프로젝트를 고르거나 프로젝트를 재개하세요`)
       }
-      const file = parseUploadedFileMeta(raw.file)
-      if (!file.ok) errors.push(...file.errors)
-      if (errors.length > 0 || !projectId || !file.ok) {
+      // 인건비 지급만 파일 없이(수기) 저장할 수 있다.
+      const noFile = raw.file === null || raw.file === undefined
+      const file = noFile ? null : parseUploadedFileMeta(raw.file)
+      if (noFile && fields.doc_type !== "payroll") errors.push(NO_FILE_ERROR)
+      if (file && !file.ok) errors.push(...file.errors)
+      if (errors.length > 0 || !projectId || (file && !file.ok)) {
         rowErrors.push({ index, errors })
         return
       }
@@ -136,7 +162,7 @@ export async function POST(request: Request) {
         index,
         projectId,
         fields,
-        file: file.value,
+        file: file && file.ok ? file.value : null,
         aiConfidence: parseConfidence(raw.ai_confidence),
         aiRaw: aiRawJson(raw.ai_raw),
       })
@@ -155,8 +181,10 @@ export async function POST(request: Request) {
 
       // 1) 묶음 안: 같은 증빙이 두 번 들어온 경우(같은 파일을 두 번 올림 — 경로는 달라도 해시가 같다 — 또는 같은 행을 복제).
       //    아래 저장 단계는 이미 있는 같은 증빙을 건너뛰므로, 여기서 먼저 막아 조용히 한 건이 빠지는 일이 없게 한다.
+      const withFile = prepared.filter((p): p is (typeof prepared)[number] & { file: UploadedFileMeta } => p.file !== null)
+      const manual = prepared.filter((p) => p.file === null)
       const seenInBatch = new Set<string>()
-      for (const p of prepared) {
+      for (const p of withFile) {
         const k = rest(p.fields)
         const keys = [`p:${p.file.pathname}|${k}`, ...(p.file.hash ? [`h:${p.file.hash}|${k}`] : [])]
         if (keys.some((key) => seenInBatch.has(key))) {
@@ -164,27 +192,56 @@ export async function POST(request: Request) {
         }
         for (const key of keys) seenInBatch.add(key)
       }
+      const seenManual = new Set<string>()
+      for (const p of manual) {
+        const key = manualKey(p.projectId, p.fields)
+        if (seenManual.has(key)) {
+          addError(p.index, "같은 인건비(같은 프로젝트·지급일·대상자·금액)가 이번 저장에 두 번 들어 있습니다. 한 건만 남기세요")
+        }
+        seenManual.add(key)
+      }
 
       // 2) 이미 저장된 증빙과 비교('저장'을 두 번 누름, 같은 파일을 다시 올려 다시 저장 등)
-      const paths = [...new Set(prepared.map((p) => p.file.pathname))]
-      const hashes = [...new Set(prepared.map((p) => p.file.hash).filter(Boolean))]
-      const existing = await sql`
-        SELECT file_pathname, file_hash, to_char(issue_date, 'YYYY-MM-DD') AS issue_date, vendor_name, total_amount
-        FROM expense_receipts
-        WHERE file_pathname = ANY(${paths}::text[]) OR (file_hash <> '' AND file_hash = ANY(${hashes}::text[]))
-      `
+      const paths = [...new Set(withFile.map((p) => p.file.pathname))]
+      const hashes = [...new Set(withFile.map((p) => p.file.hash).filter(Boolean))]
       const savedKeys = new Set<string>()
       const savedPaths = new Set<string>()
-      for (const e of existing) {
-        const k = rest({ issue_date: String(e.issue_date), vendor_name: String(e.vendor_name), total_amount: Number(e.total_amount) })
-        savedKeys.add(`p:${e.file_pathname}|${k}`)
-        if (e.file_hash) savedKeys.add(`h:${e.file_hash}|${k}`)
-        savedPaths.add(String(e.file_pathname))
+      if (withFile.length > 0) {
+        const existing = await sql`
+          SELECT file_pathname, file_hash, to_char(issue_date, 'YYYY-MM-DD') AS issue_date, vendor_name, total_amount
+          FROM expense_receipts
+          WHERE file_pathname = ANY(${paths}::text[]) OR (file_hash <> '' AND file_hash = ANY(${hashes}::text[]))
+        `
+        for (const e of existing) {
+          const k = rest({ issue_date: String(e.issue_date), vendor_name: String(e.vendor_name), total_amount: Number(e.total_amount) })
+          savedKeys.add(`p:${e.file_pathname}|${k}`)
+          if (e.file_hash) savedKeys.add(`h:${e.file_hash}|${k}`)
+          savedPaths.add(String(e.file_pathname))
+        }
       }
-      for (const p of prepared) {
+      for (const p of withFile) {
         const k = rest(p.fields)
         if (savedKeys.has(`p:${p.file.pathname}|${k}`) || (p.file.hash && savedKeys.has(`h:${p.file.hash}|${k}`))) {
           addError(p.index, "이미 저장된 증빙입니다(같은 파일·거래일·거래처·합계). 증빙 내역에서 확인하세요")
+        }
+      }
+      if (manual.length > 0) {
+        const pids = [...new Set(manual.map((p) => p.projectId))]
+        const dates = [...new Set(manual.map((p) => p.fields.issue_date))]
+        const savedManual = await sql`
+          SELECT project_id, to_char(issue_date, 'YYYY-MM-DD') AS issue_date, vendor_name, total_amount
+          FROM expense_receipts
+          WHERE file_pathname IS NULL AND project_id = ANY(${pids}::int[]) AND issue_date = ANY(${dates}::date[])
+        `
+        const savedManualKeys = new Set(
+          savedManual.map((e) =>
+            manualKey(Number(e.project_id), { issue_date: String(e.issue_date), vendor_name: String(e.vendor_name), total_amount: Number(e.total_amount) }),
+          ),
+        )
+        for (const p of manual) {
+          if (savedManualKeys.has(manualKey(p.projectId, p.fields))) {
+            addError(p.index, "이미 등록된 인건비입니다(같은 프로젝트·지급일·대상자·금액). 증빙 내역에서 확인하세요")
+          }
         }
       }
 
@@ -204,7 +261,7 @@ export async function POST(request: Request) {
           }),
         )
       }
-      for (const p of prepared) {
+      for (const p of withFile) {
         if (missing.has(p.file.pathname)) {
           addError(p.index, "원본 파일이 삭제되어 이 행을 저장할 수 없습니다. 원본 파일을 다시 올려 새 행으로 저장하세요")
         }
@@ -223,29 +280,64 @@ export async function POST(request: Request) {
     // 같은 증빙이 이미 있으면 그 행은 넣지 않는다(위 검사를 통과한 뒤 다른 요청이 먼저 저장한 경우뿐이다).
     const results = await sql.transaction([
       sql`SELECT pg_advisory_xact_lock(hashtext('expense_receipts_insert'))`,
-      ...prepared.map(
-        (p) => sql`
+      ...prepared.map((p) => {
+        const f = p.fields
+        const fxDate = nullIfEmpty(f.exchange_rate_date)
+        const payrollMonth = nullIfEmpty(f.payroll_month)
+        if (p.file) {
+          const file = p.file
+          return sql`
+            INSERT INTO expense_receipts
+              (project_id, doc_type, issue_date, vendor_name, vendor_biz_no, supply_amount, vat_amount, total_amount,
+               payment_method, approval_no, items, budget_item, purpose, memo,
+               currency, foreign_amount, exchange_rate, exchange_rate_date, exchange_rate_source, payroll_month,
+               file_pathname, file_name, file_type, file_size, file_hash, ai_confidence, ai_raw)
+            SELECT
+              ${p.projectId}, ${f.doc_type}, ${f.issue_date}::date, ${f.vendor_name}, ${f.vendor_biz_no},
+              ${f.supply_amount}::numeric, ${f.vat_amount}::numeric, ${f.total_amount}::numeric,
+              ${f.payment_method}, ${f.approval_no}, ${JSON.stringify(f.items)}::jsonb,
+              ${f.budget_item}, ${f.purpose}, ${f.memo},
+              ${f.currency}, ${f.foreign_amount}::numeric, ${f.exchange_rate}::numeric, ${fxDate}::date,
+              ${f.exchange_rate_source}, ${payrollMonth},
+              ${file.pathname}, ${file.name}, ${file.type}, ${file.size}, ${file.hash},
+              ${p.aiConfidence}, ${p.aiRaw}::jsonb
+            WHERE NOT EXISTS (
+              SELECT 1 FROM expense_receipts e
+              WHERE (e.file_pathname = ${file.pathname} OR (${file.hash}::text <> '' AND e.file_hash = ${file.hash}))
+                AND e.issue_date = ${f.issue_date}::date
+                AND e.vendor_name = ${f.vendor_name}
+                AND e.total_amount = ${f.total_amount}::numeric
+            )
+            RETURNING id
+          `
+        }
+        // 수기 등록 인건비(파일 없음): 같은 프로젝트·지급일·대상자·금액이 이미 있으면 넣지 않는다.
+        return sql`
           INSERT INTO expense_receipts
             (project_id, doc_type, issue_date, vendor_name, vendor_biz_no, supply_amount, vat_amount, total_amount,
              payment_method, approval_no, items, budget_item, purpose, memo,
+             currency, foreign_amount, exchange_rate, exchange_rate_date, exchange_rate_source, payroll_month,
              file_pathname, file_name, file_type, file_size, file_hash, ai_confidence, ai_raw)
           SELECT
-            ${p.projectId}, ${p.fields.doc_type}, ${p.fields.issue_date}::date, ${p.fields.vendor_name}, ${p.fields.vendor_biz_no},
-            ${p.fields.supply_amount}::numeric, ${p.fields.vat_amount}::numeric, ${p.fields.total_amount}::numeric,
-            ${p.fields.payment_method}, ${p.fields.approval_no}, ${JSON.stringify(p.fields.items)}::jsonb,
-            ${p.fields.budget_item}, ${p.fields.purpose}, ${p.fields.memo},
-            ${p.file.pathname}, ${p.file.name}, ${p.file.type}, ${p.file.size}, ${p.file.hash},
+            ${p.projectId}, ${f.doc_type}, ${f.issue_date}::date, ${f.vendor_name}, ${f.vendor_biz_no},
+            ${f.supply_amount}::numeric, ${f.vat_amount}::numeric, ${f.total_amount}::numeric,
+            ${f.payment_method}, ${f.approval_no}, ${JSON.stringify(f.items)}::jsonb,
+            ${f.budget_item}, ${f.purpose}, ${f.memo},
+            ${f.currency}, ${f.foreign_amount}::numeric, ${f.exchange_rate}::numeric, ${fxDate}::date,
+            ${f.exchange_rate_source}, ${payrollMonth},
+            NULL, '', '', 0, '',
             ${p.aiConfidence}, ${p.aiRaw}::jsonb
           WHERE NOT EXISTS (
             SELECT 1 FROM expense_receipts e
-            WHERE (e.file_pathname = ${p.file.pathname} OR (${p.file.hash}::text <> '' AND e.file_hash = ${p.file.hash}))
-              AND e.issue_date = ${p.fields.issue_date}::date
-              AND e.vendor_name = ${p.fields.vendor_name}
-              AND e.total_amount = ${p.fields.total_amount}::numeric
+            WHERE e.file_pathname IS NULL
+              AND e.project_id = ${p.projectId}
+              AND e.issue_date = ${f.issue_date}::date
+              AND e.vendor_name = ${f.vendor_name}
+              AND e.total_amount = ${f.total_amount}::numeric
           )
           RETURNING id
-        `,
-      ),
+        `
+      }),
     ], { isolationLevel: "ReadCommitted" }) // 잠금을 얻은 뒤의 문장이 먼저 끝난 저장을 볼 수 있어야 한다
     const ids: number[] = []
     const skipped: number[] = []
@@ -288,6 +380,20 @@ export async function PUT(request: Request) {
       if (!target) errors.push("선택한 프로젝트가 삭제되었습니다. 다시 선택하세요")
       else if (target.status !== "active") errors.push(`'${target.name}' 프로젝트는 종료되어 증빙을 옮길 수 없습니다`)
     }
+
+    // 첨부 추가: 원본 파일이 없는 행(수기 등록 인건비)에만 붙일 수 있다.
+    let attach: UploadedFileMeta | null = null
+    if (body.file !== undefined && body.file !== null) {
+      if (existing.file_pathname) errors.push("이미 원본 파일이 있는 증빙입니다. 원본 파일은 바꿀 수 없습니다")
+      else {
+        const parsed = parseUploadedFileMeta(body.file)
+        if (parsed.ok) attach = parsed.value
+        else errors.push(...parsed.errors)
+      }
+    }
+    if (!attach && !existing.file_pathname && fields.doc_type !== "payroll") {
+      errors.push("원본 파일이 없는 증빙은 문서 종류를 '인건비 지급'으로만 둘 수 있습니다. 첨부를 먼저 추가하세요")
+    }
     if (errors.length > 0 || !projectId) return fail(errors[0] ?? "입력값을 확인하세요", 400, { errors })
 
     await sql`
@@ -306,6 +412,17 @@ export async function PUT(request: Request) {
         budget_item = ${fields.budget_item},
         purpose = ${fields.purpose},
         memo = ${fields.memo},
+        currency = ${fields.currency},
+        foreign_amount = ${fields.foreign_amount}::numeric,
+        exchange_rate = ${fields.exchange_rate}::numeric,
+        exchange_rate_date = ${nullIfEmpty(fields.exchange_rate_date)}::date,
+        exchange_rate_source = ${fields.exchange_rate_source},
+        payroll_month = ${nullIfEmpty(fields.payroll_month)},
+        file_pathname = CASE WHEN ${attach !== null}::boolean THEN ${attach?.pathname ?? null} ELSE file_pathname END,
+        file_name = CASE WHEN ${attach !== null}::boolean THEN ${attach?.name ?? ""} ELSE file_name END,
+        file_type = CASE WHEN ${attach !== null}::boolean THEN ${attach?.type ?? ""} ELSE file_type END,
+        file_size = CASE WHEN ${attach !== null}::boolean THEN ${attach?.size ?? 0}::int ELSE file_size END,
+        file_hash = CASE WHEN ${attach !== null}::boolean THEN ${attach?.hash ?? ""} ELSE file_hash END,
         updated_at = now()
       WHERE id = ${id}
     `
@@ -329,6 +446,8 @@ export async function DELETE(request: Request) {
   try {
     const rows = await sql`DELETE FROM expense_receipts WHERE id = ${id} RETURNING file_pathname`
     if (rows.length === 0) return fail("이미 삭제되었거나 없는 증빙입니다. 새로고침하세요.", 404)
+    // 수기 등록 인건비(원본 없음)는 정리할 파일이 없다.
+    if (rows[0].file_pathname === null || rows[0].file_pathname === undefined) return NextResponse.json({ success: true })
     const pathname = String(rows[0].file_pathname)
 
     // 한 파일에 증빙이 여러 장이면 다른 행이 같은 원본을 쓴다 — 마지막 행일 때만 원본을 지운다.

@@ -8,6 +8,7 @@ import { dbErrorMessage, fail, getProject, kstToday, listReceipts, parseId, requ
 // 해당 프로젝트 증빙 원본 파일을 fflate zip()으로 묶어 내려준다(한글 파일명 UTF-8 플래그).
 // zip 안 파일명: {거래일자}_{거래처}_{합계}원.{확장자} — 한 파일에 증빙이 여러 장이면 " 외 N건"을 붙이고 한 번만 넣는다.
 // 못 읽은 파일이 있으면 _안내.txt에 목록을 남긴다(조용히 빠지지 않도록).
+// 원본 파일이 없는 수기 등록 인건비는 건너뛰고 _안내.txt에 '수기 등록 N건 제외'와 목록을 적는다.
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -37,7 +38,9 @@ function uniqueName(used: Set<string>, base: string, ext: string): string {
   return name
 }
 
-function extFor(r: ExpenseReceipt): string {
+type FileReceipt = ExpenseReceipt & { file_pathname: string }
+
+function extFor(r: FileReceipt): string {
   const fromName = (r.file_name.match(/\.[A-Za-z0-9]{1,5}$/)?.[0] || "").toLowerCase()
   if (fromName) return fromName
   const fromPath = (r.file_pathname.match(/\.[A-Za-z0-9]{1,5}$/)?.[0] || "").toLowerCase()
@@ -94,8 +97,20 @@ export async function GET(request: Request) {
 
     // 거래일 오름차순, 같은 원본 파일은 한 번만
     const sorted = [...receipts].sort((a, b) => (a.issue_date === b.issue_date ? a.id - b.id : a.issue_date < b.issue_date ? -1 : 1))
-    const byPath = new Map<string, ExpenseReceipt[]>()
-    for (const r of sorted) {
+    // 원본 파일이 없는 수기 등록(인건비)은 묶을 파일이 없다.
+    const manual = sorted.filter((r) => !r.file_pathname)
+    const manualNote =
+      manual.length > 0
+        ? `[수기 등록 ${manual.length}건 제외]\n원본 파일 없이 직접 등록한 인건비는 이 zip에 파일이 없습니다(증빙 목록 엑셀에는 포함).\n\n${manual
+            .map((r) => `${r.issue_date} ${r.vendor_name} ${r.total_amount !== null ? `${r.total_amount.toLocaleString("ko-KR")}원` : ""}${r.payroll_month ? ` (귀속 ${r.payroll_month})` : ""}`.trim())
+            .join("\n")}\n`
+        : ""
+    const withFile = sorted.filter((r): r is FileReceipt => !!r.file_pathname)
+    if (withFile.length === 0) {
+      return fail(`내려받을 원본 파일이 없습니다(조건에 맞는 ${manual.length}건이 모두 파일 없이 수기 등록한 인건비입니다)`, 404)
+    }
+    const byPath = new Map<string, FileReceipt[]>()
+    for (const r of withFile) {
       const list = byPath.get(r.file_pathname)
       if (list) list.push(r)
       else byPath.set(r.file_pathname, [r])
@@ -138,11 +153,14 @@ export async function GET(request: Request) {
     if (Object.keys(files).length === 0) {
       return fail("증빙 원본 파일을 하나도 읽지 못했습니다. 잠시 후 다시 시도하세요.", 500)
     }
+    const notes: string[] = []
     if (failed.length > 0) {
-      files["_안내.txt"] = new TextEncoder().encode(
+      notes.push(
         `[빠진 원본 ${failed.length}건]\n아래 증빙의 원본 파일을 읽지 못해 이 zip에 들어 있지 않습니다.\n증빙 내역 화면에서 개별로 열어 확인하세요.\n\n${failed.join("\n")}\n`,
       )
     }
+    if (manualNote) notes.push(manualNote)
+    if (notes.length > 0) files["_안내.txt"] = new TextEncoder().encode(notes.join("\n"))
 
     const zipped = await zipAsync(files)
     const filename = encodeURIComponent(`사업비_증빙원본_${safeName(project.name, 60)}_${kstToday().replace(/-/g, "")}.zip`)
@@ -153,6 +171,7 @@ export async function GET(request: Request) {
         "Cache-Control": "private, no-store",
         "X-File-Count": String(jobs.length - failed.length),
         "X-File-Total": String(jobs.length),
+        "X-Manual-Skipped": String(manual.length),
       },
     })
   } catch (error) {

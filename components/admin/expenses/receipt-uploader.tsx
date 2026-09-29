@@ -19,6 +19,7 @@ import {
   SCAN_CONCURRENCY,
   formatWon,
   type DuplicateReceipt,
+  type FxRateResponse,
   type InboxItem,
   type ReceiptDraft,
   type ReceiptFields,
@@ -28,8 +29,15 @@ import { UploadDropzone } from "./upload-dropzone"
 import { UploadFileList } from "./upload-file-list"
 import { ReceiptTable, type ReceiptTableActions } from "./receipt-table"
 import { UploadReviewDialog } from "./upload-review-dialog"
+import { PayrollEntryButton } from "./payroll-entry"
 import {
   BACKUP_KEY,
+  applyFieldPatch,
+  applyFxRate,
+  isFxFailureWarning,
+  fxRequestKey,
+  parseFxResponse,
+  resetFxRate,
   blankRow,
   findTableMatches,
   httpErrorMessage,
@@ -200,6 +208,62 @@ export function ReceiptUploader({
       // 네트워크 오류 — 무시(다음에 열 때 서버가 저장된 증빙과 대조해 저장한 초안은 빼고, 다 저장된 파일은 대기함에서 정리한다)
     }
   }, [])
+
+  // ── 외화 행: 결제일 환율 받기 ─────────────────────────────────────────────────
+  // 통화·거래일자가 정해졌는데 환율이 없는 외화 행(직접 입력 제외)이면 /fx로 받아 원화 합계를 계산한다.
+  // 같은 (통화, 날짜)는 한 번만 요청하고, 실패하면 그 행은 '다시 조회'를 누를 때까지 다시 요청하지 않는다.
+  const fxCacheRef = useRef(new Map<string, Promise<FxRateResponse>>())
+  const fxAttemptRef = useRef(new Map<string, string>()) // 행 key → 마지막으로 요청한 'USD|2026-09-18'
+  const loadFx = useCallback(async (rowKey: string, reqKey: string) => {
+    const [currency, date] = reqKey.split("|")
+    const stillWanted = (r: DraftRow) => r.key === rowKey && fxRequestKey(r.fields) === reqKey
+    setRows((prev) => prev.map((r) => (stillWanted(r) ? { ...r, fx: { status: "loading" } } : r)))
+    let p = fxCacheRef.current.get(reqKey)
+    if (!p) {
+      p = fetch(`/api/admin/expenses/fx?currency=${encodeURIComponent(currency)}&date=${encodeURIComponent(date)}`, { credentials: "include" })
+        .then(async (res) => {
+          let data: unknown = null
+          try {
+            data = await res.json()
+          } catch {
+            data = null
+          }
+          const parsed = parseFxResponse(data)
+          if (!parsed.success && !res.ok) return { success: false as const, error: httpErrorMessage(res.status, (data as { error?: string } | null)?.error || "환율 조회 실패") }
+          return parsed
+        })
+        .catch(() => ({ success: false as const, error: "네트워크 오류로 환율을 받지 못했습니다" }))
+      fxCacheRef.current.set(reqKey, p)
+    }
+    const res = await p
+    if (!res.success) fxCacheRef.current.delete(reqKey) // 실패는 기억하지 않는다('다시 조회'로 재요청)
+    setRows((prev) =>
+      prev.map((r) => {
+        if (!stillWanted(r)) return r.key === rowKey && r.fx?.status === "loading" && !fxRequestKey(r.fields) ? { ...r, fx: null } : r
+        if (!res.success) return { ...r, fx: { status: "error", message: res.error || "환율 조회 실패" } }
+        const fields = applyFxRate(r.fields, res, date)
+        const warnings = fields.exchange_rate !== null ? r.warnings.filter((w) => !isFxFailureWarning(w)) : r.warnings
+        return { ...r, fields, fx: null, warnings: warnings.length === r.warnings.length ? r.warnings : warnings }
+      })
+    )
+  }, [])
+
+  useEffect(() => {
+    const attempts = fxAttemptRef.current
+    const live = new Set<string>()
+    for (const r of rows) {
+      live.add(r.key)
+      const k = fxRequestKey(r.fields)
+      if (!k) {
+        attempts.delete(r.key)
+        continue
+      }
+      if (attempts.get(r.key) === k) continue
+      attempts.set(r.key, k)
+      void loadFx(r.key, k)
+    }
+    for (const k of attempts.keys()) if (!live.has(k)) attempts.delete(k)
+  }, [rows, loadFx])
 
   // ── 행 삽입 순서: 파일을 올린 순서대로(끝난 순서가 아니라) ─────────────────────
   // 넣기 전에 표에 이미 있는 행과 견줘, 같은 파일을 다시 올렸거나 같은 거래의 다른 서류(세금계산서+이체확인증 등)면
@@ -472,8 +536,23 @@ export function ReceiptUploader({
   // ── 표 조작 ──────────────────────────────────────────────────────────────────
   const actions: ReceiptTableActions = useMemo(
     () => ({
+      // 통화·외화 금액·환율·거래일자 수정은 applyFieldPatch 규칙으로 원화 합계를 맞춘다(환율 재조회는 위 effect가 한다).
       patchFields: (key: string, patch: Partial<ReceiptFields>) =>
-        setRows((prev) => prev.map((r) => (r.key === key ? { ...r, fields: { ...r.fields, ...patch }, serverErrors: [] } : r))),
+        setRows((prev) =>
+          prev.map((r) => {
+            if (r.key !== key) return r
+            const fields = applyFieldPatch(r.fields, patch)
+            const fx = fxRequestKey(fields) === fxRequestKey(r.fields) ? r.fx : null
+            // 환율을 직접 넣었거나(원화 합계 입력 포함) 원화로 바꿨으면 판독 때의 '환율 못 가져옴' 경고는 더는 맞지 않는다.
+            const fxResolved = fields.currency === "KRW" || fields.exchange_rate !== null
+            const warnings = fxResolved ? r.warnings.filter((w) => !isFxFailureWarning(w)) : r.warnings
+            return { ...r, fields, fx, serverErrors: [], warnings: warnings.length === r.warnings.length ? r.warnings : warnings }
+          })
+        ),
+      refetchFx: (key: string) => {
+        fxAttemptRef.current.delete(key)
+        setRows((prev) => prev.map((r) => (r.key === key ? { ...r, fields: resetFxRate(r.fields), fx: null, serverErrors: [] } : r)))
+      },
       setProject: (key: string, projectId: number) =>
         setRows((prev) =>
           prev.map((r) =>
@@ -922,7 +1001,7 @@ export function ReceiptUploader({
 
       {notice && <NoticeBar notice={notice} onClose={() => setNotice(null)} />}
 
-      <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-text-secondary">
+      <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-2 text-sm text-text-secondary">
         <span>진행 중 프로젝트 {projects.length}개:</span>
         <span className="min-w-0 truncate text-dark">
           {projectNames.slice(0, 3).join(" · ")}
@@ -931,6 +1010,21 @@ export function ReceiptUploader({
         <Link href="/admin/expenses/projects" className="ml-1 font-medium text-dark underline underline-offset-2 hover:text-dark/80">
           프로젝트 관리
         </Link>
+        {/* 인건비는 증빙 파일 없이 지급 내역을 직접 입력한다(이체확인증·급여명세서는 선택 첨부). */}
+        <div className="ml-auto">
+          <PayrollEntryButton
+            projects={projects}
+            defaultProjectId={defaultProjectId}
+            size="sm"
+            onSaved={(count) =>
+              setNotice({
+                tone: "success",
+                text: `인건비 ${count}건을 등록했습니다.`,
+                link: { href: "/admin/expenses/receipts", label: "증빙 내역 보기" },
+              })
+            }
+          />
+        </div>
       </div>
 
       <UploadDropzone onFiles={addFiles} compact={items.length > 0 || rows.length > 0} />
@@ -997,6 +1091,8 @@ export function ReceiptUploader({
         items={[
           "대상: 카드 매출전표 · 간이영수증 · 세금계산서 · 거래명세서 · 계좌이체 확인증(JPG·PNG·HEIC·PDF) · 여러 파일 동시 가능(3개씩 순차 인식)",
           "한 파일에 증빙이 여러 건이면 건별 행으로 분리",
+          "해외 결제(외화) 증빙: 결제일 환율로 원화 환산(주말·공휴일은 직전 영업일 환율). 환율이나 원화 합계를 고치면 '직접 입력'으로 유지",
+          "인건비: 파일 없이 '인건비 직접 등록'으로 지급 내역 입력(이체확인증·급여명세서 첨부는 선택)",
           "촬영: 정면에서, 그림자·반사 없이, 글자가 화면을 채우도록",
           "인식 값은 저장 전 원본과 대조(노란 칸 = 인식 불확실, 썸네일 클릭 시 원본)",
           <>

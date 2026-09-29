@@ -2,9 +2,12 @@ import { NextResponse } from "next/server"
 import ExcelJS from "exceljs"
 import { DOC_TYPE_LABELS, PAYMENT_LABELS, isValidDate, type ExpenseProject, type ExpenseReceipt } from "@/lib/expenses"
 import { dbErrorMessage, fail, getProject, kstToday, listProjects, listReceipts, parseId, requireAdminDb } from "@/lib/expense-db"
+import { FX_SOURCE_LABELS } from "@/lib/fx"
 
 // GET /api/admin/expenses/export?project_id=[&from=&to=&q=]
-// 증빙 목록 xlsx. 시트 1 "증빙 목록"(번호·거래일자·문서종류·거래처·사업자번호·비목·적요·공급가액·부가세·합계·결제수단·승인번호·파일명)
+// 증빙 목록 xlsx. 시트 1 "증빙 목록"(번호·거래일자·문서종류·거래처·사업자번호·비목·적요·공급가액·부가세·합계(원화)·
+//   통화·외화금액·적용환율·환율기준일(출처)·결제수단·승인번호·귀속월·증빙(파일명 또는 '수기'))
+//   외화 증빙의 합계는 결제일 기준 환율로 환산한 원화다.
 // 시트 2: 프로젝트를 고르면 "비목별 소계"(예산 대비 집행률), 고르지 않으면 "프로젝트별 집계".
 // 파일명: 사업비_증빙_{프로젝트명}_{YYYYMMDD}.xlsx (프로젝트 미지정 시 '전체')
 
@@ -39,6 +42,13 @@ function styleHeader(ws: ExcelJS.Worksheet) {
   ws.views = [{ state: "frozen", ySplit: 1 }]
 }
 
+// "2026-09-18 (유럽중앙은행)" · 직접 입력은 "직접 입력" (기준일이 있으면 앞에)
+function fxNote(r: ExpenseReceipt): string {
+  const label = r.exchange_rate_source ? FX_SOURCE_LABELS[r.exchange_rate_source] : ""
+  if (r.exchange_rate_date && label) return `${r.exchange_rate_date} (${label})`
+  return r.exchange_rate_date || label
+}
+
 function addReceiptSheet(wb: ExcelJS.Workbook, receipts: ExpenseReceipt[], withProject: boolean) {
   const ws = wb.addWorksheet("증빙 목록")
   ws.columns = [
@@ -52,10 +62,15 @@ function addReceiptSheet(wb: ExcelJS.Workbook, receipts: ExpenseReceipt[], withP
     { header: "적요", key: "purpose", width: 34 },
     { header: "공급가액", key: "supply", width: 13 },
     { header: "부가세", key: "vat", width: 11 },
-    { header: "합계", key: "total", width: 13 },
+    { header: "합계(원)", key: "total", width: 13 },
+    { header: "통화", key: "currency", width: 7 },
+    { header: "외화금액", key: "foreign", width: 12 },
+    { header: "적용환율", key: "rate", width: 11 },
+    { header: "환율기준일(출처)", key: "fx", width: 26 },
     { header: "결제수단", key: "pay", width: 10 },
     { header: "승인번호", key: "approval", width: 16 },
-    { header: "파일명", key: "file", width: 34 },
+    { header: "귀속월", key: "payroll", width: 9 },
+    { header: "증빙", key: "file", width: 34 },
   ]
   styleHeader(ws)
 
@@ -77,9 +92,14 @@ function addReceiptSheet(wb: ExcelJS.Workbook, receipts: ExpenseReceipt[], withP
       supply: r.supply_amount ?? "",
       vat: r.vat_amount ?? "",
       total: r.total_amount ?? 0,
+      currency: r.currency,
+      foreign: r.currency !== "KRW" ? (r.foreign_amount ?? "") : "",
+      rate: r.currency !== "KRW" ? (r.exchange_rate ?? "") : "",
+      fx: r.currency !== "KRW" ? fxNote(r) : "",
       pay: PAYMENT_LABELS[r.payment_method] ?? r.payment_method,
       approval: r.approval_no,
-      file: r.file_name,
+      payroll: r.payroll_month,
+      file: r.file_pathname ? r.file_name : "수기",
     })
     sumSupply += r.supply_amount ?? 0
     sumVat += r.vat_amount ?? 0
@@ -91,6 +111,8 @@ function addReceiptSheet(wb: ExcelJS.Workbook, receipts: ExpenseReceipt[], withP
     cell.fill = TOTAL_FILL
   })
   for (const key of ["supply", "vat", "total"]) ws.getColumn(key).numFmt = MONEY
+  ws.getColumn("foreign").numFmt = "#,##0.00"
+  ws.getColumn("rate").numFmt = "#,##0.00##"
   ws.getColumn("purpose").alignment = { wrapText: true, vertical: "top" }
   if (sorted.length > 0) ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: ws.columns.length } }
 }

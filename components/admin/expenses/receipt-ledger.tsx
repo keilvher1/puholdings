@@ -19,7 +19,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { BudgetUsageTable } from "@/components/admin/expenses/ledger-budget-table"
-import { ReceiptEditSheet } from "@/components/admin/expenses/receipt-edit-sheet"
+import { ReceiptEditSheet, foreignWithCode, formatFxRate, fxCaption } from "@/components/admin/expenses/receipt-edit-sheet"
+import { PayrollEntryButton, type PayrollProject } from "@/components/admin/expenses/payroll-entry"
 import { NoticeBanner, type Notice } from "@/components/admin/expenses/notice-banner"
 import {
   BusyText,
@@ -52,10 +53,12 @@ import {
 } from "@/components/admin/expenses/client-helpers"
 import {
   DOC_TYPE_LABELS,
+  EXPENSE_DOC_TYPES,
   PAYMENT_LABELS,
   amountMismatch,
   formatWon,
   isValidDate,
+  type ExpenseDocType,
   type ExpenseProject,
   type ExpenseReceipt,
 } from "@/lib/expenses"
@@ -110,6 +113,15 @@ function computeRange(preset: Preset, month: string, from: string, to: string): 
   }
 }
 
+function isForeignRow(r: ExpenseReceipt): boolean {
+  return Boolean(r.currency) && r.currency !== "KRW" && typeof r.foreign_amount === "number"
+}
+
+// 외화 행 툴팁: "USD 20.00 × 1,388.10 · 2026-09-18 기준 · 유럽중앙은행"
+function foreignTitle(r: ExpenseReceipt): string {
+  return [`${foreignWithCode(r.currency, r.foreign_amount)} × ${formatFxRate(r.exchange_rate)}`, fxCaption(r)].filter(Boolean).join(" · ")
+}
+
 function monthLabel(ym: string): string {
   const [y, m] = ym.split("-")
   return `${y}년 ${Number(m)}월`
@@ -133,6 +145,7 @@ export function ReceiptLedger({ initialProjectId = null }: { initialProjectId?: 
   const [to, setTo] = useState("")
   const [q, setQ] = useState("")
   const [debouncedQ, setDebouncedQ] = useState("")
+  const [docType, setDocType] = useState<"all" | ExpenseDocType>("all")
 
   const [receipts, setReceipts] = useState<ExpenseReceipt[]>([])
   const [loading, setLoading] = useState(true)
@@ -149,7 +162,8 @@ export function ReceiptLedger({ initialProjectId = null }: { initialProjectId?: 
   const clearNotice = useCallback(() => setNotice(null), [])
 
   const range = useMemo(() => computeRange(preset, month, from, to), [preset, month, from, to])
-  const filtersActive = Boolean(range.from || range.to || debouncedQ)
+  // 문서 종류는 불러온 목록을 화면에서 거른다(서버 조회 조건 아님)
+  const filtersActive = Boolean(range.from || range.to || debouncedQ || docType !== "all")
   const anyFilter = filtersActive || projectId !== "all" || preset !== "all" || q.trim() !== ""
   const selectedProject = projects.find((p) => String(p.id) === projectId) ?? null
   const months = useMemo(recentMonths, [])
@@ -243,7 +257,22 @@ export function ReceiptLedger({ initialProjectId = null }: { initialProjectId?: 
     setTo("")
     setQ("")
     setDebouncedQ("")
+    setDocType("all")
   }
+
+  const shown = useMemo(
+    () => (docType === "all" ? receipts : receipts.filter((r) => r.doc_type === docType)),
+    [receipts, docType]
+  )
+
+  // 인건비 직접 등록: 진행 중 프로젝트만(종료된 프로젝트에는 증빙을 추가할 수 없다)
+  const payrollProjects = useMemo<PayrollProject[]>(
+    () =>
+      projects
+        .filter((p) => p.status === "active")
+        .map((p) => ({ id: p.id, name: p.name, budget_items: p.budget_items.filter((b) => b.name.trim()) })),
+    [projects]
+  )
 
   // ── 요약 ─────────────────────────────────────────────────────────────────
   const sums = useMemo(() => {
@@ -251,7 +280,7 @@ export function ReceiptLedger({ initialProjectId = null }: { initialProjectId?: 
     let supply = 0
     let vat = 0
     const byProject = new Map<number, { name: string; count: number; total: number }>()
-    for (const r of receipts) {
+    for (const r of shown) {
       const t = typeof r.total_amount === "number" ? r.total_amount : 0
       total += t
       supply += typeof r.supply_amount === "number" ? r.supply_amount : 0
@@ -262,7 +291,7 @@ export function ReceiptLedger({ initialProjectId = null }: { initialProjectId?: 
       byProject.set(r.project_id, cur)
     }
     return { total, supply, vat, byProject: [...byProject.values()].sort((a, b) => b.total - a.total) }
-  }, [receipts])
+  }, [shown])
 
   const budgetNameSet = useMemo(
     () => new Set((selectedProject?.budget_items ?? []).map((b) => normalizeName(b.name))),
@@ -272,10 +301,16 @@ export function ReceiptLedger({ initialProjectId = null }: { initialProjectId?: 
   const scopeText = [
     selectedProject ? selectedProject.name : "전체 프로젝트",
     preset === "month" ? monthLabel(month) : preset === "custom" ? `${range.from || "처음"} ~ ${range.to || "오늘"}` : PRESET_LABELS[preset],
+    docType !== "all" ? DOC_TYPE_LABELS[docType] : "",
     debouncedQ ? `“${debouncedQ}” 검색` : "",
   ]
     .filter(Boolean)
     .join(" · ")
+
+  const onPayrollSaved = (count: number) => {
+    setNotice({ tone: "success", text: `인건비 지급 ${count.toLocaleString("ko-KR")}건을 등록했습니다.` })
+    refreshAll()
+  }
 
   // ── 동작 ─────────────────────────────────────────────────────────────────
   const download = async (kind: "xlsx" | "zip") => {
@@ -367,7 +402,7 @@ export function ReceiptLedger({ initialProjectId = null }: { initialProjectId?: 
 
       {/* 조회 조건: 모바일은 2열(프로젝트 한 줄 · 기간+검색 한 줄)에 라벨을 숨겨 첫 화면에 기록이 보이게 한다. */}
       <div className="mb-4">
-        <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-2 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1.2fr)] md:gap-3">
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,1.2fr)] md:gap-3">
           <div className="col-span-2 grid gap-1.5 md:col-span-1">
             <Label htmlFor="lf-project" className="sr-only text-xs font-medium text-text-secondary md:not-sr-only">
               프로젝트
@@ -423,7 +458,27 @@ export function ReceiptLedger({ initialProjectId = null }: { initialProjectId?: 
             </div>
           </div>
 
-          <div className={cn("grid gap-1.5 md:col-span-1", preset === "month" && "col-span-2")}>
+          <div className="grid gap-1.5">
+            <Label htmlFor="lf-doc" className="sr-only text-xs font-medium text-text-secondary md:not-sr-only">
+              문서 종류
+            </Label>
+            <Select value={docType} onValueChange={(v) => setDocType(v as "all" | ExpenseDocType)}>
+              <SelectTrigger id="lf-doc" className="w-full bg-card">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">전체 문서</SelectItem>
+                <SelectSeparator />
+                {EXPENSE_DOC_TYPES.map((t) => (
+                  <SelectItem key={t} value={t}>
+                    {DOC_TYPE_LABELS[t]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className={cn("grid gap-1.5 md:col-span-1", preset === "month" ? "col-span-1" : "col-span-2")}>
             <Label htmlFor="lf-q" className="sr-only text-xs font-medium text-text-secondary md:not-sr-only">
               검색
             </Label>
@@ -474,7 +529,7 @@ export function ReceiptLedger({ initialProjectId = null }: { initialProjectId?: 
       <SummaryStrip className="mb-4">
         <SummaryItem
           label="조회된 증빙"
-          value={`${receipts.length.toLocaleString("ko-KR")}건`}
+          value={`${shown.length.toLocaleString("ko-KR")}건`}
           sub={loading ? "불러오는 중" : scopeText}
         />
         <SummaryItem
@@ -542,11 +597,17 @@ export function ReceiptLedger({ initialProjectId = null }: { initialProjectId?: 
       <Panel>
         <PanelHeader
           title="증빙 목록"
-          count={loading && receipts.length === 0 ? undefined : `${receipts.length.toLocaleString("ko-KR")}건`}
+          count={loading && shown.length === 0 ? undefined : `${shown.length.toLocaleString("ko-KR")}건`}
           meta={listMeta}
           actions={
             <>
-              {loading && receipts.length > 0 && <BusyText>불러오는 중</BusyText>}
+              {loading && shown.length > 0 && <BusyText>불러오는 중</BusyText>}
+              <PayrollEntryButton
+                size="sm"
+                projects={payrollProjects}
+                defaultProjectId={selectedProject?.status === "active" ? selectedProject.id : null}
+                onSaved={onPayrollSaved}
+              />
               <Button
                 size="sm"
                 variant="outline"
@@ -582,11 +643,11 @@ export function ReceiptLedger({ initialProjectId = null }: { initialProjectId?: 
               </Button>
             }
           />
-        ) : loading && receipts.length === 0 ? (
+        ) : loading && shown.length === 0 ? (
           <p className="px-4 py-8 text-center" aria-busy="true">
             <BusyText>불러오는 중</BusyText>
           </p>
-        ) : receipts.length === 0 ? (
+        ) : shown.length === 0 ? (
           filtersActive ? (
             <EmptyState
               title="조건에 맞는 증빙 없음"
@@ -600,11 +661,18 @@ export function ReceiptLedger({ initialProjectId = null }: { initialProjectId?: 
           ) : (
             <EmptyState
               title="저장된 증빙 없음"
-              description="증빙 올리기에서 저장한 증빙이 여기에 표시됩니다."
+              description="증빙 올리기에서 저장한 증빙과 직접 등록한 인건비가 여기에 표시됩니다."
               action={
-                <Button asChild>
-                  <Link href="/admin/expenses">증빙 올리기</Link>
-                </Button>
+                <div className="flex flex-wrap justify-center gap-2">
+                  <Button asChild>
+                    <Link href="/admin/expenses">증빙 올리기</Link>
+                  </Button>
+                  <PayrollEntryButton
+                    projects={payrollProjects}
+                    defaultProjectId={selectedProject?.status === "active" ? selectedProject.id : null}
+                    onSaved={onPayrollSaved}
+                  />
+                </div>
               }
             />
           )
@@ -630,7 +698,7 @@ export function ReceiptLedger({ initialProjectId = null }: { initialProjectId?: 
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {receipts.map((r) => {
+                  {shown.map((r) => {
                     const mismatch = amountMismatch(r)
                     const offBudget =
                       selectedProject !== null &&
@@ -652,7 +720,12 @@ export function ReceiptLedger({ initialProjectId = null }: { initialProjectId?: 
                         title="클릭하여 수정"
                       >
                         <TableCell className={TD("pl-4 tabular-nums text-dark")}>{r.issue_date}</TableCell>
-                        <TableCell className={TD("text-text-secondary")}>{DOC_TYPE_LABELS[r.doc_type] ?? r.doc_type}</TableCell>
+                        <TableCell className={TD("text-text-secondary")}>
+                          <div className="whitespace-nowrap">{DOC_TYPE_LABELS[r.doc_type] ?? r.doc_type}</div>
+                          {r.doc_type === "payroll" && r.payroll_month && (
+                            <div className="text-xs tabular-nums text-text-secondary">{r.payroll_month} 귀속</div>
+                          )}
+                        </TableCell>
                         <TableCell
                           className={TD("max-w-[220px]")}
                           title={r.vendor_biz_no ? `${r.vendor_name} · 사업자번호 ${r.vendor_biz_no}` : r.vendor_name}
@@ -676,6 +749,11 @@ export function ReceiptLedger({ initialProjectId = null }: { initialProjectId?: 
                         </TableCell>
                         <TableCell className={TD(TABLE_CLASS.num)}>
                           <Money value={r.total_amount} strong flag={mismatch ? "금액 불일치: 공급가액+부가세 ≠ 합계" : null} />
+                          {isForeignRow(r) && (
+                            <div className="text-xs text-text-secondary" title={foreignTitle(r)}>
+                              {foreignWithCode(r.currency, r.foreign_amount)}
+                            </div>
+                          )}
                         </TableCell>
                         <TableCell className={TD("text-text-secondary")}>{PAYMENT_LABELS[r.payment_method] ?? r.payment_method}</TableCell>
                         {showProjectCol && (
@@ -686,18 +764,24 @@ export function ReceiptLedger({ initialProjectId = null }: { initialProjectId?: 
                           </TableCell>
                         )}
                         <TableCell className={TD()}>
-                          <a
-                            href={fileUrl(r.file_pathname)}
-                            target="_blank"
-                            rel="noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            onKeyDown={(e) => e.stopPropagation()}
-                            className="inline-flex items-center gap-1 rounded px-1.5 py-1 text-sm text-dark underline-offset-2 hover:underline"
-                            title={`${r.file_name} 원본 보기`}
-                          >
-                            <Eye className="h-3.5 w-3.5" />
-                            보기
-                          </a>
+                          {!r.file_pathname ? (
+                            <span className="px-1.5 text-sm text-text-secondary" title="증빙 파일 없이 수기 등록">
+                              수기
+                            </span>
+                          ) : (
+                            <a
+                              href={fileUrl(r.file_pathname)}
+                              target="_blank"
+                              rel="noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              onKeyDown={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-1 rounded px-1.5 py-1 text-sm text-dark underline-offset-2 hover:underline"
+                              title={`${r.file_name} 원본 보기`}
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                              보기
+                            </a>
+                          )}
                         </TableCell>
                         <TableCell className={TD("pr-4")}>
                           <button
@@ -721,7 +805,7 @@ export function ReceiptLedger({ initialProjectId = null }: { initialProjectId?: 
                 <TableFooter className="border-t-0 bg-transparent">
                   <TableRow className={cn(TABLE_CLASS.foot, "hover:bg-warm-ivory")}>
                     <TableCell colSpan={5} className={TD("pl-4")}>
-                      합계 {receipts.length.toLocaleString("ko-KR")}건
+                      합계 {shown.length.toLocaleString("ko-KR")}건
                     </TableCell>
                     <TableCell className={TD(TABLE_CLASS.num)}>
                       <Money value={sums.total} strong />
@@ -735,7 +819,7 @@ export function ReceiptLedger({ initialProjectId = null }: { initialProjectId?: 
             {/* md 미만: 카드 목록 */}
             <div className="md:hidden">
               <ul className="space-y-2 p-3">
-                {receipts.map((r) => {
+                {shown.map((r) => {
                   const mismatch = amountMismatch(r)
                   const offBudget =
                     selectedProject !== null &&
@@ -749,7 +833,15 @@ export function ReceiptLedger({ initialProjectId = null }: { initialProjectId?: 
                         amount={<Money value={r.total_amount} unit flag={mismatch ? "금액 불일치: 공급가액+부가세 ≠ 합계" : null} />}
                         meta={
                           <DotList
-                            items={[r.issue_date, DOC_TYPE_LABELS[r.doc_type] ?? r.doc_type, PAYMENT_LABELS[r.payment_method] ?? r.payment_method]}
+                            items={[
+                              r.issue_date,
+                              r.doc_type === "payroll" && r.payroll_month
+                                ? `${DOC_TYPE_LABELS.payroll}(${r.payroll_month} 귀속)`
+                                : (DOC_TYPE_LABELS[r.doc_type] ?? r.doc_type),
+                              PAYMENT_LABELS[r.payment_method] ?? r.payment_method,
+                              ...(isForeignRow(r) ? [foreignWithCode(r.currency, r.foreign_amount)] : []),
+                              ...(!r.file_pathname ? ["수기"] : []),
+                            ]}
                           />
                         }
                         footer={
@@ -781,7 +873,7 @@ export function ReceiptLedger({ initialProjectId = null }: { initialProjectId?: 
                 })}
               </ul>
               <p className="flex items-center justify-between gap-3 border-t border-warm-tan px-3 py-3 text-sm font-semibold text-dark">
-                <span>합계 {receipts.length.toLocaleString("ko-KR")}건</span>
+                <span>합계 {shown.length.toLocaleString("ko-KR")}건</span>
                 <Money value={sums.total} unit strong />
               </p>
             </div>
@@ -813,7 +905,10 @@ export function ReceiptLedger({ initialProjectId = null }: { initialProjectId?: 
                     <span className="block text-xs text-dark/70">{deleteTarget.project_name}</span>
                   </p>
                 )}
-                <p>삭제 후 복구할 수 없으며 집행액에서 제외됩니다. 원본 파일도 삭제됩니다(같은 파일의 다른 증빙이 있으면 유지).</p>
+                <p>
+                  삭제 후 복구할 수 없으며 집행액에서 제외됩니다.
+                  {deleteTarget?.file_pathname ? " 원본 파일도 삭제됩니다(같은 파일의 다른 증빙이 있으면 유지)." : ""}
+                </p>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>

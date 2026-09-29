@@ -17,19 +17,26 @@ import {
 } from "@/lib/expenses"
 import {
   BizNoInput,
+  CurrencySelect,
   DateCell,
   DocTypeSelect,
+  ForeignAmountInput,
+  FxNote,
   ItemsEditor,
   MoneyInput,
+  MonthCell,
   PaymentSelect,
   ProjectSelect,
+  RateInput,
   TextCell,
   type CellState,
+  type GridProps,
 } from "./upload-fields"
 import {
   DEFAULT_BUDGET_ITEM_SUGGESTIONS,
   TABLE_MATCH_TEXT,
   fileUrl,
+  formatForeign,
   hasTableConflict,
   invalidFields,
   isImageMeta,
@@ -69,6 +76,7 @@ export interface ReceiptTableActions {
   removeRows: (keys: string[]) => void
   addRowForFile: (rowKey: string) => void
   openReview: (key: string) => void
+  refetchFx: (key: string) => void // 외화 행: 결제일 환율 다시 받기(직접 입력한 환율을 버림)
 }
 
 export function budgetListId(projectId: number | null): string {
@@ -130,13 +138,26 @@ const FIELD_LABEL: Partial<Record<keyof ReceiptFields, string>> = {
   purpose: "적요",
   approval_no: "승인번호",
   memo: "메모",
+  currency: "통화",
+  foreign_amount: "외화 금액",
+  exchange_rate: "환율",
+  payroll_month: "귀속월",
 }
 
 // 1440폭 표에서 가로 스크롤 없이 보이는 칸. 나머지 칸의 노란 표시는 화면 밖(가로 스크롤 뒤·접힌 상세)에 있으므로
 // 행 아래 안내 줄에 칸 이름을 적어 어디를 봐야 하는지 알린다.
-const UPFRONT_FIELDS = new Set<keyof ReceiptFields>(["issue_date", "vendor_name", "total_amount", "budget_item", "purpose"])
+const UPFRONT_FIELDS = new Set<keyof ReceiptFields>([
+  "issue_date",
+  "vendor_name",
+  "total_amount",
+  "currency",
+  "foreign_amount",
+  "exchange_rate",
+  "budget_item",
+  "purpose",
+])
 // '상세'(펼침) 안에 있는 칸
-const DETAIL_FIELDS = new Set<keyof ReceiptFields>(["approval_no", "memo"])
+const DETAIL_FIELDS = new Set<keyof ReceiptFields>(["approval_no", "memo", "payroll_month"])
 
 function fieldNames(fields: (keyof ReceiptFields)[]): string[] {
   return fields.map((f) => FIELD_LABEL[f]).filter((x): x is string => !!x)
@@ -338,6 +359,96 @@ function Thumbnail({ row, filePos, fileCount, onOpen }: { row: DraftRow; filePos
   )
 }
 
+// 합계 칸. 원화: [KRW][합계]. 외화: [USD][외화 금액] / × [환율] = [원화 합계]원 / 환율 기준일·출처.
+// 외화 행에서도 원화 합계를 고칠 수 있다(그러면 환율은 '직접 입력').
+function AmountCell({
+  row,
+  st,
+  patch,
+  seen,
+  grid,
+  mismatch,
+  onRefetch,
+}: {
+  row: DraftRow
+  st: (field: keyof ReceiptFields) => CellState
+  patch: (p: Partial<ReceiptFields>) => void
+  seen: (field: keyof ReceiptFields) => () => void
+  grid: (col: string) => GridProps
+  mismatch: boolean
+  onRefetch: () => void
+}) {
+  const f = row.fields
+  const warn = (
+    <span className="flex w-4 shrink-0 justify-center">
+      {mismatch && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="inline-flex cursor-help text-amber-700" aria-label="금액 불일치: 공급가액+부가세 ≠ 합계">
+              <TriangleAlert className="h-3.5 w-3.5" />
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>금액 불일치: 공급가액+부가세 ≠ 합계</TooltipContent>
+        </Tooltip>
+      )}
+    </span>
+  )
+  const currency = (
+    <CurrencySelect
+      value={f.currency}
+      onChange={(v) => patch({ currency: v })}
+      onSeen={seen("currency")}
+      state={st("currency")}
+      quiet={f.currency === "KRW"}
+      className="w-[64px] shrink-0"
+      aria-label="통화"
+    />
+  )
+  if (f.currency === "KRW") {
+    return (
+      <div className="flex items-center gap-1">
+        {warn}
+        {currency}
+        <MoneyInput value={f.total_amount} onChange={(v) => patch({ total_amount: v })} onBlur={seen("total_amount")} state={st("total_amount")} className="w-[112px] font-semibold" grid={grid("total_amount")} aria-label="합계" />
+      </div>
+    )
+  }
+  return (
+    <div className="w-[276px] space-y-1">
+      <div className="flex items-center gap-1">
+        {warn}
+        {currency}
+        <ForeignAmountInput
+          currency={f.currency}
+          value={f.foreign_amount}
+          onChange={(v) => patch({ foreign_amount: v })}
+          onBlur={seen("foreign_amount")}
+          state={st("foreign_amount")}
+          className="min-w-0 flex-1 font-semibold"
+          grid={grid("foreign_amount")}
+          aria-label={`${f.currency} 금액`}
+        />
+      </div>
+      <div className="flex items-center gap-1 pl-5 text-xs text-text-secondary">
+        <span aria-hidden>×</span>
+        <RateInput
+          value={f.exchange_rate}
+          onChange={(v) => patch({ exchange_rate: v })}
+          onBlur={seen("exchange_rate")}
+          state={st("exchange_rate")}
+          className="w-[84px] shrink-0 px-1.5"
+          grid={grid("exchange_rate")}
+          aria-label={`적용 환율(1 ${f.currency}당 원)`}
+        />
+        <span aria-hidden>=</span>
+        <MoneyInput value={f.total_amount} onChange={(v) => patch({ total_amount: v })} onBlur={seen("total_amount")} state={st("total_amount")} className="min-w-0 flex-1 px-1.5 font-semibold" grid={grid("total_amount")} aria-label="원화 합계" />
+        <span aria-hidden>원</span>
+      </div>
+      <FxNote fields={f} fx={row.fx} onRefetch={onRefetch} className="pl-5" />
+    </div>
+  )
+}
+
 const SOURCE_LABEL: Record<string, string> = {
   default: "기본 프로젝트",
   single: "유일한 프로젝트",
@@ -444,21 +555,7 @@ const ReceiptRow = memo(function ReceiptRow({
           <TextCell value={f.vendor_name} onChange={(v) => patch({ vendor_name: v })} onBlur={seen("vendor_name")} state={st("vendor_name")} maxLength={200} placeholder="거래처명" className="w-[168px]" grid={grid("vendor_name")} aria-label="거래처" />
         </td>
         <td className={TD}>
-          <div className="flex items-center gap-1">
-            <span className="flex w-4 shrink-0 justify-center">
-              {mismatch && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="inline-flex cursor-help text-amber-700" aria-label="금액 불일치: 공급가액+부가세 ≠ 합계">
-                      <TriangleAlert className="h-3.5 w-3.5" />
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>금액 불일치: 공급가액+부가세 ≠ 합계</TooltipContent>
-                </Tooltip>
-              )}
-            </span>
-            <MoneyInput value={f.total_amount} onChange={(v) => patch({ total_amount: v })} onBlur={seen("total_amount")} state={st("total_amount")} className="w-[112px] font-semibold" grid={grid("total_amount")} aria-label="합계" />
-          </div>
+          <AmountCell row={row} st={st} patch={patch} seen={seen} grid={grid} mismatch={mismatch} onRefetch={() => actions.refetchFx(key)} />
         </td>
         <td className={TD}>
           <TextCell value={f.budget_item} onChange={(v) => patch({ budget_item: v })} onBlur={seen("budget_item")} state={st("budget_item")} maxLength={100} list={budgetListId(row.project_id)} placeholder="비목" className="w-[120px]" grid={grid("budget_item")} aria-label="비목" />
@@ -582,6 +679,12 @@ const ReceiptRow = memo(function ReceiptRow({
                     <span className="mb-1 block text-xs font-medium text-text-secondary">메모</span>
                     <TextCell value={f.memo} onChange={(v) => patch({ memo: v })} onBlur={seen("memo")} state={st("memo")} placeholder="내부 메모" />
                   </label>
+                  {f.doc_type === "payroll" && (
+                    <label className="block">
+                      <span className="mb-1 block text-xs font-medium text-text-secondary">귀속월</span>
+                      <MonthCell value={f.payroll_month} onChange={(v) => patch({ payroll_month: v })} onBlur={seen("payroll_month")} state={st("payroll_month")} aria-label="귀속월" />
+                    </label>
+                  )}
                   <div className="space-y-1 text-xs text-text-secondary">
                     {row.confidence && (
                       <p>
@@ -697,7 +800,13 @@ function MobileRowCard({
       amount={<Money value={f.total_amount} unit />}
       meta={
         <DotList
-          items={[`${number}번`, f.issue_date || "날짜 미입력", DOC_TYPE_LABELS[f.doc_type], PAYMENT_LABELS[f.payment_method]]}
+          items={[
+            `${number}번`,
+            f.issue_date || "날짜 미입력",
+            f.currency !== "KRW" ? `${f.currency} ${formatForeign(f.foreign_amount, f.currency) || "금액 미입력"}` : null,
+            DOC_TYPE_LABELS[f.doc_type],
+            PAYMENT_LABELS[f.payment_method],
+          ]}
         />
       }
       footer={

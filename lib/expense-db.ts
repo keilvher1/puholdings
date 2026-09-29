@@ -17,13 +17,16 @@ import { normalizeApproval, sameTransactionReason, type SimilarReceipt, type TxK
 import {
   EXPENSE_DOC_TYPES,
   PAYMENT_METHODS,
+  SUPPORTED_CURRENCIES,
   formatBizNo,
   isValidDate,
   isWholeWon,
   validateReceiptFields,
   type BudgetItem,
   type Confidence,
+  type CurrencyCode,
   type DuplicateReceipt,
+  type ExchangeRateSource,
   type ExpenseDocType,
   type ExpenseProject,
   type ExpenseReceipt,
@@ -57,6 +60,8 @@ export async function requireAdminDb(): Promise<{ sql: Sql; response?: undefined
 export function dbErrorMessage(error: unknown, fallback: string): string {
   const code = (error as { code?: string } | null)?.code
   if (code === "42P01") return "사업비 정산 테이블이 아직 준비되지 않았습니다. 관리자에게 DB 마이그레이션(2026-expense-01.sql) 실행을 요청하세요."
+  // 42703: 없는 컬럼(통화·인건비 컬럼을 추가하는 마이그레이션 전)
+  if (code === "42703") return "사업비 정산 테이블이 최신이 아닙니다. 관리자에게 DB 마이그레이션(2026-expense-03-fx-payroll.sql) 실행을 요청하세요."
   return fallback
 }
 
@@ -105,6 +110,17 @@ function asDocType(v: unknown): ExpenseDocType {
 
 function asPayment(v: unknown): PaymentMethod {
   return (PAYMENT_METHODS as readonly string[]).includes(String(v)) ? (v as PaymentMethod) : "other"
+}
+
+function asCurrency(v: unknown): CurrencyCode {
+  const s = toStr(v).trim().toUpperCase()
+  return (SUPPORTED_CURRENCIES as readonly string[]).includes(s) ? (s as CurrencyCode) : "KRW"
+}
+
+const FX_SOURCES = ["", "ecb", "koreaexim", "manual"] as const
+function asFxSource(v: unknown): ExchangeRateSource {
+  const s = toStr(v).trim()
+  return (FX_SOURCES as readonly string[]).includes(s) ? (s as ExchangeRateSource) : ""
 }
 
 function asConfidence(v: unknown): Confidence | null {
@@ -178,7 +194,13 @@ export function rowToReceipt(row: Row): ExpenseReceipt {
     budget_item: toStr(row.budget_item),
     purpose: toStr(row.purpose),
     memo: toStr(row.memo),
-    file_pathname: toStr(row.file_pathname),
+    currency: asCurrency(row.currency),
+    foreign_amount: toNumOrNull(row.foreign_amount),
+    exchange_rate: toNumOrNull(row.exchange_rate),
+    exchange_rate_date: toStr(row.exchange_rate_date),
+    exchange_rate_source: asFxSource(row.exchange_rate_source),
+    payroll_month: toStr(row.payroll_month).trim(),
+    file_pathname: row.file_pathname === null || row.file_pathname === undefined ? null : toStr(row.file_pathname),
     file_name: toStr(row.file_name),
     file_type: toStr(row.file_type),
     file_size: toInt(row.file_size),
@@ -252,6 +274,9 @@ export async function listReceipts(sql: Sql, filter: ReceiptFilter = {}): Promis
            to_char(r.issue_date, 'YYYY-MM-DD') AS issue_date,
            r.vendor_name, r.vendor_biz_no, r.supply_amount, r.vat_amount, r.total_amount,
            r.payment_method, r.approval_no, r.items, r.budget_item, r.purpose, r.memo,
+           r.currency, r.foreign_amount, r.exchange_rate,
+           to_char(r.exchange_rate_date, 'YYYY-MM-DD') AS exchange_rate_date,
+           r.exchange_rate_source, COALESCE(r.payroll_month, '') AS payroll_month,
            r.file_pathname, r.file_name, r.file_type, r.file_size, r.file_hash,
            r.ai_confidence, r.created_at, r.updated_at
     FROM expense_receipts r
@@ -502,6 +527,41 @@ function parseItems(v: unknown): ReceiptItem[] {
   return out
 }
 
+// 외화 금액·환율: 숫자 또는 "1,234.56" 같은 문자열. 빈 값은 null, 해석 불가면 NaN.
+function parseDecimal(v: unknown, digits: number): number | null {
+  if (v === null || v === undefined) return null
+  let n: number
+  if (typeof v === "number") n = v
+  else if (typeof v === "string") {
+    const s = v.replace(/[,\s]/g, "")
+    if (s === "") return null
+    n = /^-?\d+(\.\d+)?$/.test(s) ? Number(s) : NaN
+  } else return NaN
+  if (!Number.isFinite(n)) return NaN
+  const f = 10 ** digits
+  return Math.round(n * f) / f
+}
+
+// 통화 필드 정규화. 원화면 외화 필드를 비운다. 외화 환율 출처가 비어 있으면 직접 입력으로 본다.
+function parseCurrencyFields(b: Row): Pick<
+  ReceiptFields,
+  "currency" | "foreign_amount" | "exchange_rate" | "exchange_rate_date" | "exchange_rate_source"
+> {
+  const raw = trimStr(b.currency).toUpperCase()
+  const currency = (raw || "KRW") as CurrencyCode
+  if (currency === "KRW") {
+    return { currency, foreign_amount: null, exchange_rate: null, exchange_rate_date: "", exchange_rate_source: "" }
+  }
+  const source = trimStr(b.exchange_rate_source)
+  return {
+    currency,
+    foreign_amount: parseDecimal(b.foreign_amount, 2),
+    exchange_rate: parseDecimal(b.exchange_rate, 6),
+    exchange_rate_date: trimStr(b.exchange_rate_date),
+    exchange_rate_source: (source || "manual") as ExchangeRateSource,
+  }
+}
+
 // ReceiptFields 정규화 + validateReceiptFields(공용) + DB 컬럼 길이 등 서버 추가 검사.
 export function parseReceiptFields(body: unknown): { fields: ReceiptFields; errors: string[] } {
   const b = isObj(body) ? body : {}
@@ -520,8 +580,29 @@ export function parseReceiptFields(body: unknown): { fields: ReceiptFields; erro
     budget_item: trimStr(b.budget_item),
     purpose: trimStr(b.purpose),
     memo: trimStr(b.memo),
+    ...parseCurrencyFields(b),
+    payroll_month: trimStr(b.payroll_month),
   }
   const errors = validateReceiptFields(fields)
+  if (fields.currency !== "KRW") {
+    if (!(FX_SOURCES as readonly string[]).includes(fields.exchange_rate_source)) errors.push("환율 출처가 올바르지 않습니다")
+    if (fields.exchange_rate_date && !isValidDate(fields.exchange_rate_date)) errors.push("환율 기준일을 YYYY-MM-DD 형식으로 입력하세요")
+    if ((fields.exchange_rate_source === "ecb" || fields.exchange_rate_source === "koreaexim") && !fields.exchange_rate_date) {
+      errors.push("환율 기준일이 없습니다. 환율을 다시 불러오세요")
+    }
+    const f = fields.foreign_amount
+    const rate = fields.exchange_rate
+    const total = fields.total_amount
+    if (typeof f === "number" && f > 0 && f >= 1e10) errors.push("외화 금액이 너무 큽니다")
+    if (typeof rate === "number" && rate > 0 && rate >= 1e8) errors.push("적용 환율이 너무 큽니다")
+    // 원화 합계 = 외화 금액 × 환율(반올림). 원화를 직접 고쳐 환율을 역산(소수 4자리)한 경우의 오차만 허용한다.
+    if (typeof f === "number" && f > 0 && typeof rate === "number" && rate > 0 && isWholeWon(total)) {
+      const tolerance = 1 + Math.abs(f) * 0.0001
+      if (Math.abs(total - f * rate) > tolerance) {
+        errors.push(`원화 합계가 ${fields.currency} 금액 × 환율(${Math.round(f * rate).toLocaleString("ko-KR")}원)과 맞지 않습니다`)
+      }
+    }
+  }
   if (fields.approval_no.length > 50) errors.push("승인번호가 너무 깁니다(50자 이내)")
   if (fields.purpose.length > 2000) errors.push("적요는 2,000자 이내로 입력하세요")
   if (fields.memo.length > 2000) errors.push("메모는 2,000자 이내로 입력하세요")

@@ -4,20 +4,34 @@ import { useLayoutEffect, useRef, useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
-import { Plus, Trash2 } from "lucide-react"
+import { Loader2, Plus, RotateCcw, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
+  CURRENCY_LABELS,
   DOC_TYPE_LABELS,
   EXPENSE_DOC_TYPES,
+  SUPPORTED_CURRENCIES,
   PAYMENT_LABELS,
   PAYMENT_METHODS,
   formatBizNo,
   formatWon,
+  type CurrencyCode,
   type ExpenseDocType,
   type PaymentMethod,
+  type ReceiptFields,
   type ReceiptItem,
 } from "@/lib/expenses"
-import { formatNumberText, parseQuantityText, parseWonText, type UploaderProject } from "./upload-model"
+import {
+  formatForeign,
+  formatNumberText,
+  formatRate,
+  fxDateNote,
+  fxSourceText,
+  parseQuantityText,
+  parseWonText,
+  type FxState,
+  type UploaderProject,
+} from "./upload-model"
 import { CELL_TONE_CLASS } from "./ui"
 
 // 증빙 표·검토 창에서 함께 쓰는 입력 칸.
@@ -517,5 +531,233 @@ export function ItemsEditor({
         )}
       </div>
     </div>
+  )
+}
+
+// ── 외화 금액·환율(소수 허용, 천 단위 콤마) ─────────────────────────────────────
+// 입력 중에는 친 그대로 두고, 칸을 벗어나면 format으로 맞춘다. 음수는 받지 않는다(외화 금액·환율은 0보다 커야 한다).
+export function parseDecimalText(text: string, decimals: number): number | null | undefined {
+  const s = text.replace(/[,\s]/g, "")
+  if (s === "") return null
+  if (!/^\d*\.?\d*$/.test(s) || !/\d/.test(s)) return undefined
+  const [int, frac = ""] = s.split(".")
+  const n = Number(`${int || "0"}.${frac.slice(0, decimals) || "0"}`)
+  return Number.isFinite(n) && n < 1e12 ? n : undefined
+}
+
+export function DecimalInput({
+  value,
+  onChange,
+  onBlur,
+  decimals,
+  format,
+  state = {},
+  className,
+  grid,
+  ...rest
+}: {
+  value: number | null
+  onChange: (v: number | null) => void
+  onBlur?: () => void
+  decimals: number
+  format: (n: number | null) => string
+  state?: CellState
+  className?: string
+  grid?: GridProps
+  "aria-label"?: string
+  placeholder?: string
+  id?: string
+}) {
+  const [text, setText] = useState(() => format(value))
+  const [prevValue, setPrevValue] = useState(value)
+  if (prevValue !== value) {
+    setPrevValue(value)
+    if (parseDecimalText(text, decimals) !== value) setText(format(value))
+  }
+  return (
+    <Input
+      type="text"
+      inputMode="decimal"
+      autoComplete="off"
+      value={text}
+      title={state.low && !state.invalid ? LOW_TITLE : undefined}
+      aria-invalid={state.invalid || undefined}
+      onChange={(e) => {
+        const raw = e.target.value
+        const n = parseDecimalText(raw, decimals)
+        if (n === undefined) return // 숫자·점·콤마 외의 글자는 받지 않는다
+        const frac = raw.replace(/[,\s]/g, "").split(".")[1]
+        if (frac && frac.length > decimals) return // 소수 자릿수 초과
+        setText(raw)
+        onChange(n)
+      }}
+      onBlur={() => {
+        setText(format(value))
+        onBlur?.()
+      }}
+      className={cellClass(state, cn("text-right tabular-nums", className))}
+      {...grid}
+      {...rest}
+    />
+  )
+}
+
+// 통화 선택. quiet: 원화 행에서는 눈에 덜 띄게(외화로 바꿀 때만 쓰는 칸).
+export function CurrencySelect({
+  value,
+  onChange,
+  onSeen,
+  state = {},
+  quiet = false,
+  className,
+  ...rest
+}: {
+  value: CurrencyCode
+  onChange: (v: CurrencyCode) => void
+  onSeen?: () => void
+  state?: CellState
+  quiet?: boolean
+  className?: string
+  "aria-label"?: string
+  id?: string
+}) {
+  return (
+    <Select value={value} onValueChange={(v) => onChange(v as CurrencyCode)} onOpenChange={(open) => !open && onSeen?.()}>
+      <SelectTrigger
+        className={triggerClass(
+          state,
+          cn(
+            "gap-1 px-1.5 text-xs font-medium tabular-nums [&_svg:not([class*='size-'])]:size-3.5",
+            quiet && !state.low && !state.invalid && "border-transparent text-text-secondary hover:border-warm-tan",
+            className
+          )
+        )}
+        title={state.low && !state.invalid ? LOW_TITLE : CURRENCY_LABELS[value]}
+        aria-invalid={state.invalid || undefined}
+        onBlur={onSeen}
+        {...rest}
+      >
+        <SelectValue>{value}</SelectValue>
+      </SelectTrigger>
+      <SelectContent>
+        {SUPPORTED_CURRENCIES.map((c) => (
+          <SelectItem key={c} value={c}>
+            {CURRENCY_LABELS[c]}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
+}
+
+// 외화 금액 칸(통화별 소수 자리)
+export function ForeignAmountInput(props: Omit<Parameters<typeof DecimalInput>[0], "decimals" | "format"> & { currency: CurrencyCode }) {
+  const { currency, ...rest } = props
+  return <DecimalInput {...rest} decimals={2} format={(n) => formatForeign(n, currency)} placeholder={rest.placeholder ?? `${currency} 금액`} />
+}
+
+// 환율 칸(1 외화당 원, 소수 4자리)
+export function RateInput(props: Omit<Parameters<typeof DecimalInput>[0], "decimals" | "format">) {
+  return <DecimalInput {...props} decimals={4} format={formatRate} placeholder={props.placeholder ?? "환율"} />
+}
+
+// 환율 근거 한 줄: "2026-09-18 기준 · 유럽중앙은행" · 조회 중 · 조회 실패 · 직접 입력.
+// onRefetch: 결제일 환율 다시 받기(직접 입력한 환율을 버림)
+export function FxNote({
+  fields,
+  fx,
+  onRefetch,
+  className,
+}: {
+  fields: Pick<ReceiptFields, "currency" | "issue_date" | "exchange_rate" | "exchange_rate_date" | "exchange_rate_source">
+  fx?: FxState | null
+  onRefetch?: () => void
+  className?: string
+}) {
+  if (fields.currency === "KRW") return null
+  const btn = (label: string) =>
+    onRefetch ? (
+      <button
+        type="button"
+        onClick={onRefetch}
+        className="inline-flex items-center gap-0.5 font-medium text-dark underline-offset-2 hover:underline disabled:no-underline disabled:opacity-60"
+      >
+        <RotateCcw className="h-3 w-3" aria-hidden />
+        {label}
+      </button>
+    ) : null
+  let body: React.ReactNode
+  if (fx?.status === "loading") {
+    body = (
+      <span className="inline-flex items-center gap-1">
+        <Loader2 className="h-3 w-3 animate-spin" aria-hidden />
+        결제일 환율 조회 중
+      </span>
+    )
+  } else if (fields.exchange_rate_source === "manual") {
+    body = (
+      <>
+        <span>{fxSourceText(fields)}</span>
+        {btn("결제일 환율 적용")}
+      </>
+    )
+  } else if (fields.exchange_rate !== null && fields.exchange_rate_source) {
+    const note = fxDateNote(fields)
+    body = (
+      <span title={note || undefined}>
+        {fxSourceText(fields)}
+        {note && " (직전 영업일)"}
+      </span>
+    )
+  } else if (fx?.status === "error") {
+    body = (
+      <>
+        <span className="text-amber-800" title="환율 칸에 직접 입력할 수 있습니다">
+          {fx.message}
+        </span>
+        {btn("다시 조회")}
+      </>
+    )
+  } else if (!fields.issue_date) {
+    body = <span>거래일자 입력 시 결제일 환율 적용</span>
+  } else {
+    body = <span>환율 없음 · 직접 입력하세요</span>
+  }
+  return (
+    <p className={cn("flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs leading-4 text-text-secondary", className)} aria-live="polite">
+      {body}
+    </p>
+  )
+}
+
+// 인건비 귀속월('YYYY-MM')
+export function MonthCell({
+  value,
+  onChange,
+  onBlur,
+  state = {},
+  className,
+  ...rest
+}: {
+  value: string
+  onChange: (v: string) => void
+  onBlur?: () => void
+  state?: CellState
+  className?: string
+  "aria-label"?: string
+  id?: string
+}) {
+  return (
+    <Input
+      type="month"
+      value={value}
+      min="2000-01"
+      max="2099-12"
+      aria-invalid={state.invalid || undefined}
+      onChange={(e) => onChange(e.target.value)}
+      onBlur={onBlur}
+      className={cellClass(state, cn("tabular-nums", className))}
+      {...rest}
+    />
   )
 }

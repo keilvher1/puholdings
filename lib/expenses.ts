@@ -8,7 +8,7 @@
 import type { Attachment } from "@/lib/db"
 
 // ── 문서 종류·결제 수단 ─────────────────────────────────────────────────────────
-export const EXPENSE_DOC_TYPES = ["receipt", "card_slip", "tax_invoice", "invoice", "transfer", "other"] as const
+export const EXPENSE_DOC_TYPES = ["receipt", "card_slip", "tax_invoice", "invoice", "transfer", "payroll", "other"] as const
 export type ExpenseDocType = (typeof EXPENSE_DOC_TYPES)[number]
 export const DOC_TYPE_LABELS: Record<ExpenseDocType, string> = {
   receipt: "영수증",
@@ -16,6 +16,7 @@ export const DOC_TYPE_LABELS: Record<ExpenseDocType, string> = {
   tax_invoice: "세금계산서",
   invoice: "거래명세서",
   transfer: "이체확인증",
+  payroll: "인건비 지급",
   other: "기타",
 }
 
@@ -84,6 +85,33 @@ export interface ReceiptItem {
   amount: number | null
 }
 
+// ── 통화·환율 ────────────────────────────────────────────────────────────────
+// 외화 증빙은 결제일(issue_date) 기준 환율로 원화(total_amount)를 계산해 저장한다.
+// 원본 외화 금액·적용 환율·환율 기준일·출처를 함께 남겨 정산 근거로 쓴다.
+export const SUPPORTED_CURRENCIES = ["KRW", "USD", "EUR", "JPY", "CNY", "GBP"] as const
+export type CurrencyCode = (typeof SUPPORTED_CURRENCIES)[number]
+export const CURRENCY_LABELS: Record<CurrencyCode, string> = {
+  KRW: "원화(KRW)",
+  USD: "미국 달러(USD)",
+  EUR: "유로(EUR)",
+  JPY: "일본 엔(JPY)",
+  CNY: "중국 위안(CNY)",
+  GBP: "영국 파운드(GBP)",
+}
+// ecb: 유럽중앙은행 기준(Frankfurter, 키 불필요) · koreaexim: 한국수출입은행 매매기준율(env KOREAEXIM_API_KEY)
+// manual: 사용자가 환율 또는 원화 금액을 직접 입력 · '': 원화 증빙
+export type ExchangeRateSource = "" | "ecb" | "koreaexim" | "manual"
+
+// 외화 금액 × 환율(1단위당 원) → 원 단위 정수(반올림)
+export function convertToKrw(foreignAmount: number, rate: number): number {
+  return Math.round(foreignAmount * rate)
+}
+
+// GET /api/admin/expenses/fx?currency=USD&date=YYYY-MM-DD 응답
+export type FxRateResponse =
+  | { success: true; currency: CurrencyCode; requested_date: string; rate_date: string; rate: number; source: Exclude<ExchangeRateSource, "" | "manual"> }
+  | { success: false; error: string }
+
 // 화면 표에서 편집하는 필드 묶음. 저장된 증빙과 AI 초안이 같은 모양을 공유한다.
 export interface ReceiptFields {
   doc_type: ExpenseDocType
@@ -99,6 +127,14 @@ export interface ReceiptFields {
   budget_item: string // 비목(프로젝트 budget_items의 name 중 하나 권장, 자유 입력 허용)
   purpose: string // 사용 목적·적요
   memo: string
+  // 통화 — 원화 증빙은 currency 'KRW', 나머지 환율 필드는 null/''
+  currency: CurrencyCode
+  foreign_amount: number | null // 외화 합계(소수 2자리까지). 원화 증빙이면 null
+  exchange_rate: number | null // 1 외화 단위당 원(예: USD 1 = 1388.1). 원화 증빙이면 null
+  exchange_rate_date: string // 실제 적용한 환율의 기준일 'YYYY-MM-DD'(주말이면 직전 영업일), 없으면 ''
+  exchange_rate_source: ExchangeRateSource
+  // 인건비 — 급여 귀속월 'YYYY-MM' 또는 ''
+  payroll_month: string
 }
 
 // 업로드되어 Blob에 보관된 원본 파일 정보
@@ -185,7 +221,8 @@ export type AnalyzeProjectsResponse =
 // POST /api/admin/expenses/receipts 요청 한 건
 export interface ReceiptCreateInput extends ReceiptFields {
   project_id: number
-  file: UploadedFileMeta
+  // 인건비(doc_type 'payroll')는 파일 없이 수기 등록할 수 있다 — 그때만 null 허용
+  file: UploadedFileMeta | null
   ai_confidence: Confidence | null
   ai_raw: unknown // 감사용 AI 원본 초안(그대로 JSONB 저장)
 }
@@ -194,7 +231,7 @@ export interface ExpenseReceipt extends ReceiptFields {
   id: number
   project_id: number
   project_name: string
-  file_pathname: string
+  file_pathname: string | null // 수기 등록한 인건비는 null
   file_name: string
   file_type: string
   file_size: number
@@ -230,6 +267,14 @@ export function validateReceiptFields(r: ReceiptFields): string[] {
   if (!PAYMENT_METHODS.includes(r.payment_method)) errors.push("결제 수단이 올바르지 않습니다")
   if (r.vendor_biz_no && !/^\d{3}-?\d{2}-?\d{5}$/.test(r.vendor_biz_no)) errors.push("사업자등록번호 형식이 올바르지 않습니다")
   if (r.budget_item.length > 100) errors.push("비목이 너무 깁니다")
+  if (!SUPPORTED_CURRENCIES.includes(r.currency)) errors.push("통화가 올바르지 않습니다")
+  if (r.currency !== "KRW") {
+    if (typeof r.foreign_amount !== "number" || !Number.isFinite(r.foreign_amount) || r.foreign_amount <= 0)
+      errors.push(`${r.currency} 금액을 입력하세요`)
+    if (typeof r.exchange_rate !== "number" || !Number.isFinite(r.exchange_rate) || r.exchange_rate <= 0)
+      errors.push("적용 환율을 입력하세요")
+  }
+  if (r.payroll_month && !/^\d{4}-(0[1-9]|1[0-2])$/.test(r.payroll_month)) errors.push("귀속월은 YYYY-MM 형식이어야 합니다")
   return errors
 }
 
@@ -263,5 +308,11 @@ export function emptyReceiptFields(): ReceiptFields {
     budget_item: "",
     purpose: "",
     memo: "",
+    currency: "KRW",
+    foreign_amount: null,
+    exchange_rate: null,
+    exchange_rate_date: "",
+    exchange_rate_source: "",
+    payroll_month: "",
   }
 }

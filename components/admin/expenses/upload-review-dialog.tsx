@@ -9,12 +9,17 @@ import { ChevronLeft, ChevronRight, Download, ExternalLink, RotateCw, Trash2, Zo
 import { CONFIDENCE_LABELS, type ReceiptFields } from "@/lib/expenses"
 import {
   BizNoInput,
+  CurrencySelect,
   DateCell,
   DocTypeSelect,
+  ForeignAmountInput,
+  FxNote,
   ItemsEditor,
   MoneyInput,
+  MonthCell,
   PaymentSelect,
   ProjectSelect,
+  RateInput,
   TextCell,
   type CellState,
 } from "./upload-fields"
@@ -254,6 +259,7 @@ function ReviewBody({
   const lowCount = row.lowFields.filter((x) => !row.checkedFields.includes(x)).length
   const matchInfo = !!matches && matches.some((m) => m.otherSelected)
   const aiSuggested = row.projectSource === "ai" && !!row.project_id
+  const foreign = f.currency !== "KRW"
 
   return (
     <>
@@ -339,6 +345,26 @@ function ReviewBody({
           >
             <BizNoInput value={f.vendor_biz_no} onChange={(v) => patch({ vendor_biz_no: v })} onBlur={seen("vendor_biz_no")} state={st("vendor_biz_no")} />
           </Field>
+          <div className="space-y-1.5">
+            <div className={cn("grid gap-2", foreign ? "grid-cols-[88px_minmax(0,1fr)_minmax(0,1fr)]" : "grid-cols-[88px_minmax(0,1fr)]")}>
+              <Field label="통화">
+                <CurrencySelect value={f.currency} onChange={(v) => patch({ currency: v })} onSeen={seen("currency")} state={st("currency")} className="h-8" />
+              </Field>
+              {foreign ? (
+                <>
+                  <Field label={`${f.currency} 금액`} required>
+                    <ForeignAmountInput currency={f.currency} value={f.foreign_amount} onChange={(v) => patch({ foreign_amount: v })} onBlur={seen("foreign_amount")} state={st("foreign_amount")} className="font-semibold" />
+                  </Field>
+                  <Field label={`적용 환율(1 ${f.currency}당 원)`} required>
+                    <RateInput value={f.exchange_rate} onChange={(v) => patch({ exchange_rate: v })} onBlur={seen("exchange_rate")} state={st("exchange_rate")} />
+                  </Field>
+                </>
+              ) : (
+                <p className="self-end pb-2 text-xs text-text-secondary [word-break:keep-all]">해외 결제는 통화를 바꾸면 결제일 환율로 원화 환산</p>
+              )}
+            </div>
+            {foreign && <FxNote fields={f} fx={row.fx} onRefetch={() => actions.refetchFx(key)} />}
+          </div>
           <div className="grid grid-cols-3 gap-2">
             <Field label="공급가액">
               <MoneyInput value={f.supply_amount} onChange={(v) => patch({ supply_amount: v })} onBlur={seen("supply_amount")} state={st("supply_amount")} />
@@ -346,7 +372,7 @@ function ReviewBody({
             <Field label="부가세">
               <MoneyInput value={f.vat_amount} onChange={(v) => patch({ vat_amount: v })} onBlur={seen("vat_amount")} state={st("vat_amount")} />
             </Field>
-            <Field label="합계" required>
+            <Field label={foreign ? "원화 합계" : "합계"} required>
               <MoneyInput value={f.total_amount} onChange={(v) => patch({ total_amount: v })} onBlur={seen("total_amount")} state={st("total_amount")} className="font-semibold" />
             </Field>
           </div>
@@ -364,6 +390,11 @@ function ReviewBody({
           <Field label="적요(사용 목적)">
             <TextCell value={f.purpose} onChange={(v) => patch({ purpose: v })} onBlur={seen("purpose")} state={st("purpose")} placeholder="예: 시제품 제작용 부품 구입" />
           </Field>
+          {f.doc_type === "payroll" && (
+            <Field label="귀속월">
+              <MonthCell value={f.payroll_month} onChange={(v) => patch({ payroll_month: v })} onBlur={seen("payroll_month")} state={st("payroll_month")} />
+            </Field>
+          )}
           <Field label="메모">
             <TextCell value={f.memo} onChange={(v) => patch({ memo: v })} onBlur={seen("memo")} state={st("memo")} placeholder="내부 메모" />
           </Field>

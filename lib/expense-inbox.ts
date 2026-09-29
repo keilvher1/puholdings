@@ -70,6 +70,7 @@ export function rowToInboxItem(row: Row): InboxItem {
     preferred_project_id: pid === null || pid === undefined ? null : toInt(pid),
     status: asStatus(row.status),
     scan_status: asScanStatus(row.scan_status),
+    // 통화·인건비 필드가 생기기 전에 저장된 초안에는 그 필드가 없다(화면에서 원화 기본값으로 본다).
     drafts: asArray(row.drafts).filter((d): d is ReceiptDraft => !!d && typeof d === "object" && !Array.isArray(d)),
     warnings: asArray(row.warnings).map(toStr).filter(Boolean),
     duplicates: asArray(row.duplicates).filter((d): d is DuplicateReceipt => !!d && typeof d === "object"),

@@ -10,10 +10,12 @@ import sharp from "sharp"
 import {
   EXPENSE_DOC_TYPES,
   PAYMENT_METHODS,
+  SUPPORTED_CURRENCIES,
   formatWon,
   isValidDate,
   type BudgetItem,
   type Confidence,
+  type CurrencyCode,
   type ExpenseDocType,
   type PaymentMethod,
   type ProjectDraft,
@@ -454,7 +456,12 @@ const RECEIPT_FIELD_KEYS = [
   "budget_item",
   "purpose",
   "memo",
+  "currency",
+  "foreign_amount",
 ] as const satisfies readonly (keyof ReceiptFields)[]
+
+// 인건비 지급(payroll)은 사람이 직접 등록하는 종류라 판독 결과로는 고르지 않는다.
+const SCAN_DOC_TYPES = EXPENSE_DOC_TYPES.filter((t) => t !== "payroll")
 
 const nullableInt = (description: string) => ({ type: ["integer", "null"], description })
 const nullableStr = (description: string) => ({ type: ["string", "null"], description })
@@ -472,7 +479,7 @@ const RECEIPT_SCHEMA = {
           location: { type: "string", description: "파일 안 위치(예: '2페이지', '사진 왼쪽 영수증'). 증빙이 1건이면 빈 문자열." },
           doc_type: {
             type: "string",
-            enum: [...EXPENSE_DOC_TYPES],
+            enum: [...SCAN_DOC_TYPES],
             description: "receipt=영수증·현금영수증, card_slip=카드 매출전표, tax_invoice=세금계산서·계산서, invoice=거래명세서, transfer=이체확인증, other=기타",
           },
           issue_date: nullableStr("거래일자 YYYY-MM-DD. 두 자리 연도는 20YY. 읽을 수 없으면 null."),
@@ -482,7 +489,16 @@ const RECEIPT_SCHEMA = {
           vat_amount: nullableInt("부가세(세액). 합계에 이미 포함된 금액. 문서에 따로 적혀 있을 때만."),
           tax_free_amount: nullableInt("면세물품가액. 없으면 null."),
           service_charge: nullableInt("봉사료. 없으면 null."),
-          total_amount: nullableInt("실제 결제된 최종 금액(할인 후 받을금액·승인금액·합계금액). '받은금액(현금 투입액)' 아님."),
+          total_amount: nullableInt("원화 증빙의 실제 결제된 최종 금액(할인 후 받을금액·승인금액·합계금액, 원 단위 정수). '받은금액(현금 투입액)' 아님. 외화 증빙이면 null."),
+          currency: {
+            type: "string",
+            enum: [...SUPPORTED_CURRENCIES],
+            description: "증빙 금액의 통화. 원화(₩·원·KRW)는 KRW. $·US$·USD→USD, €·EUR→EUR, ¥·円·JPY→JPY, 元·RMB·CNY→CNY, £·GBP→GBP.",
+          },
+          foreign_total: {
+            type: ["number", "null"],
+            description: "외화 증빙의 원래 통화 합계(소수 가능, 예: 20.00). 원화 증빙이면 null.",
+          },
           payment_method: { type: "string", enum: [...PAYMENT_METHODS], description: "card=카드, cash=현금·현금영수증, transfer=계좌이체, other=모름·기타" },
           approval_no: nullableStr("카드 승인번호·현금영수증 승인번호·세금계산서 국세청 승인번호. 거래번호·가맹점번호 아님. 없으면 null."),
           card_info: nullableStr("카드사와 마스킹된 카드번호 끝자리(예: '신한카드 ****1234'). 카드 결제가 아니면 null."),
@@ -524,6 +540,8 @@ const RECEIPT_SCHEMA = {
           "tax_free_amount",
           "service_charge",
           "total_amount",
+          "currency",
+          "foreign_total",
           "payment_method",
           "approval_no",
           "card_info",
@@ -560,6 +578,8 @@ interface RawReceipt {
   tax_free_amount: number | null
   service_charge: number | null
   total_amount: number | null
+  currency: string
+  foreign_total: number | null
   payment_method: string
   approval_no: string | null
   card_info: string | null
@@ -601,10 +621,10 @@ const RECEIPT_SYSTEM = `너는 한국 지원사업(R&D 과제, 창업사업화 �
   - vendor_name = 받는 분(예금주 이름·상호). total_amount = 이체금액(수수료 제외; 수수료가 있으면 warnings에 "이체 수수료 500원 별도").
   - supply_amount·vat_amount는 null, payment_method 'transfer', approval_no는 거래번호가 있으면 그것 아니면 null. 사업자번호는 대개 없다 → null.
   - '받는 분 통장 표시', '메모'에 적힌 내용은 purpose와 프로젝트 추정의 근거가 된다.
-- other: 위에 해당하지 않는 것(견적서, 해외 인보이스, 항공권 e-티켓 확인서 등).
+- other: 위에 해당하지 않는 것(견적서, 해외 인보이스·해외 결제 영수증 중 위 종류로 보기 어려운 것, 항공권 e-티켓 확인서 등).
 
 ## 3. 금액 — 가장 흔한 실수들
-모든 금액은 원 단위 정수다(쉼표·'원'·'₩'·'\\' 제거; '12,000' → 12000). 칸마다 한 자리씩 적힌 종이 세금계산서는 자릿수를 세어 읽고 '공란수'로 확인한다.
+원화 증빙의 모든 금액은 원 단위 정수다(쉼표·'원'·'₩'·'\\' 제거; '12,000' → 12000). 칸마다 한 자리씩 적힌 종이 세금계산서는 자릿수를 세어 읽고 '공란수'로 확인한다.
 - total_amount = 실제로 결제(지급)된 최종 금액.
   - POS 영수증: '합계/총액/판매금액' 아래에 '할인/쿠폰/포인트 사용'이 있으면 할인 후 '받을금액/결제금액/청구금액/승인금액'이 total이다.
   - '받은금액/받은돈/현금/투입금액'은 손님이 낸 돈이라 거스름돈만큼 크다 — total이 아니다. '거스름돈/잔돈'도 무시한다.
@@ -619,8 +639,19 @@ const RECEIPT_SYSTEM = `너는 한국 지원사업(R&D 과제, 창업사업화 �
 - 봉사료: '봉사료'는 service_charge에. 봉사료는 공급가액·부가세에 들어가지 않고 total에만 포함된다.
 - 할인: total은 할인 후 금액. 할인 줄은 items에 음수 금액 품목('할인', -3000)으로 넣는다.
 - 취소 전표('취소', '승인취소', '반품', '환불'): 금액을 음수로 하고 warnings에 "취소(환불) 전표입니다", confidence는 low.
-- 외화 결제: 원화 청구 금액이 적혀 있으면 그것을 total로. 원화 금액이 없으면 total null, warnings에 외화 금액·통화를 적는다.
+- 외화 결제(해외 결제·해외 SW 구독·외국 인보이스 등): 아래 '3-1. 통화'를 따른다.
 - 할부 개월수, 카드 유효기간, 잔여·적립 포인트, 전화번호, 수량은 금액이 아니다.
+
+## 3-1. 통화(currency)·외화 합계(foreign_total)
+- 금액 옆의 통화 기호·코드로 통화를 판별한다: ₩·원·KRW → KRW / $·US$·USD → USD / €·EUR → EUR / ¥·円·JPY → JPY / 元·RMB·CNY → CNY / £·GBP → GBP.
+  - '$'만 있고 나라를 알 수 없으면 USD로 두고 low_confidence_fields에 currency를 넣는다. '¥'는 일본 문서면 JPY, 중국 문서면 CNY.
+  - 한국 영수증·세금계산서처럼 통화 표시가 없는 한국 문서는 KRW.
+- 원화 증빙(KRW): 지금까지대로 total·supply·vat를 원 단위 정수로 채우고 foreign_total은 null.
+- 외화 증빙(KRW 외): total_amount·supply_amount·vat_amount는 채우지 말고(null) foreign_total에 원래 통화의 최종 결제 합계를 적는다(예: 20.00). 원화 환산은 서버가 결제일 환율로 계산한다.
+  - 해외 결제 카드전표·카드 명세에 원화 청구액(원화 환산액)이 함께 적혀 있어도 total은 비워 두고, warnings에 "원화 청구액 27,900원"처럼 적는다.
+  - 외화 증빙에는 한국 부가세가 없다. Tax·VAT·Sales tax 줄이 있어도 vat_amount는 null이다(합계에 포함된 금액일 뿐).
+  - 품목 금액(items)도 외화 증빙이면 unit_price·amount를 null로 둔다(원 단위 정수가 아니므로). 품명은 옮긴다.
+- 거래일자(issue_date)는 환율 기준일이 되므로 외화 증빙에서는 특히 정확히 읽는다(결제일·청구일·인보이스 발행일 중 실제 결제일 우선).
 
 ## 4. 거래일자(issue_date) — 'YYYY-MM-DD'
 - 거래일자 = 카드 '승인일시/거래일시', 영수증 '판매일/거래일자', 세금계산서 '작성일자', 이체확인증 '이체일시/처리일시'. 재출력·조회·출력 일시가 따로 있으면 실제 거래 일시를 쓴다.
@@ -715,7 +746,7 @@ function normalizeReceipt(
     if (t) warnings.push(t)
   }
 
-  const doc_type: ExpenseDocType = (EXPENSE_DOC_TYPES as readonly string[]).includes(raw.doc_type)
+  const doc_type: ExpenseDocType = (SCAN_DOC_TYPES as readonly string[]).includes(raw.doc_type)
     ? (raw.doc_type as ExpenseDocType)
     : "other"
 
@@ -743,12 +774,21 @@ function normalizeReceipt(
     warnings.push("사업자등록번호를 10자리로 읽지 못해 비워 두었습니다.")
   }
 
-  const supply_amount = toWon(raw.supply_amount)
-  const vat_amount = toWon(raw.vat_amount)
-  const total_amount = toWon(raw.total_amount)
-  const taxFree = toWon(raw.tax_free_amount)
-  const service = toWon(raw.service_charge)
-  if (total_amount === null) low.add("total_amount")
+  // 통화: 외화 증빙이면 원화 칸은 비우고 원래 금액만 foreign_amount로 넘긴다(환산은 lib/expense-scan.ts가 결제일 환율로).
+  const currency: CurrencyCode = (SUPPORTED_CURRENCIES as readonly string[]).includes(raw.currency) ? (raw.currency as CurrencyCode) : "KRW"
+  const foreign = currency !== "KRW"
+  const foreignTotal =
+    foreign && typeof raw.foreign_total === "number" && Number.isFinite(raw.foreign_total) && Math.abs(raw.foreign_total) < 1e10
+      ? Math.round(raw.foreign_total * 100) / 100
+      : null
+  if (foreign && foreignTotal === null) low.add("foreign_amount")
+
+  const supply_amount = foreign ? null : toWon(raw.supply_amount)
+  const vat_amount = foreign ? null : toWon(raw.vat_amount)
+  const total_amount = foreign ? null : toWon(raw.total_amount)
+  const taxFree = foreign ? null : toWon(raw.tax_free_amount)
+  const service = foreign ? null : toWon(raw.service_charge)
+  if (total_amount === null && !foreign) low.add("total_amount")
   if (taxFree) warnings.push(`면세 금액 ${formatWon(taxFree)}이 합계에 포함돼 있어 공급가액+부가세가 합계와 다를 수 있습니다.`)
   if (service) warnings.push(`봉사료 ${formatWon(service)}이 합계에 포함돼 있습니다.`)
   if (supply_amount !== null && vat_amount !== null && total_amount !== null) {
@@ -770,11 +810,15 @@ function normalizeReceipt(
   const items: ReceiptItem[] = (Array.isArray(raw.items) ? raw.items : []).slice(0, 50).map((it) => ({
     name: str(it?.name, 200),
     quantity: typeof it?.quantity === "number" && Number.isFinite(it.quantity) ? it.quantity : null,
-    unit_price: toWon(it?.unit_price),
-    amount: toWon(it?.amount),
+    // 외화 증빙의 품목 금액은 원 단위가 아니므로 옮기지 않는다.
+    unit_price: foreign ? null : toWon(it?.unit_price),
+    amount: foreign ? null : toWon(it?.amount),
   }))
 
   const cardInfo = str(raw.card_info, 100)
+  // 해외 결제 카드전표의 원화 청구액은 참고용으로 메모에 남긴다(합계는 결제일 환율로 계산).
+  const krwBilled = foreign ? warnings.find((w) => /원화\s*청구/.test(w)) : undefined
+  const memo = [cardInfo ? `결제 카드: ${cardInfo}` : "", krwBilled ? `카드사 ${krwBilled}` : ""].filter(Boolean).join(" · ")
 
   // 추천 프로젝트는 등록된 활성 프로젝트 id이고, 거래일이 그 기간 안일 때만 남긴다.
   let suggested_project_id: number | null = null
@@ -799,7 +843,13 @@ function normalizeReceipt(
     items,
     budget_item: str(raw.budget_item, 100),
     purpose: str(raw.purpose, 500),
-    memo: cardInfo ? `결제 카드: ${cardInfo}` : "",
+    memo,
+    currency,
+    foreign_amount: foreignTotal,
+    exchange_rate: null,
+    exchange_rate_date: "",
+    exchange_rate_source: "",
+    payroll_month: "",
     suggested_project_id,
     project_reason: suggested_project_id !== null ? str(raw.project_reason, 300) : "",
     confidence: asConfidence(raw.confidence),
