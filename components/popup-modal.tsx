@@ -49,7 +49,7 @@ export function PopupModal() {
   const [index, setIndex] = useState(0)
 
   // Do not render on admin / login pages.
-  const isAdminArea = pathname?.startsWith("/admin") || pathname?.startsWith("/login")
+  const isAdminArea = pathname?.startsWith("/admin") || pathname?.startsWith("/login") || pathname?.startsWith("/services")
 
   useEffect(() => {
     if (isAdminArea) return

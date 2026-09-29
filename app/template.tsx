@@ -11,7 +11,8 @@ import { CinematicIntro } from "@/components/magicui/cinematic-intro"
 // containing block을 만들어 내부 fixed 요소가 뷰포트가 아닌 페이지 전체 기준으로 잡히기 때문.
 export default function Template({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const isApp = pathname.startsWith("/admin") || pathname.startsWith("/portal")
+  // /services(통합 서비스 포털)도 업무용 입구라 전환 연출을 붙이지 않는다.
+  const isApp = pathname.startsWith("/admin") || pathname.startsWith("/portal") || pathname.startsWith("/services")
 
   if (isApp) return <>{children}</>
 
