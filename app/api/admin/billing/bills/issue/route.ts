@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/db"
 import { sendMail } from "@/lib/mail"
+import { notifyBillsIssued } from "@/lib/messenger-notify"
 import { generateAndStoreInvoice } from "@/lib/invoice-gen"
 import { computeElecContext, factoryChargeByRoom } from "@/lib/billing-db"
 import { isValidPeriod, prevPeriod, formatWon } from "@/lib/billing"
@@ -169,6 +170,8 @@ export async function POST(request: Request) {
       else failed++
     }
 
+    // 메신저 시스템 알림(응답 후 실행): 발행 N건 요약
+    notifyBillsIssued({ bills: issued.map((b) => ({ period: b.period, total_amount: b.total_amount })), corrected, sent, failed, no_email: noEmail })
     return NextResponse.json({ success: true, issued: issued.length, corrected, mail: { sent, failed }, no_email: noEmail, elec_month: prevPeriod(issued[0].period) })
   } catch (error) {
     console.error("Issue bills error:", error)

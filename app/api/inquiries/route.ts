@@ -1,6 +1,7 @@
 import { NextResponse, after } from "next/server"
 import { getDb } from "@/lib/db"
 import { sendMail } from "@/lib/mail"
+import { notifyInquiry } from "@/lib/messenger-notify"
 
 // 공개 엔드포인트 스팸 방어.
 // - honeypot: 폼의 숨김 필드(website)가 채워져 있으면 봇으로 간주하고 조용히 무시
@@ -91,6 +92,9 @@ export async function POST(request: Request) {
       VALUES (${company}, ${name}, ${email}, ${phone || null}, ${message})
       RETURNING id
     `
+
+    // 메신저 시스템 알림 토픽에도 남긴다(응답 후 실행, 실패해도 접수는 성공)
+    notifyInquiry({ name, company, message })
 
     // 관리자 알림 메일 — 응답을 지연시키지 않도록 응답 후 발송 (실패해도 접수는 성공)
     const notifyEmail = process.env.ADMIN_NOTIFY_EMAIL

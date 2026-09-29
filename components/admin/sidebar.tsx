@@ -20,6 +20,7 @@ import {
   ExternalLink,
   Menu,
   Wallet,
+  MessagesSquare,
 } from "lucide-react"
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import type { AdminUser } from "@/lib/auth"
@@ -30,7 +31,10 @@ const NAV_SECTIONS: {
 }[] = [
   {
     label: null,
-    items: [{ href: "/admin", label: "대시보드", icon: LayoutDashboard }],
+    items: [
+      { href: "/admin", label: "대시보드", icon: LayoutDashboard },
+      { href: "/admin/messenger", label: "메신저", icon: MessagesSquare },
+    ],
   },
   {
     label: "홈페이지 관리",

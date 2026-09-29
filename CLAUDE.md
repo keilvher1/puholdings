@@ -49,3 +49,15 @@
 - 모델 기본값 `gpt-5.6-sol`, `OPENAI_MODEL`로 덮어쓸 수 있다(terra·luna로 낮추면 비용이 준다).
 - `OPENAI_API_KEY` 미설정 시 판독 API는 503 + `needs_setup: true`를 반환하고, 화면은 직접 입력으로 계속 동작해야 한다.
 - 판독 결과는 **제안**이다. 어떤 경로로도 사용자 확인 없이 DB에 저장하지 않는다.
+
+### 10. 사내 메신저 (잔디 벤치마킹, 자체 구현)
+- 공용 타입·상수는 `lib/messenger-types.ts`, 서버 로직은 `lib/messenger.ts`, 세션 → 구성원 변환은 `lib/messenger-auth.ts`의 `getMessengerMember()` 하나만 쓴다.
+  관리자 세션 = 정회원(member), 포털 세션 = 게스트(guest). 외부 메신저 API를 연동하지 않는다.
+- **데이터 범위는 방 참여(`messenger_room_members`)로만 정한다.** 모든 `/api/messenger/*`는 맨 앞에서 `getMessengerMember()`(없으면 401),
+  방·메시지·첨부를 건드리는 요청은 참여 여부를 확인하고 아니면 404. 요청 파라미터(room_id 등)만 믿고 조회하지 않는다.
+  첨부(`messenger/{room_id}/…`)도 `/api/file`에서 같은 규칙으로 막는다. 게스트는 공개 토픽 둘러보기·토픽 생성·초대·웹훅 관리 불가.
+- 모든 쓰기는 `messenger_events`에 이벤트를 남긴다(클라이언트는 `/api/messenger/sync` 폴링으로만 갱신).
+- **업무 알림은 `postSystemMessage()` 단일 진입점**으로 "시스템 알림" 토픽(system_slug 'alerts')에 남긴다.
+  라우트에서는 `lib/messenger-notify.ts`의 `notify*()` 한 줄만 부른다(`after()`로 응답 후 실행, 실패해도 본 작업은 성공).
+  현재 연결: 공개 문의 접수, 데스크톱 앱 증빙 도착(3분 안 연속 도착은 대기 건수 요약), 관리비 청구서 발행.
+- 웹훅 수신(`/api/messenger/hooks/{token}`)만 세션 없이 토큰으로 인증한다(상수 시간 비교, 분당 60건, 본문 5000자).

@@ -3,6 +3,7 @@ import { get } from '@vercel/blob'
 import { getSession, getPortalSession } from '@/lib/auth'
 import { isSafePathname } from '@/lib/upload'
 import { getDb } from '@/lib/db'
+import { parseMessengerPathname } from '@/lib/messenger-files'
 
 // Derive a human-friendly filename from a stored pathname like
 // "news/1716800000000-보고서.docx" -> "보고서.docx".
@@ -30,7 +31,38 @@ function isPublicAsset(pathname: string): boolean {
   return PUBLIC_PREFIXES.some((p) => pathname.startsWith(p))
 }
 
+// messenger/{room_id}/… — 사내 메신저 첨부. 관리자·포털 세션 → 메신저 멤버 → 그 방 참여자만.
+// 방을 나가거나 강퇴되면 더 이상 열 수 없다. 형식이 어긋난 messenger/ 경로는 모두 차단.
+// 삭제되지 않은 그 방 메시지가 첨부로 가리키는 파일만 연다 — 메시지를 지우면 주소를 알아도 못 받는다.
+async function canAccessMessenger(pathname: string): Promise<boolean> {
+  const parsed = parseMessengerPathname(pathname)
+  if (!parsed) return false
+  const sql = getDb()
+  if (!sql) return false
+  try {
+    const { getMessengerMember } = await import('@/lib/messenger-auth')
+    const member = await getMessengerMember()
+    if (!member) return false
+    const rows = await sql`
+      SELECT 1 FROM messenger_room_members rm
+      WHERE rm.room_id = ${parsed.roomId} AND rm.member_id = ${member.id}
+        AND EXISTS (
+          SELECT 1 FROM messenger_messages m
+          WHERE m.room_id = ${parsed.roomId} AND m.deleted_at IS NULL
+            AND m.attachments @> jsonb_build_array(jsonb_build_object('pathname', ${pathname}::text))
+        )
+    `
+    return rows.length > 0
+  } catch (error) {
+    console.error('messenger file access check error:', error)
+    return false
+  }
+}
+
 async function canAccess(pathname: string): Promise<boolean> {
+  if (pathname.startsWith('messenger/')) {
+    return canAccessMessenger(pathname)
+  }
   if (pathname.startsWith('submissions/')) {
     return canAccessSubmission(pathname)
   }

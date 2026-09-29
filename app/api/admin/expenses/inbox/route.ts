@@ -5,6 +5,7 @@ import { INBOX_STATUSES, type InboxListResponse, type InboxStatus, type InboxUpl
 import { fail, parseId, requireAdminDb } from "@/lib/expense-db"
 import { scanUploadedReceipt } from "@/lib/expense-scan"
 import { countPendingInbox, inboxDbErrorMessage, insertInbox, listInbox, recognizedDrafts } from "@/lib/expense-inbox"
+import { notifyInboxArrival } from "@/lib/messenger-notify"
 
 // 확인 대기함 — 데스크톱 앱(포연기 증빙함)이 끌어다 놓은 증빙을 받아 둔다.
 //
@@ -95,6 +96,8 @@ export async function POST(request: Request) {
     },
     pending_count: pending,
   }
+  // 메신저 시스템 알림(응답 후 실행). 3분 안에 연달아 오면 대기 건수 요약만 보낸다.
+  notifyInboxArrival(sql, { id, file_name: out.file.name, scan_status: scanStatus, first: body.item.first, pending })
   return NextResponse.json(body)
 }
 

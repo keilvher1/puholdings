@@ -2,12 +2,13 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LogOut, Settings, LayoutDashboard, Receipt, ClipboardList } from "lucide-react"
+import { LogOut, Settings, LayoutDashboard, Receipt, ClipboardList, MessagesSquare } from "lucide-react"
 
 const navItems = [
   { href: "/portal", label: "대시보드", icon: LayoutDashboard },
   { href: "/portal/bills", label: "청구서", icon: Receipt },
   { href: "/portal/programs", label: "프로그램", icon: ClipboardList },
+  { href: "/portal/messenger", label: "메신저", icon: MessagesSquare },
   { href: "/portal/settings", label: "설정", icon: Settings },
 ]
 
