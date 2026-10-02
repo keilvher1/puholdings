@@ -1,27 +1,12 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ChevronDown, Loader2, Plus, RefreshCw, X } from "lucide-react"
+import { ChevronDown, Plus, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { BusyButton, CardSkeleton, ConfirmDialog, EmptyState, Notice, Section, toastSuccess, useDelayedFlag } from "@/components/saas"
 import { ProjectAddFlow } from "@/components/admin/expenses/project-add-flow"
 import { ProjectCard } from "@/components/admin/expenses/project-card"
 import {
@@ -33,23 +18,16 @@ import {
   type ProjectFormErrors,
   type ProjectFormState,
 } from "@/components/admin/expenses/project-form"
-import { NoticeBanner, type Notice } from "@/components/admin/expenses/notice-banner"
 import { jsonInit, requestJson } from "@/components/admin/expenses/client-helpers"
-import {
-  BusyText,
-  EmptyState,
-  HelpDetails,
-  InlineNotice,
-  Panel,
-  PanelHeader,
-  SectionTitle,
-} from "@/components/admin/expenses/ui"
+import { friendlyError, MSG } from "@/lib/messages"
+import { expensesHref } from "@/lib/links"
 import type { ExpenseProject, ProjectInput } from "@/lib/expenses"
 
-// 사업·프로젝트 화면.
-// - 활성 프로젝트가 없거나 ?onboarding=1 로 들어오면 등록 화면(두 가지 등록 방법)을 먼저 보여 준다.
-//   온보딩에서 등록을 마치면 곧바로 증빙 올리기(/admin/expenses)로 이동한다.
-// - 평소에는 프로젝트 카드 목록(집행률) + 추가·수정·종료/재개·삭제.
+// 사업·프로젝트 화면(계획서 4.2.8).
+// - 진행 중 프로젝트가 없거나 ?onboarding=1로 들어오면 등록 화면(두 가지 등록 방법)을 먼저 보여 준다.
+//   처음 쓰는 사람에게는 위에 4단계 체크리스트(K-5)를 보여 준다. 온보딩에서 등록을 마치면 그 프로젝트로 증빙 올리기로 간다.
+// - 평소에는 프로젝트 카드 목록(집행률·비목 초과) + 추가·수정·종료/다시 진행·삭제.
+// - 등록 뒤에는 토스트 + [이 프로젝트로 증빙 올리기](K-4). 종료·삭제는 확인창(처리 중 잠금, 실패하면 창 안에 안내).
 
 type Mode = "loading" | "onboarding" | "list"
 
@@ -66,9 +44,10 @@ export function ProjectManager({ initialOnboarding = false }: { initialOnboardin
   const [refreshing, setRefreshing] = useState(false)
   const [navigating, setNavigating] = useState(false)
   const [createdHere, setCreatedHere] = useState(0)
+  const lastCreated = useRef<ExpenseProject | null>(null)
 
-  const [notice, setNotice] = useState<Notice | null>(null)
-  const clearNotice = useCallback(() => setNotice(null), [])
+  const [created, setCreated] = useState<{ count: number; project: ExpenseProject | null } | null>(null)
+  const [actionError, setActionError] = useState("")
 
   const [addOpen, setAddOpen] = useState(false)
   const [addKey, setAddKey] = useState(0)
@@ -89,7 +68,7 @@ export function ProjectManager({ initialOnboarding = false }: { initialOnboardin
       const r = await requestJson<{ projects: ExpenseProject[] }>("/api/admin/expenses/projects")
       setRefreshing(false)
       if (!r.ok) {
-        setLoadError(r.error)
+        setLoadError(friendlyError(r.status, r.error, MSG.loadFailed))
         return
       }
       const list = Array.isArray(r.data.projects) ? r.data.projects : []
@@ -102,7 +81,7 @@ export function ProjectManager({ initialOnboarding = false }: { initialOnboardin
         return list.length === 0 || active === 0 || initialOnboarding ? "onboarding" : "list"
       })
     },
-    [initialOnboarding]
+    [initialOnboarding],
   )
 
   useEffect(() => {
@@ -117,27 +96,32 @@ export function ProjectManager({ initialOnboarding = false }: { initialOnboardin
   const createProject = useCallback(
     async (input: ProjectInput): Promise<string | null> => {
       const r = await requestJson<{ project: ExpenseProject }>("/api/admin/expenses/projects", jsonInit("POST", input))
-      if (!r.ok) return r.error
+      if (!r.ok) return friendlyError(r.status, r.error, MSG.saveFailed)
+      lastCreated.current = r.data.project ?? null
       setCreatedHere((n) => n + 1)
       void load(true)
+      router.refresh()
       return null
     },
-    [load]
+    [load, router],
   )
 
-  const finishOnboarding = useCallback(() => {
-    setNavigating(true)
-    router.push("/admin/expenses")
-  }, [router])
+  const finishOnboarding = useCallback(
+    (count: number) => {
+      const p = count === 1 ? lastCreated.current : null
+      toastSuccess(count > 1 ? `프로젝트 ${count}개를 등록했어요` : "프로젝트를 등록했어요")
+      setNavigating(true)
+      router.push(expensesHref({ project_id: p?.id ?? null }))
+    },
+    [router],
+  )
 
   const finishAdd = useCallback((count: number) => {
     setAddOpen(false)
     setAddKey((k) => k + 1)
-    setNotice({
-      tone: "success",
-      text: count > 1 ? `프로젝트 ${count}개를 등록했습니다.` : "프로젝트를 등록했습니다.",
-      link: { href: "/admin/expenses", label: "증빙 올리기" },
-    })
+    const p = count === 1 ? lastCreated.current : null
+    toastSuccess(count > 1 ? `프로젝트 ${count}개를 등록했어요` : `‘${p?.name ?? "프로젝트"}’를 등록했어요`)
+    setCreated({ count, project: p })
   }, [])
 
   const leaveOnboarding = () => {
@@ -164,7 +148,7 @@ export function ProjectManager({ initialOnboarding = false }: { initialOnboardin
     const e = validateProjectForm(editForm)
     setEditErrors(e)
     if (hasErrors(e)) {
-      setEditError("빨간 칸을 확인하세요.")
+      setEditError("표시한 칸을 확인해 주세요.")
       return
     }
     setEditSaving(true)
@@ -172,84 +156,73 @@ export function ProjectManager({ initialOnboarding = false }: { initialOnboardin
     const r = await requestJson("/api/admin/expenses/projects", jsonInit("PUT", { id: editing.id, ...formToInput(editForm), status: editing.status }))
     setEditSaving(false)
     if (!r.ok) {
-      setEditError(r.error)
+      setEditError(friendlyError(r.status, r.error, MSG.saveFailed))
       return
     }
     setEditing(null)
     setEditForm(null)
-    setNotice({ tone: "success", text: "프로젝트 정보를 저장했습니다." })
+    toastSuccess("프로젝트 정보를 저장했어요")
     void load(true)
+    router.refresh()
   }
 
-  // ── 종료·재개·삭제 ────────────────────────────────────────────────────────
-  const setStatus = async (p: ExpenseProject, status: "active" | "closed") => {
+  // ── 종료·다시 진행·삭제 ────────────────────────────────────────────────────
+  const setStatus = async (p: ExpenseProject, status: "active" | "closed"): Promise<string | null> => {
     setBusyId(p.id)
     // 상태만 보낸다(다른 필드는 서버가 기존 값을 유지)
     const r = await requestJson("/api/admin/expenses/projects", jsonInit("PUT", { id: p.id, status }))
     setBusyId(null)
-    if (!r.ok) {
-      setNotice({ tone: "error", text: r.error })
-      return
-    }
-    setNotice({
-      tone: "success",
-      text:
-        status === "closed"
-          ? `‘${p.name}’ 프로젝트를 종료했습니다. 저장된 증빙은 유지됩니다.`
-          : `‘${p.name}’ 프로젝트를 재개했습니다.`,
-    })
+    if (!r.ok) return friendlyError(r.status, r.error, MSG.saveFailed)
+    toastSuccess(status === "closed" ? `‘${p.name}’ 프로젝트를 종료했어요. 저장한 증빙은 그대로예요` : `‘${p.name}’ 프로젝트를 다시 진행해요`)
     void load(true)
+    router.refresh()
+    return null
   }
 
-  const deleteProject = async (p: ExpenseProject) => {
+  const deleteProject = async (p: ExpenseProject): Promise<string | null> => {
     setBusyId(p.id)
     const r = await requestJson("/api/admin/expenses/projects", jsonInit("DELETE", { id: p.id }))
     setBusyId(null)
-    if (!r.ok) {
-      setNotice({ tone: "error", text: r.error })
-      return
-    }
-    setNotice({ tone: "success", text: `‘${p.name}’ 프로젝트를 삭제했습니다.` })
+    if (!r.ok) return friendlyError(r.status, r.error, MSG.deleteFailed)
+    toastSuccess(`‘${p.name}’ 프로젝트를 삭제했어요`)
     void load(true)
+    router.refresh()
+    return null
   }
 
   const askDelete = (p: ExpenseProject) => setConfirm({ kind: p.receipt_count > 0 ? "blocked" : "delete", project: p })
-  const askToggle = (p: ExpenseProject) => {
-    if (p.status === "active") setConfirm({ kind: "close", project: p })
-    else void setStatus(p, "active")
+  const askToggle = async (p: ExpenseProject) => {
+    if (p.status === "active") {
+      setConfirm({ kind: "close", project: p })
+      return
+    }
+    setActionError("")
+    const err = await setStatus(p, "active")
+    if (err) setActionError(err)
   }
+
+  const showSkeleton = useDelayedFlag(mode === "loading" && !loadError)
 
   // ── 화면 ─────────────────────────────────────────────────────────────────
   if (mode === "loading") {
     if (loadError) {
-      return (
-        <Panel>
-          <EmptyState
-            title="프로젝트 목록을 불러오지 못했습니다"
-            description={loadError}
-            action={
-              <Button variant="outline" onClick={() => void load()}>
-                <RefreshCw className="h-4 w-4" />
-                다시 시도
-              </Button>
-            }
-          />
-        </Panel>
-      )
+      return <EmptyState kind="error" bordered title="프로젝트 목록을 불러오지 못했어요" description={loadError} onRetry={() => void load()} />
     }
-    return (
-      <Panel className="px-4 py-8 text-center" aria-busy="true">
-        <BusyText>불러오는 중</BusyText>
-      </Panel>
+    return showSkeleton ? (
+      <div className="grid gap-4 lg:grid-cols-2">
+        <CardSkeleton lines={5} label="프로젝트를 불러오는 중…" />
+        <CardSkeleton lines={5} label="프로젝트를 불러오는 중…" />
+      </div>
+    ) : (
+      <div className="h-40" aria-busy="true" />
     )
   }
 
   if (navigating) {
     return (
-      <Panel className="px-6 py-10 text-center">
-        <p className="text-base font-semibold text-dark">프로젝트 등록 완료</p>
-        <BusyText className="mt-2">증빙 올리기로 이동 중</BusyText>
-      </Panel>
+      <Section className="text-center">
+        <p className="py-6 text-base font-semibold text-dark">프로젝트를 등록했어요. 증빙 올리기로 가는 중…</p>
+      </Section>
     )
   }
 
@@ -257,60 +230,87 @@ export function ProjectManager({ initialOnboarding = false }: { initialOnboardin
     // 이 화면에서 새로 등록한 프로젝트는 빼고 센다(등록 직후 목록을 다시 불러와도 제목이 바뀌지 않게)
     const prevTotal = Math.max(0, projects.length - createdHere)
     const prevActive = Math.max(0, active.length - createdHere)
-    const heading = prevTotal === 0 ? "등록된 프로젝트 없음" : prevActive === 0 ? "진행 중인 프로젝트 없음" : "새 프로젝트"
+    const heading = prevTotal === 0 ? "아직 등록한 프로젝트가 없어요" : prevActive === 0 ? "진행 중인 프로젝트가 없어요" : "새 프로젝트"
     return (
       <div className="grid gap-4">
+        {prevTotal === 0 && <FirstUseChecklist />}
         <div>
-          <SectionTitle>{heading}</SectionTitle>
-          <p className="mt-1 text-sm text-text-secondary [word-break:keep-all]">
-            {prevActive === 0 ? "증빙을 올리려면 사업(프로젝트)을 먼저 등록하세요." : "등록을 마치면 증빙 올리기로 이동합니다."}
+          <h2 className="text-lg font-semibold text-dark">{heading}</h2>
+          <p className="mt-1 text-[15px] text-text-secondary [word-break:keep-all]">
+            {prevActive === 0 ? "증빙을 올리려면 사업(프로젝트)을 먼저 등록해 주세요." : "등록을 마치면 그 프로젝트로 증빙 올리기 화면이 열려요."}
           </p>
         </div>
 
         {projects.length > 0 && createdHere === 0 && (
-          <InlineNotice
+          <Notice
             action={
-              <Button variant="outline" size="sm" onClick={leaveOnboarding}>
-                등록된 프로젝트 보기
+              <Button variant="outline" size="sm" className="bg-card hover:bg-warm-beige" onClick={leaveOnboarding}>
+                등록한 프로젝트 보기
               </Button>
             }
           >
             {active.length === 0
-              ? `진행 중인 프로젝트 없음 · 종료된 프로젝트 ${closed.length}개는 목록에서 재개할 수 있습니다.`
-              : `등록된 프로젝트 ${projects.length}개`}
-          </InlineNotice>
+              ? `진행 중인 프로젝트가 없어요. 종료한 프로젝트 ${closed.length}개는 목록에서 다시 진행할 수 있어요.`
+              : `등록한 프로젝트가 ${projects.length}개 있어요.`}
+          </Notice>
         )}
 
         <div>
-          <SectionTitle as="h3" className="mb-2 text-sm">
-            등록 방법
-          </SectionTitle>
+          <h3 className="mb-2 text-[15px] font-semibold text-dark">등록 방법</h3>
           <ProjectAddFlow onCreate={createProject} onFinished={finishOnboarding} existingNames={existingNames} />
         </div>
       </div>
     )
   }
 
-  return (
-    <div>
-      <NoticeBanner notice={notice} onClose={clearNotice} />
+  const card = (p: ExpenseProject) => (
+    <ProjectCard
+      key={p.id}
+      project={p}
+      busy={busyId === p.id}
+      onEdit={() => openEdit(p)}
+      onToggleStatus={() => void askToggle(p)}
+      onDelete={() => askDelete(p)}
+    />
+  )
 
-      {loadError && (
-        <InlineNotice
-          tone="danger"
-          className="mb-4"
+  return (
+    <div className="grid gap-4">
+      {created && (
+        <Notice
+          tone="success"
+          onClose={() => setCreated(null)}
           action={
-            <Button size="sm" variant="outline" onClick={() => void load(true)}>
+            <Button asChild size="sm">
+              <Link href={expensesHref({ project_id: created.project?.id ?? null })}>
+                {created.project ? "이 프로젝트로 증빙 올리기" : "증빙 올리기"}
+              </Link>
+            </Button>
+          }
+        >
+          {created.count > 1 ? `프로젝트 ${created.count}개를 등록했어요.` : `‘${created.project?.name ?? "프로젝트"}’를 등록했어요.`} 이제 증빙을 올릴 수 있어요.
+        </Notice>
+      )}
+      {actionError && (
+        <Notice tone="danger" onClose={() => setActionError("")}>
+          {actionError}
+        </Notice>
+      )}
+      {loadError && (
+        <Notice
+          tone="danger"
+          action={
+            <Button size="sm" variant="outline" className="bg-card hover:bg-warm-beige" onClick={() => void load(true)}>
               다시 시도
             </Button>
           }
         >
-          최신 목록을 불러오지 못했습니다. {loadError}
-        </InlineNotice>
+          최신 목록을 불러오지 못했어요. {loadError}
+        </Notice>
       )}
 
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <p className="flex items-center gap-3 text-sm text-text-secondary">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="flex items-center gap-3 text-[15px] text-text-secondary">
           <span>
             진행 중 <b className="font-semibold tabular-nums text-dark">{active.length}</b>개
           </span>
@@ -319,117 +319,72 @@ export function ProjectManager({ initialOnboarding = false }: { initialOnboardin
               종료 <b className="font-semibold tabular-nums text-dark">{closed.length}</b>개
             </span>
           )}
-          {refreshing && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-label="새로 고치는 중" />}
+          {refreshing && <span className="text-sm">새로 고치는 중…</span>}
         </p>
         {!addOpen && (
           <Button onClick={() => setAddOpen(true)}>
-            <Plus className="h-4 w-4" />
+            <Plus className="size-4" aria-hidden />
             프로젝트 추가
           </Button>
         )}
       </div>
 
       {addOpen && (
-        <Panel className="mb-6">
-          <PanelHeader
-            as="h3"
-            title="새 프로젝트"
-            actions={
-              <Button variant="ghost" size="sm" onClick={() => setAddOpen(false)} aria-label="새 프로젝트 닫기">
-                <X className="h-4 w-4" />
-                닫기
-              </Button>
-            }
-          />
-          <div className="p-4">
-            <ProjectAddFlow key={addKey} onCreate={createProject} onFinished={finishAdd} existingNames={existingNames} />
-          </div>
-        </Panel>
+        <Section
+          title="새 프로젝트"
+          headingLevel={3}
+          actions={
+            <Button variant="ghost" size="sm" className="hover:bg-warm-beige" onClick={() => setAddOpen(false)} aria-label="새 프로젝트 닫기">
+              <X className="size-4" aria-hidden />
+              닫기
+            </Button>
+          }
+        >
+          <ProjectAddFlow key={addKey} onCreate={createProject} onFinished={finishAdd} existingNames={existingNames} />
+        </Section>
       )}
 
       {projects.length === 0 && !addOpen && (
         <EmptyState
           bordered
-          title="등록된 프로젝트 없음"
-          description="프로젝트를 등록하면 증빙을 올릴 수 있습니다."
+          title="아직 등록한 프로젝트가 없어요"
+          description="프로젝트를 등록하면 증빙을 올릴 수 있어요."
           action={
             <Button onClick={() => setAddOpen(true)}>
-              <Plus className="h-4 w-4" />
+              <Plus className="size-4" aria-hidden />
               프로젝트 추가
             </Button>
           }
         />
       )}
 
-      {active.length > 0 && (
-        <div className="grid gap-4 lg:grid-cols-2">
-          {active.map((p) => (
-            <ProjectCard
-              key={p.id}
-              project={p}
-              busy={busyId === p.id}
-              onEdit={() => openEdit(p)}
-              onToggleStatus={() => askToggle(p)}
-              onDelete={() => askDelete(p)}
-            />
-          ))}
-        </div>
-      )}
+      {active.length > 0 && <div className="grid gap-4 lg:grid-cols-2">{active.map(card)}</div>}
       {active.length === 0 && closed.length > 0 && !addOpen && (
-        <EmptyState
-          bordered
-          title="진행 중인 프로젝트 없음"
-          description="새 프로젝트를 추가하거나 아래 종료된 프로젝트를 재개하세요."
-        />
+        <EmptyState bordered title="진행 중인 프로젝트가 없어요" description="새 프로젝트를 추가하거나 아래 종료한 프로젝트를 다시 진행해 주세요." />
       )}
 
       {closed.length > 0 && (
-        <section className="mt-8">
+        <section className="mt-4">
           <button
             type="button"
             onClick={() => setShowClosed((v) => !v)}
-            className="mb-3 flex items-center gap-1.5 rounded-sm text-sm font-semibold text-dark outline-none hover:underline hover:underline-offset-2 focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            className="mb-3 flex min-h-9 items-center gap-1.5 rounded-sm text-[15px] font-semibold text-dark hover:underline hover:underline-offset-2"
             aria-expanded={showClosed}
           >
-            <ChevronDown className={`h-4 w-4 text-text-secondary ${showClosed ? "" : "-rotate-90"}`} aria-hidden />
-            종료된 프로젝트
+            <ChevronDown className={`size-4 text-text-secondary ${showClosed ? "" : "-rotate-90"}`} aria-hidden />
+            종료한 프로젝트
             <span className="font-normal tabular-nums text-text-secondary">{closed.length}개</span>
           </button>
-          {showClosed && (
-            <div className="grid gap-4 lg:grid-cols-2">
-              {closed.map((p) => (
-                <ProjectCard
-                  key={p.id}
-                  project={p}
-                  busy={busyId === p.id}
-                  onEdit={() => openEdit(p)}
-                  onToggleStatus={() => askToggle(p)}
-                  onDelete={() => askDelete(p)}
-                />
-              ))}
-            </div>
-          )}
+          {showClosed && <div className="grid gap-4 lg:grid-cols-2">{closed.map(card)}</div>}
         </section>
       )}
 
-      <HelpDetails
-        title="집행률 계산 기준"
-        className="mt-6"
-        items={[
-          "집행액 = 저장된 증빙 합계(부가세 포함)",
-          "집행률 = 집행액 ÷ 총사업비(총사업비 미입력 시 ‘-’)",
-          "90% 이상 주황 · 100% 초과 빨강",
-          "비목별 현황: 증빙 내역 › 프로젝트 선택",
-          "종료: 증빙 올리기 목록에서만 제외, 저장된 증빙은 유지",
-        ]}
-      />
-
-      {/* 수정 Dialog */}
+      {/* 수정 대화상자 */}
       <Dialog open={editing !== null} onOpenChange={(o) => !o && closeEdit()}>
-        <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-2xl">
+        <DialogContent className="app-shell max-h-[92vh] overflow-y-auto sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>프로젝트 수정</DialogTitle>
-            <DialogDescription>변경 내용은 즉시 반영됩니다.</DialogDescription>
+            <DialogTitle>프로젝트 정보 수정</DialogTitle>
+            <DialogDescription>저장하면 바로 반영돼요.</DialogDescription>
           </DialogHeader>
           {editing && editForm && (
             <>
@@ -444,107 +399,96 @@ export function ProjectManager({ initialOnboarding = false }: { initialOnboardin
                 disabled={editSaving}
               />
               {editing.receipt_count > 0 && (
-                <InlineNotice className="text-xs">
-                  연결된 증빙 <b className="font-semibold tabular-nums">{editing.receipt_count.toLocaleString("ko-KR")}건</b> · 비목 이름 변경은
-                  기존 증빙에 반영되지 않습니다.
-                </InlineNotice>
+                <Notice>
+                  연결된 증빙이 <b className="font-semibold tabular-nums">{editing.receipt_count.toLocaleString("ko-KR")}건</b> 있어요. 비목 이름을
+                  바꿔도 이미 저장한 증빙의 비목은 바뀌지 않아요.
+                </Notice>
               )}
-              {editError && <InlineNotice tone="danger">{editError}</InlineNotice>}
+              {editError && <Notice tone="danger">{editError}</Notice>}
             </>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={closeEdit} disabled={editSaving}>
-              취소
+            <Button variant="outline" className="hover:bg-warm-beige" onClick={closeEdit} disabled={editSaving}>
+              닫기
             </Button>
-            <Button onClick={() => void saveEdit()} disabled={editSaving}>
-              {editSaving ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  저장 중…
-                </>
-              ) : (
-                "저장"
-              )}
-            </Button>
+            <BusyButton busy={editSaving} onClick={() => void saveEdit()}>
+              저장
+            </BusyButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* 종료·삭제 확인 */}
-      <AlertDialog open={confirm !== null} onOpenChange={(o) => !o && setConfirm(null)}>
-        <AlertDialogContent>
-          {confirm?.kind === "close" && (
-            <>
-              <AlertDialogHeader>
-                <AlertDialogTitle>프로젝트 종료: ‘{confirm.project.name}’</AlertDialogTitle>
-                <AlertDialogDescription className="[word-break:keep-all]">
-                  증빙 올리기의 프로젝트 선택 목록에서 제외됩니다. 저장된 증빙·내역·엑셀 다운로드는 유지되며 ‘재개’로 되돌릴 수 있습니다.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>취소</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => {
-                    const p = confirm.project
-                    setConfirm(null)
-                    void setStatus(p, "closed")
-                  }}
-                >
-                  종료
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </>
-          )}
-          {confirm?.kind === "delete" && (
-            <>
-              <AlertDialogHeader>
-                <AlertDialogTitle>프로젝트 삭제: ‘{confirm.project.name}’</AlertDialogTitle>
-                <AlertDialogDescription className="[word-break:keep-all]">
-                  저장된 증빙이 없는 프로젝트입니다. 삭제 후에는 되돌릴 수 없으니, 잘못 만든 프로젝트가 아니면 ‘종료’를 사용하세요.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>취소</AlertDialogCancel>
-                <AlertDialogAction
-                  className="bg-destructive text-white hover:bg-destructive/90"
-                  onClick={() => {
-                    const p = confirm.project
-                    setConfirm(null)
-                    void deleteProject(p)
-                  }}
-                >
-                  삭제
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </>
-          )}
-          {confirm?.kind === "blocked" && (
-            <>
-              <AlertDialogHeader>
-                <AlertDialogTitle>증빙이 있는 프로젝트는 삭제할 수 없습니다</AlertDialogTitle>
-                <AlertDialogDescription className="[word-break:keep-all]">
-                  ‘{confirm.project.name}’에 저장된 증빙이 {confirm.project.receipt_count.toLocaleString("ko-KR")}건 있습니다. 삭제 대신
-                  ‘종료’를 사용하세요(증빙 올리기 목록에서만 제외).
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>닫기</AlertDialogCancel>
-                {confirm.project.status === "active" && (
-                  <AlertDialogAction
-                    onClick={() => {
-                      const p = confirm.project
-                      setConfirm(null)
-                      void setStatus(p, "closed")
-                    }}
-                  >
-                    종료
-                  </AlertDialogAction>
-                )}
-              </AlertDialogFooter>
-            </>
-          )}
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* 종료·삭제 확인 — 처리 중 잠금, 실패하면 창 안에 안내 */}
+      <ConfirmDialog
+        open={confirm !== null}
+        onOpenChange={(o) => !o && setConfirm(null)}
+        tone={confirm?.kind === "delete" ? "danger" : "default"}
+        title={
+          confirm?.kind === "close"
+            ? `‘${confirm.project.name}’ 프로젝트를 종료할까요?`
+            : confirm?.kind === "delete"
+              ? `‘${confirm.project.name}’ 프로젝트를 삭제할까요?`
+              : "증빙이 있는 프로젝트는 삭제할 수 없어요"
+        }
+        body={
+          confirm?.kind === "close"
+            ? "증빙 올리기의 프로젝트 목록에서만 빠져요. 저장한 증빙·증빙 내역·엑셀은 그대로이고, ⋯ 메뉴의 ‘다시 진행하기’로 되돌릴 수 있어요."
+            : confirm?.kind === "delete"
+              ? "저장한 증빙이 없는 프로젝트예요. 삭제하면 되돌릴 수 없으니, 잘못 만든 프로젝트가 아니면 ‘종료하기’를 써 주세요."
+              : confirm
+                ? `‘${confirm.project.name}’에 저장한 증빙이 ${confirm.project.receipt_count.toLocaleString("ko-KR")}건 있어요. 삭제 대신 ‘종료하기’를 써 주세요(증빙 올리기 목록에서만 빠져요).`
+                : undefined
+        }
+        confirmLabel={confirm?.kind === "delete" ? "삭제하기" : "종료하기"}
+        busyLabel={confirm?.kind === "delete" ? "삭제 중…" : "종료하는 중…"}
+        failedTitle={confirm?.kind === "delete" ? "삭제하지 못했어요" : "종료하지 못했어요"}
+        onConfirm={async () => {
+          if (!confirm) return
+          if (confirm.kind === "blocked" && confirm.project.status !== "active") {
+            setConfirm(null)
+            return
+          }
+          const err = confirm.kind === "delete" ? await deleteProject(confirm.project) : await setStatus(confirm.project, "closed")
+          if (err) return { error: err }
+        }}
+      />
     </div>
+  )
+}
+
+// 처음 쓰는 사람 체크리스트(K-5) — 등록한 프로젝트가 하나도 없을 때만. 단계는 실제로 끝나야 체크된다(지금은 모두 시작 전).
+function FirstUseChecklist() {
+  const steps = [
+    { title: "과제 등록", note: "약 3분 · 사업계획서를 올리면 자동으로 채워요" },
+    { title: "비목별 예산 입력", note: "약 5분 · 등록하면서 함께 넣어도 돼요" },
+    { title: "첫 증빙 올리기", note: "영수증·세금계산서 사진이나 PDF" },
+    { title: "데스크톱 앱 설치(선택)", note: "폴더에 넣으면 자동으로 올라와요" },
+  ]
+  return (
+    <Section title="처음 쓰는 순서" headingLevel={2} description="아래 순서대로 하면 증빙 처리를 시작할 수 있어요.">
+      <ol className="grid gap-2 sm:grid-cols-2">
+        {steps.map((s, i) => (
+          <li key={s.title} className="flex items-start gap-3 rounded-md border border-warm-tan px-3 py-2.5">
+            <span className="mt-0.5 inline-flex size-6 shrink-0 items-center justify-center rounded-full border border-warm-tan text-sm font-semibold tabular-nums text-dark" aria-hidden>
+              {i + 1}
+            </span>
+            <span className="min-w-0">
+              <span className="block text-[15px] font-medium text-dark">
+                {s.title}
+                {i === 3 && (
+                  <>
+                    {" "}
+                    <Link href="/admin/expenses/desktop" className="text-sm font-normal text-link underline underline-offset-2">
+                      설치 안내
+                    </Link>
+                  </>
+                )}
+              </span>
+              <span className="block text-sm text-text-secondary [word-break:keep-all]">{s.note}</span>
+            </span>
+          </li>
+        ))}
+      </ol>
+    </Section>
   )
 }

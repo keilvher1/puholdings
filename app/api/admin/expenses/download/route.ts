@@ -1,10 +1,22 @@
 import { NextResponse } from "next/server"
 import { get } from "@vercel/blob"
 import { zip } from "fflate"
-import { isValidDate, type ExpenseReceipt } from "@/lib/expenses"
-import { dbErrorMessage, fail, getProject, kstToday, listReceipts, parseId, requireAdminDb } from "@/lib/expense-db"
+import type { ExpenseReceipt } from "@/lib/expenses"
+import {
+  dbErrorMessage,
+  fail,
+  getProject,
+  kstToday,
+  listReceipts,
+  parseId,
+  parseReceiptQuery,
+  receiptQueryFileTag,
+  receiptQueryLabels,
+  requireAdminDb,
+} from "@/lib/expense-db"
 
-// GET /api/admin/expenses/download?project_id=[&from=&to=&q=]
+// GET /api/admin/expenses/download?project_id=[&from=&to=&q=&doc_type=&budget_item=]
+// 조건이 걸리면 zip 파일명에 "_조건_{조건}"을 넣고 _안내.txt 첫머리에 조건을 적는다(전체 자료로 오해하지 않게).
 // 해당 프로젝트 증빙 원본 파일을 fflate zip()으로 묶어 내려준다(한글 파일명 UTF-8 플래그).
 // zip 안 파일명: {거래일자}_{거래처}_{합계}원.{확장자} — 한 파일에 증빙이 여러 장이면 " 외 N건"을 붙이고 한 번만 넣는다.
 // 못 읽은 파일이 있으면 _안내.txt에 목록을 남긴다(조용히 빠지지 않도록).
@@ -81,18 +93,20 @@ export async function GET(request: Request) {
   const params = new URL(request.url).searchParams
   const projectId = parseId(params.get("project_id"))
   if (!projectId) return fail("증빙 파일을 내려받을 프로젝트를 먼저 선택하세요", 400)
-  const from = params.get("from")
-  const to = params.get("to")
+  const query = parseReceiptQuery(params)
 
   try {
     const project = await getProject(sql, projectId)
     if (!project) return fail("없는 프로젝트입니다. 새로고침하세요.", 404)
     const receipts = await listReceipts(sql, {
       projectId,
-      from: isValidDate(from) ? from : null,
-      to: isValidDate(to) ? to : null,
-      q: params.get("q"),
+      from: query.from,
+      to: query.to,
+      q: query.q,
+      docType: query.docType,
+      budgetItem: query.budgetItem,
     })
+    const conditions = receiptQueryLabels(query)
     if (receipts.length === 0) return fail("조건에 맞는 증빙이 없습니다", 404)
 
     // 거래일 오름차순, 같은 원본 파일은 한 번만
@@ -154,6 +168,9 @@ export async function GET(request: Request) {
       return fail("증빙 원본 파일을 하나도 읽지 못했습니다. 잠시 후 다시 시도하세요.", 500)
     }
     const notes: string[] = []
+    if (conditions.length > 0) {
+      notes.push(`[조회 조건] ${conditions.join(" · ")}\n조건에 맞는 증빙 원본만 담았어요(전체 정산 자료가 아니에요).\n`)
+    }
     if (failed.length > 0) {
       notes.push(
         `[빠진 원본 ${failed.length}건]\n아래 증빙의 원본 파일을 읽지 못해 이 zip에 들어 있지 않습니다.\n증빙 내역 화면에서 개별로 열어 확인하세요.\n\n${failed.join("\n")}\n`,
@@ -163,7 +180,10 @@ export async function GET(request: Request) {
     if (notes.length > 0) files["_안내.txt"] = new TextEncoder().encode(notes.join("\n"))
 
     const zipped = await zipAsync(files)
-    const filename = encodeURIComponent(`사업비_증빙원본_${safeName(project.name, 60)}_${kstToday().replace(/-/g, "")}.zip`)
+    const tag = receiptQueryFileTag(query)
+    const filename = encodeURIComponent(
+      `사업비_증빙원본_${safeName(project.name, 60)}${tag ? `_조건_${tag}` : ""}_${kstToday().replace(/-/g, "")}.zip`,
+    )
     return new NextResponse(streamBytes(zipped), {
       headers: {
         "Content-Type": "application/zip",

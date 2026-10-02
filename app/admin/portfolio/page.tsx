@@ -30,7 +30,7 @@ export default async function AdminPortfolioPage() {
     <div className="p-5 md:p-8">
       <AdminPageHeader
         title="포트폴리오"
-        description="투자 기업 목록을 관리합니다"
+        description="투자 기업 목록을 관리해요"
         actions={
           <Button asChild>
             <Link href="/admin/portfolio/new">
@@ -69,11 +69,11 @@ export default async function AdminPortfolioPage() {
                 <TableCell>
                   <div className="flex items-center justify-end gap-1">
                     <Button variant="ghost" size="icon" asChild className="h-8 w-8 text-text-secondary hover:text-dark">
-                      <Link href={`/admin/portfolio/${item.id}`}>
-                        <Pencil className="h-4 w-4" />
+                      <Link href={`/admin/portfolio/${item.id}`} aria-label={`${item.name} 수정`}>
+                        <Pencil className="h-4 w-4" aria-hidden />
                       </Link>
                     </Button>
-                    <DeleteButton id={item.id} type="portfolio" />
+                    <DeleteButton id={item.id} type="portfolio" itemName={item.name} />
                   </div>
                 </TableCell>
               </TableRow>

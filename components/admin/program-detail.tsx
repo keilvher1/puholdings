@@ -2,10 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Dialog,
@@ -31,11 +31,10 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { ArrowLeft, FileText } from "lucide-react"
-import {
-  APPLICATION_STATUS_LABELS,
-  SUBMISSION_STATUS_LABELS,
-  PROGRAM_STATUS_LABELS,
-} from "@/lib/programs"
+import { BusyButton, CardSkeleton, CountBadge, EmptyState, Notice, StatusBadge, toastSuccess, useConfirm, useDelayedFlag } from "@/components/saas"
+import { dateShort, dateTime } from "@/lib/format"
+import { friendlyError, MSG } from "@/lib/messages"
+import { statusMeta } from "@/lib/status"
 import { AttachmentList } from "@/components/attachment-list"
 import type { Attachment } from "@/lib/db"
 
@@ -74,24 +73,24 @@ interface Submission {
   updated_at: string
 }
 
-function appBadge(status: Application["status"]) {
-  const label = APPLICATION_STATUS_LABELS[status] || status
-  if (status === "accepted") return <Badge className="bg-green-700 text-white">{label}</Badge>
-  if (status === "rejected") return <Badge variant="destructive">{label}</Badge>
-  if (status === "completed") return <Badge variant="outline">{label}</Badge>
-  return <Badge variant="secondary">{label}</Badge>
-}
+const d = (v: string | null) => (v ? dateShort(v) : "-")
 
-function subBadge(status: Submission["status"]) {
-  const label = SUBMISSION_STATUS_LABELS[status] || status
-  if (status === "approved") return <Badge className="bg-green-700 text-white">{label}</Badge>
-  if (status === "rejected") return <Badge variant="destructive">{label}</Badge>
-  if (status === "resubmit_requested") return <Badge variant="destructive">{label}</Badge>
-  if (status === "reviewing") return <Badge variant="outline">{label}</Badge>
-  return <Badge variant="secondary">{label}</Badge>
-}
-
-export function ProgramDetail({ programId }: { programId: number }) {
+/**
+ * 프로그램 상세(신청·제출물). 계획서 4.1.7: 선정/미선정 → useConfirm, 실패 → Notice.
+ * mailEnabled는 서버 page가 넘긴다(메일 꺼짐이면 "결과 메일" 약속 문구를 쓰지 않는다).
+ */
+export function ProgramDetail({
+  programId,
+  mailEnabled = false,
+  initialTab = "applications",
+}: {
+  programId: number
+  mailEnabled?: boolean
+  initialTab?: "applications" | "submissions"
+}) {
+  const ask = useConfirm()
+  const router = useRouter()
+  const [actionError, setActionError] = useState("")
   const [program, setProgram] = useState<Program | null>(null)
   const [applications, setApplications] = useState<Application[]>([])
   const [submissions, setSubmissions] = useState<Submission[]>([])
@@ -118,11 +117,11 @@ export function ProgramDetail({ programId }: { programId: number }) {
       ])
       const [pData, aData, sData] = await Promise.all([pRes.json(), aRes.json(), sRes.json()])
       if (pData.success) setProgram(pData.program)
-      else setError(pData.error || "프로그램을 불러오지 못했습니다")
+      else setError(friendlyError(pRes.status, pData.error, MSG.loadFailed))
       if (aData.success) setApplications(aData.applications)
       if (sData.success) setSubmissions(sData.submissions)
     } catch {
-      setError("서버 오류가 발생했습니다")
+      setError(friendlyError(0, null, MSG.loadFailed))
     } finally {
       setLoading(false)
     }
@@ -133,9 +132,21 @@ export function ProgramDetail({ programId }: { programId: number }) {
   }, [fetchAll])
 
   const handleApplicationStatus = async (app: Application, status: "accepted" | "rejected") => {
-    const actionLabel = status === "accepted" ? "승인(선정)" : "반려(미선정)"
-    if (!confirm(`${app.tenant_name}의 신청을 ${actionLabel} 처리할까요? 결과 메일이 발송됩니다.`)) return
+    const label = status === "accepted" ? "선정" : "미선정"
+    if (
+      !(await ask({
+        title: mailEnabled
+          ? `${app.tenant_name} 신청을 ${label}으로 정하고 결과 메일을 보낼까요?`
+          : `${app.tenant_name} 신청을 ${label}으로 정할까요?`,
+        body: mailEnabled ? undefined : "메일 발송이 설정되지 않아 결과 메일은 나가지 않아요. 결과는 기업에 직접 알려 주세요.",
+        summary: program ? [{ label: "프로그램", value: program.title }] : undefined,
+        confirmLabel: mailEnabled ? `${label}으로 정하고 메일 보내기` : `${label}으로 정하기`,
+        tone: status === "rejected" ? "danger" : "default",
+      }))
+    )
+      return
     setActingId(app.id)
+    setActionError("")
     try {
       const res = await fetch("/api/admin/applications", {
         method: "PUT",
@@ -143,11 +154,14 @@ export function ProgramDetail({ programId }: { programId: number }) {
         credentials: "include",
         body: JSON.stringify({ id: app.id, status }),
       })
-      const data = await res.json()
-      if (!data.success) alert(data.error || "처리에 실패했습니다")
+      const data = await res.json().catch(() => ({}))
+      if (res.ok && data.success) {
+        toastSuccess(`${app.tenant_name} 신청을 ${label}으로 정했어요`)
+        router.refresh() // 사이드바 배지·홈 할 일 합계 갱신(2.0)
+      } else setActionError(friendlyError(res.status, data.error, "처리하지 못했어요."))
       fetchAll()
     } catch {
-      alert("서버 오류가 발생했습니다")
+      setActionError(friendlyError(0, null, "처리하지 못했어요."))
     } finally {
       setActingId(null)
     }
@@ -172,34 +186,39 @@ export function ProgramDetail({ programId }: { programId: number }) {
         credentials: "include",
         body: JSON.stringify({ id: reviewing.id, status: reviewStatus, feedback }),
       })
-      const data = await res.json()
-      if (data.success) {
+      const data = await res.json().catch(() => ({}))
+      if (res.ok && data.success) {
         setReviewOpen(false)
+        toastSuccess(`${reviewing.tenant_name} 제출물 검토를 저장했어요`)
         fetchAll()
+        router.refresh() // 사이드바 "프로그램" 배지·홈 할 일 합계 갱신(2.0)
       } else {
-        setReviewError(data.error || "저장에 실패했습니다")
+        setReviewError(friendlyError(res.status, data.error, MSG.saveFailed))
       }
     } catch {
-      setReviewError("서버 오류가 발생했습니다")
+      setReviewError(friendlyError(0, null, MSG.saveFailed))
     } finally {
       setReviewSaving(false)
     }
   }
 
-  if (loading) {
-    return <p className="py-10 text-center text-sm text-text-secondary">불러오는 중...</p>
+  if (loading && !program) {
+    return <DetailLoading />
   }
   if (error || !program) {
     return (
-      <div className="py-10 text-center">
-        <p className="mb-4 text-sm text-destructive">{error || "프로그램을 찾을 수 없습니다"}</p>
-        <Button variant="outline" asChild>
-          <Link href="/admin/programs">
-            <ArrowLeft className="h-4 w-4" />
-            목록으로
-          </Link>
-        </Button>
-      </div>
+      <EmptyState
+        kind="error"
+        bordered
+        title="프로그램을 불러오지 못했어요"
+        description={error || MSG.notFound}
+        onRetry={fetchAll}
+        action={
+          <Button variant="outline" size="sm" asChild className="hover:bg-warm-beige hover:text-dark">
+            <Link href="/admin/programs">프로그램 목록으로</Link>
+          </Button>
+        }
+      />
     )
   }
 
@@ -208,25 +227,44 @@ export function ProgramDetail({ programId }: { programId: number }) {
       <div className="mb-6">
         <Link
           href="/admin/programs"
-          className="mb-2 inline-flex items-center gap-1 text-sm text-text-secondary hover:text-dark"
+          className="mb-2 inline-flex min-h-8 items-center gap-1 text-[15px] text-link underline underline-offset-2 hover:text-dark"
         >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          프로그램 목록
+          <ArrowLeft className="size-4" aria-hidden />
+          프로그램
         </Link>
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold text-dark">{program.title}</h1>
-          <Badge variant="outline">{PROGRAM_STATUS_LABELS[program.status] || program.status}</Badge>
+          <StatusBadge domain="program" status={program.status} />
         </div>
-        <p className="mt-1 text-sm text-text-secondary">
-          신청 {program.apply_start || "-"} ~ {program.apply_end || "-"} · 제출 마감{" "}
-          {program.submit_deadline || "-"}
+        <p className="mt-1 text-base text-text-secondary">
+          신청 {d(program.apply_start)} ~ {d(program.apply_end)} · 제출 마감 {d(program.submit_deadline)}
         </p>
       </div>
 
-      <Tabs defaultValue="applications">
-        <TabsList>
-          <TabsTrigger value="applications">신청 현황 ({applications.length})</TabsTrigger>
-          <TabsTrigger value="submissions">제출물 ({submissions.length})</TabsTrigger>
+      {actionError && (
+        <Notice tone="danger" className="mb-4" onClose={() => setActionError("")}>
+          {actionError}
+        </Notice>
+      )}
+
+      <Tabs defaultValue={initialTab} className="gap-0">
+        {/* 하위 탭 모양은 SubNav와 같게(밑줄 탭 + 중립 건수 배지) */}
+        <TabsList aria-label="프로그램 상세 보기" className="mb-4 h-auto w-full justify-start gap-1 overflow-x-auto rounded-none border-b border-warm-tan bg-transparent p-0">
+          {(
+            [
+              { value: "applications", label: "신청 현황", count: applications.length },
+              { value: "submissions", label: "제출물", count: submissions.length },
+            ] as const
+          ).map((t) => (
+            <TabsTrigger
+              key={t.value}
+              value={t.value}
+              className="-mb-px h-auto min-h-11 flex-none gap-1.5 rounded-none border-0 border-b-2 border-transparent bg-transparent px-3 text-[15px] font-medium text-text-secondary shadow-none hover:text-dark data-[state=active]:border-dark data-[state=active]:bg-transparent data-[state=active]:font-semibold data-[state=active]:text-dark data-[state=active]:shadow-none sm:px-4"
+            >
+              {t.label}
+              <CountBadge count={t.count} srLabel={`${t.count}건`} />
+            </TabsTrigger>
+          ))}
         </TabsList>
 
         <TabsContent value="applications">
@@ -245,7 +283,7 @@ export function ProgramDetail({ programId }: { programId: number }) {
                 {applications.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="py-10 text-center text-text-secondary">
-                      신청한 기업이 없습니다
+                      아직 신청한 기업이 없어요
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -256,13 +294,13 @@ export function ProgramDetail({ programId }: { programId: number }) {
                         {app.room_no && <div className="text-xs text-text-secondary">{app.room_no}</div>}
                       </TableCell>
                       <TableCell className="text-sm text-text-secondary">
-                        {new Date(app.applied_at).toLocaleDateString("ko-KR")}
+                        <span title={dateTime(app.applied_at)}>{d(app.applied_at)}</span>
                       </TableCell>
-                      <TableCell>{appBadge(app.status)}</TableCell>
+                      <TableCell>
+                        <StatusBadge domain="application" status={app.status} />
+                      </TableCell>
                       <TableCell className="text-sm text-text-secondary">
-                        {app.submission_status
-                          ? SUBMISSION_STATUS_LABELS[app.submission_status] || app.submission_status
-                          : "-"}
+                        {app.submission_status ? statusMeta("submission", app.submission_status).label : "-"}
                       </TableCell>
                       <TableCell className="text-right">
                         {app.status === "applied" && (
@@ -272,15 +310,16 @@ export function ProgramDetail({ programId }: { programId: number }) {
                               onClick={() => handleApplicationStatus(app, "accepted")}
                               disabled={actingId === app.id}
                             >
-                              승인
+                              선정
                             </Button>
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => handleApplicationStatus(app, "rejected")}
                               disabled={actingId === app.id}
+                              className="hover:bg-warm-beige hover:text-dark"
                             >
-                              반려
+                              미선정
                             </Button>
                           </div>
                         )}
@@ -310,7 +349,7 @@ export function ProgramDetail({ programId }: { programId: number }) {
                 {submissions.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="py-10 text-center text-text-secondary">
-                      제출물이 없습니다
+                      아직 제출물이 없어요
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -332,9 +371,11 @@ export function ProgramDetail({ programId }: { programId: number }) {
                           <span className="text-xs text-text-secondary">없음</span>
                         )}
                       </TableCell>
-                      <TableCell>{subBadge(sub.status)}</TableCell>
+                      <TableCell>
+                        <StatusBadge domain="submission" status={sub.status} />
+                      </TableCell>
                       <TableCell className="text-sm text-text-secondary">
-                        {new Date(sub.updated_at || sub.submitted_at).toLocaleDateString("ko-KR")}
+                        <span title={dateTime(sub.updated_at || sub.submitted_at)}>{d(sub.updated_at || sub.submitted_at)}</span>
                       </TableCell>
                       <TableCell className="text-right">
                         <Button variant="outline" size="sm" onClick={() => openReview(sub)}>
@@ -357,15 +398,13 @@ export function ProgramDetail({ programId }: { programId: number }) {
           <DialogHeader>
             <DialogTitle>제출물 검토 — {reviewing?.tenant_name}</DialogTitle>
             <DialogDescription>
-              승인/반려/재제출 요청으로 저장하면 피드백 메일이 발송됩니다
+              {mailEnabled
+                ? "승인·반려·보완 요청으로 저장하면 기업에 의견 메일이 가요"
+                : "메일 발송이 설정되지 않아 의견 메일은 나가지 않아요. 기업은 포털에서 결과를 볼 수 있어요"}
             </DialogDescription>
           </DialogHeader>
 
-          {reviewError && (
-            <div className="rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              {reviewError}
-            </div>
-          )}
+          {reviewError && <Notice tone="danger">{reviewError}</Notice>}
 
           {reviewing && (
             <div className="grid gap-4">
@@ -382,22 +421,22 @@ export function ProgramDetail({ programId }: { programId: number }) {
               </div>
 
               <div className="grid gap-1.5">
-                <Label>검토 결과</Label>
+                <Label htmlFor="r-status">검토 결과</Label>
                 <Select value={reviewStatus} onValueChange={setReviewStatus}>
-                  <SelectTrigger>
+                  <SelectTrigger id="r-status">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="reviewing">검토 중 (메일 없음)</SelectItem>
+                    <SelectItem value="reviewing">검토 중(메일 없음)</SelectItem>
                     <SelectItem value="approved">승인</SelectItem>
                     <SelectItem value="rejected">반려</SelectItem>
-                    <SelectItem value="resubmit_requested">재제출 요청</SelectItem>
+                    <SelectItem value="resubmit_requested">보완 요청</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="grid gap-1.5">
-                <Label htmlFor="r-feedback">피드백</Label>
+                <Label htmlFor="r-feedback">검토 의견</Label>
                 <Textarea
                   id="r-feedback"
                   rows={4}
@@ -410,15 +449,20 @@ export function ProgramDetail({ programId }: { programId: number }) {
           )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setReviewOpen(false)} disabled={reviewSaving}>
-              취소
+            <Button variant="outline" onClick={() => setReviewOpen(false)} disabled={reviewSaving} className="hover:bg-warm-beige hover:text-dark">
+              닫기
             </Button>
-            <Button onClick={handleReviewSave} disabled={reviewSaving}>
-              {reviewSaving ? "저장 중..." : "저장"}
-            </Button>
+            <BusyButton busy={reviewSaving} onClick={handleReviewSave}>
+              검토 저장하기
+            </BusyButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
   )
+}
+
+function DetailLoading() {
+  const show = useDelayedFlag(true)
+  return show ? <CardSkeleton lines={5} label="프로그램을 불러오는 중…" /> : <div className="min-h-40" aria-hidden />
 }

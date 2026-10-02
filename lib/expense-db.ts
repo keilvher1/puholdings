@@ -15,12 +15,14 @@ import { getDb, type Attachment } from "./db"
 import { isSafePathname } from "./upload"
 import { normalizeApproval, sameTransactionReason, type SimilarReceipt, type TxKeyFields } from "./expense-dedupe"
 import {
+  DOC_TYPE_LABELS,
   EXPENSE_DOC_TYPES,
   PAYMENT_METHODS,
   SUPPORTED_CURRENCIES,
   formatBizNo,
   isValidDate,
   isWholeWon,
+  normalizeBudgetName,
   validateReceiptFields,
   type BudgetItem,
   type Confidence,
@@ -173,7 +175,20 @@ export function rowToProject(row: Row): ExpenseProject {
     updated_at: toIso(row.updated_at),
     receipt_count: toInt(row.receipt_count),
     spent_total: toNumOrNull(row.spent_total) ?? 0,
+    ...(row.spent_items !== undefined ? { spent_by_item: spentItemsToMap(row.spent_items) } : {}),
   }
+}
+
+// listProjects의 spent_items([[비목 원문, 합계], …]) → { 정규화 비목: 합계 }.
+// 철자만 다른 비목(앞뒤·연속 공백)은 화면 표(buildUsageRows)처럼 한 키로 합친다. 미지정은 "".
+function spentItemsToMap(v: unknown): Record<string, number> {
+  const out: Record<string, number> = {}
+  for (const pair of asArray(v)) {
+    if (!Array.isArray(pair)) continue
+    const key = normalizeBudgetName(toStr(pair[0]))
+    out[key] = (out[key] ?? 0) + (toNumOrNull(pair[1]) ?? 0)
+  }
+  return out
 }
 
 export function rowToReceipt(row: Row): ExpenseReceipt {
@@ -212,7 +227,8 @@ export function rowToReceipt(row: Row): ExpenseReceipt {
 }
 
 // ── 공용 쿼리 ───────────────────────────────────────────────────────────────────
-// 활성 프로젝트 먼저, 그다음 최신 등록순. 증빙 수·집행액을 함께 집계한다.
+// 활성 프로젝트 먼저, 그다음 최신 등록순. 증빙 수·집행액·비목별 집행액(spent_by_item)을 함께 집계한다.
+// 비목별 집행액은 집행액(spent_total)과 같은 행·같은 합계(total_amount, 부가세 포함)를 비목으로 나눈 것이다.
 export async function listProjects(
   sql: Sql,
   opts: { id?: number | null; activeOnly?: boolean } = {},
@@ -225,13 +241,23 @@ export async function listProjects(
            to_char(p.end_date, 'YYYY-MM-DD') AS end_date,
            p.total_budget, p.budget_items, p.source_files, p.status, p.created_at, p.updated_at,
            COALESCE(r.receipt_count, 0) AS receipt_count,
-           COALESCE(r.spent_total, 0) AS spent_total
+           COALESCE(r.spent_total, 0) AS spent_total,
+           COALESCE(bi.spent_items, '[]'::jsonb) AS spent_items
     FROM expense_projects p
     LEFT JOIN (
       SELECT project_id, COUNT(*) AS receipt_count, SUM(total_amount) AS spent_total
       FROM expense_receipts
       GROUP BY project_id
     ) r ON r.project_id = p.id
+    LEFT JOIN (
+      SELECT project_id, jsonb_agg(jsonb_build_array(budget_item, COALESCE(spent, 0))) AS spent_items
+      FROM (
+        SELECT project_id, budget_item, SUM(total_amount) AS spent
+        FROM expense_receipts
+        GROUP BY project_id, budget_item
+      ) x
+      GROUP BY project_id
+    ) bi ON bi.project_id = p.id
     WHERE (${id}::int IS NULL OR p.id = ${id})
       AND (NOT ${activeOnly}::boolean OR p.status = 'active')
     ORDER BY (p.status = 'active') DESC, p.created_at DESC, p.id DESC
@@ -250,6 +276,9 @@ export interface ReceiptFilter {
   from?: string | null
   to?: string | null
   q?: string | null
+  // 문서 종류(없으면 전체)·비목(정규화 이름이 같은 것, 없으면 전체) — 증빙 내역 화면 조건을 엑셀·zip에도 그대로 쓰려고 추가
+  docType?: ExpenseDocType | null
+  budgetItem?: string | null
   limit?: number
 }
 
@@ -257,6 +286,12 @@ export interface ReceiptFilter {
 function likePattern(q: string): string {
   return `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`
 }
+
+// 비목 조건의 공백 정규화 — 화면·엑셀의 normalizeBudgetName(JS \s: NBSP·전각 공백 포함)과 같은 문자 집합.
+// Postgres [[:space:]]는 로케일에 따라 NBSP·전각 공백을 공백으로 보지 않아 건수가 어긋날 수 있다. 패턴은 바인드 값으로 넘긴다.
+const BUDGET_WS = "[\\s\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]"
+const BUDGET_WS_TRIM = `^${BUDGET_WS}+|${BUDGET_WS}+$`
+const BUDGET_WS_RUN = `${BUDGET_WS}+`
 
 export async function listReceipts(sql: Sql, filter: ReceiptFilter = {}): Promise<ExpenseReceipt[]> {
   const id = filter.id ?? null
@@ -269,6 +304,8 @@ export async function listReceipts(sql: Sql, filter: ReceiptFilter = {}): Promis
   const amountQ = /^[\d,]+\s*원?$/.test(q) ? Number(q.replace(/\D/g, "")) : null
   const amount = amountQ !== null && Number.isSafeInteger(amountQ) ? amountQ : null
   const limit = Math.min(Math.max(filter.limit ?? 5000, 1), 5000)
+  const docType = filter.docType && (EXPENSE_DOC_TYPES as readonly string[]).includes(filter.docType) ? filter.docType : null
+  const budgetItem = normalizeBudgetName(filter.budgetItem ?? "").slice(0, 100) || null
   const rows = await sql`
     SELECT r.id, r.project_id, p.name AS project_name, r.doc_type,
            to_char(r.issue_date, 'YYYY-MM-DD') AS issue_date,
@@ -285,6 +322,8 @@ export async function listReceipts(sql: Sql, filter: ReceiptFilter = {}): Promis
       AND (${projectId}::int IS NULL OR r.project_id = ${projectId})
       AND (${from}::date IS NULL OR r.issue_date >= ${from}::date)
       AND (${to}::date IS NULL OR r.issue_date <= ${to}::date)
+      AND (${docType}::text IS NULL OR r.doc_type = ${docType})
+      AND (${budgetItem}::text IS NULL OR regexp_replace(regexp_replace(r.budget_item, ${BUDGET_WS_TRIM}, '', 'g'), ${BUDGET_WS_RUN}, ' ', 'g') = ${budgetItem})
       AND (
         ${pattern}::text IS NULL
         OR r.vendor_name ILIKE ${pattern}
@@ -299,6 +338,59 @@ export async function listReceipts(sql: Sql, filter: ReceiptFilter = {}): Promis
     LIMIT ${limit}
   `
   return rows.map((r) => rowToReceipt(r as Row))
+}
+
+// ── 내려받기 조회 조건(엑셀·zip 공용) ─────────────────────────────────────────────
+// 증빙 내역 화면의 조건(from·to·q·doc_type·budget_item)을 읽고, 조건이 걸린 파일이면 파일명·첫 행에 적을 글자를 만든다
+// (일부만 담긴 파일이 전체 정산 자료로 잘못 제출되지 않게).
+export interface ReceiptQuery {
+  from: string | null
+  to: string | null
+  q: string
+  docType: ExpenseDocType | null
+  budgetItem: string | null
+}
+
+export function parseReceiptQuery(params: URLSearchParams): ReceiptQuery {
+  const from = params.get("from")
+  const to = params.get("to")
+  const doc = params.get("doc_type")
+  const item = normalizeBudgetName(params.get("budget_item") ?? params.get("item") ?? "").slice(0, 100)
+  return {
+    from: isValidDate(from) ? from : null,
+    to: isValidDate(to) ? to : null,
+    q: (params.get("q") ?? "").trim().slice(0, 100),
+    docType: doc && (EXPENSE_DOC_TYPES as readonly string[]).includes(doc) ? (doc as ExpenseDocType) : null,
+    budgetItem: item || null,
+  }
+}
+
+/** 사람이 읽는 조건 목록. 조건이 없으면 빈 배열 */
+export function receiptQueryLabels(q: ReceiptQuery): string[] {
+  return [
+    q.from || q.to ? `기간 ${q.from ?? "처음"} ~ ${q.to ?? "현재"}` : "",
+    q.q ? `검색어 '${q.q}'` : "",
+    q.docType ? `문서 종류 ${DOC_TYPE_LABELS[q.docType]}` : "",
+    q.budgetItem ? `비목 ${q.budgetItem}` : "",
+  ].filter(Boolean)
+}
+
+/** 파일명에 넣을 조건 꼬리표("2026-09-01~2026-09-30_검색 도담_외주용역비"). 조건이 없으면 "" */
+export function receiptQueryFileTag(q: ReceiptQuery): string {
+  const parts = [
+    q.from || q.to ? `${q.from ?? "처음"}~${q.to ?? "현재"}` : "",
+    q.q ? `검색 ${q.q}` : "",
+    q.docType ? DOC_TYPE_LABELS[q.docType] : "",
+    q.budgetItem ?? "",
+  ].filter(Boolean)
+  return parts
+    .join("_")
+    .replace(/[/\\:*?"<>|]/g, " ")
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\u0000-\u001f\u007f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 60)
 }
 
 export async function getReceipt(sql: Sql, id: number): Promise<ExpenseReceipt | null> {

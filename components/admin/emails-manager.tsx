@@ -1,108 +1,180 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+// 메일 기록 화면(계획서 4.1.6). 서버 page가 isMailEnabled()를 prop으로 넘긴다.
+//   - 메일 꺼짐: 맨 위 안내, "설정 안 됨" 실패는 "보내지 못함"에서 빼고 "기록만 남음"으로 따로, 그 행에는 [다시 보내기] 없음
+//   - 켜짐: 실패가 있으면 "보내지 못함" 탭이 기본
+//   - 종류는 한글(template_code 매핑), 오류는 쉬운 말, 행을 누르면 오른쪽 시트(받는 사람·제목·오류 전문·관련 청구서)
+//   - "같은 내용으로 다시 보내기": 첨부 PDF 없이 그때 본문 그대로. 메일 뒤에 바뀐 청구서·납부 완료 청구서는 끔
+//   - 주소 값: ?status=failed|sent|not_configured|all, ?type=<template_code>, ?q=, ?period=30d|90d|365d, ?log=ID(시트)
+// 조회는 GET /api/admin/emails?since=…(건수 응답 포함).
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { PenSquare } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+  BusyButton,
+  DetailSheet,
+  EmptyState,
+  FilterBar,
+  FilterTabs,
+  Notice,
+  PageHeader,
+  RowActions,
+  StatusBadge,
+  TableSkeleton,
+  toastSuccess,
+  useConfirm,
+  useDelayedFlag,
+  useUrlState,
+} from "@/components/saas"
+import { billMonthShort, dateTime, relative } from "@/lib/format"
+import { friendlyError, MSG } from "@/lib/messages"
+import { billsHref } from "@/lib/links"
+import type { HelpTopic } from "@/lib/help/types"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { RotateCcw, Send, PenSquare } from "lucide-react"
+  friendlyMailError,
+  MAIL_TYPES,
+  mailRowStatus,
+  mailTypeLabel,
+  resendAvailability,
+  type MailLogRow,
+} from "@/lib/email-model"
+import { ComposeSheet } from "@/components/admin/emails/compose-sheet"
 
-interface EmailLog {
-  id: number
-  to_email: string
-  tenant_id: number | null
-  tenant_name: string | null
-  template_code: string | null
-  subject: string | null
-  status: "queued" | "sent" | "failed"
-  error: string | null
-  sent_at: string | null
-  created_at: string
+type Counts = { failed: number; not_configured: number; sent: number; queued: number; all: number }
+type View = "failed" | "not_configured" | "sent" | "queued" | "all"
+
+const PERIODS = [
+  { value: "30d", label: "최근 30일" },
+  { value: "90d", label: "최근 90일" },
+  { value: "365d", label: "최근 1년" },
+] as const
+
+const EMAILS_HELP: HelpTopic = {
+  title: "메일",
+  steps: [
+    "시스템이 보낸 메일 기록을 기간·상태·종류로 봐요",
+    "행을 누르면 받는 사람·제목·오류 내용을 볼 수 있어요",
+    "보내지 못한 메일은 ‘같은 내용으로 다시 보내기’로 그때 본문을 다시 보내요(첨부 PDF는 빠져요)",
+    "[새 메일]로 입주기업에 직접 쓴 메일을 보내요",
+  ],
+  terms: ["mail", "invoice"],
 }
 
-interface TenantOption {
-  id: number
-  name: string
-  status: string
-  account_email: string | null
-  contact_email: string | null
-}
+const TYPE_OPTIONS = Object.entries(MAIL_TYPES).map(([code, v]) => ({ value: code, label: v.label }))
 
-function formatDateTime(value: string | null): string {
-  if (!value) return "-"
-  return new Date(value).toLocaleString("ko-KR", {
-    year: "2-digit", month: "2-digit", day: "2-digit",
-    hour: "2-digit", minute: "2-digit",
-  })
-}
-
-export function EmailsManager() {
-  const [logs, setLogs] = useState<EmailLog[]>([])
-  const [loading, setLoading] = useState(true)
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [error, setError] = useState("")
-  const [resendingId, setResendingId] = useState<number | null>(null)
-
-  // 새 메일 Dialog
+export function EmailsManager({ mailEnabled }: { mailEnabled: boolean }) {
+  const router = useRouter()
+  const ask = useConfirm()
+  const [statusParam, setStatusParam] = useUrlState("status", "")
+  const [type, setType] = useUrlState("type", "")
+  const [q, setQ] = useUrlState("q", "")
+  const [period, setPeriod] = useUrlState("period", "30d")
+  const [logParam, setLogParam] = useUrlState("log", "")
   const [composeOpen, setComposeOpen] = useState(false)
-  const [tenantOptions, setTenantOptions] = useState<TenantOption[]>([])
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
-  const [subject, setSubject] = useState("")
-  const [bodyHtml, setBodyHtml] = useState("")
-  const [sending, setSending] = useState(false)
-  const [composeError, setComposeError] = useState("")
-  const [sendResult, setSendResult] = useState<{ sent: number; failed: number; skipped: string[] } | null>(null)
 
-  const fetchLogs = useCallback(async (status: string) => {
-    setLoading(true)
-    setError("")
+  const [logs, setLogs] = useState<MailLogRow[]>([])
+  const [counts, setCounts] = useState<Counts | null>(null)
+  const [hasMore, setHasMore] = useState(false)
+  const [page, setPage] = useState(1)
+  const [state, setState] = useState<"loading" | "error" | "ready">("loading")
+  const [loadError, setLoadError] = useState("")
+  const [moreLoading, setMoreLoading] = useState(false)
+  const [resendingId, setResendingId] = useState<number | null>(null)
+  const [resendError, setResendError] = useState<{ id: number; message: string } | null>(null)
+  const [searchText, setSearchText] = useState(q)
+  const showSkeleton = useDelayedFlag(state === "loading")
+  const reqSeq = useRef(0)
+  const tabsRef = useRef<HTMLDivElement>(null)
+
+  const validPeriod = PERIODS.some((p) => p.value === period) ? period : "30d"
+  const validStatus = (["failed", "not_configured", "sent", "queued", "all"] as const).includes(statusParam as View) ? (statusParam as View) : ""
+  // 기본 탭: 켜짐이면 보내지 못함(실패가 없으면 전체), 꺼짐이면 전체
+  const view: View = validStatus || (mailEnabled && (counts === null || counts.failed > 0) ? "failed" : "all")
+
+  const fetchPage = useCallback(
+    async (pageNum: number) => {
+      const qs = new URLSearchParams({ since: validPeriod, status: view, page: String(pageNum) })
+      if (type) qs.set("type", type)
+      if (q) qs.set("q", q)
+      const res = await fetch(`/api/admin/emails?${qs}`, { credentials: "include" })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data.success) throw Object.assign(new Error("load"), { status: res.status, body: data })
+      return data as { logs: MailLogRow[]; counts: Counts; has_more: boolean }
+    },
+    [validPeriod, view, type, q],
+  )
+
+  const load = useCallback(async () => {
+    const seq = ++reqSeq.current
+    setState("loading")
     try {
-      const qs = status === "all" ? "" : `?status=${status}`
-      const res = await fetch(`/api/admin/emails${qs}`, { credentials: "include" })
-      const data = await res.json()
-      if (data.success) {
-        setLogs(data.logs)
-      } else {
-        setError(data.error || "목록을 불러오지 못했습니다")
-      }
-    } catch {
-      setError("서버 오류가 발생했습니다")
-    } finally {
-      setLoading(false)
+      const data = await fetchPage(1)
+      if (seq !== reqSeq.current) return
+      setLogs(data.logs)
+      setCounts(data.counts)
+      setHasMore(data.has_more)
+      setPage(1)
+      setState("ready")
+    } catch (e) {
+      if (seq !== reqSeq.current) return
+      const err = e as { status?: number; body?: { error?: string } }
+      setLoadError(friendlyError(err.status ?? 0, err.body?.error, MSG.loadFailed))
+      setState("error")
     }
-  }, [])
+  }, [fetchPage])
 
   useEffect(() => {
-    fetchLogs(statusFilter)
-  }, [fetchLogs, statusFilter])
+    void load()
+  }, [load])
 
-  const handleResend = async (log: EmailLog) => {
+  // 검색어는 잠깐 멈춘 뒤 주소에 남긴다
+  useEffect(() => {
+    if (searchText === q) return
+    const t = setTimeout(() => setQ(searchText.trim() || null), 350)
+    return () => clearTimeout(t)
+  }, [searchText, q, setQ])
+
+  const loadMore = async () => {
+    setMoreLoading(true)
+    try {
+      const data = await fetchPage(page + 1)
+      setLogs((l) => [...l, ...data.logs])
+      setHasMore(data.has_more)
+      setPage((p) => p + 1)
+    } catch (e) {
+      const err = e as { status?: number; body?: { error?: string } }
+      setLoadError(friendlyError(err.status ?? 0, err.body?.error, MSG.loadFailed))
+    } finally {
+      setMoreLoading(false)
+    }
+  }
+
+  const selectedLog = useMemo(() => logs.find((l) => String(l.id) === logParam) ?? null, [logs, logParam])
+
+  const resend = async (log: MailLogRow) => {
+    const a = resendAvailability(log, mailEnabled)
+    if (!a.canResend) return
+    if (
+      !(await ask({
+        title: `${log.tenant_name ?? log.to_email}에 같은 내용으로 다시 보낼까요?`,
+        summary: [
+          { label: "받는 사람", value: log.to_email },
+          { label: "제목", value: log.subject ?? "-" },
+        ],
+        body: a.billMail
+          ? "첨부 PDF 없이 그때 보낸 본문 그대로 다시 가요. PDF가 필요하면 청구서 화면에서 받아 따로 전달해 주세요."
+          : "그때 보낸 제목과 본문 그대로 다시 가요.",
+        confirmLabel: "다시 보내기",
+      }))
+    )
+      return
     setResendingId(log.id)
+    setResendError(null)
     try {
       const res = await fetch("/api/admin/emails/resend", {
         method: "POST",
@@ -110,303 +182,344 @@ export function EmailsManager() {
         credentials: "include",
         body: JSON.stringify({ id: log.id }),
       })
-      const data = await res.json()
-      if (!data.success) {
-        alert(data.error || "재발송에 실패했습니다")
+      const data = await res.json().catch(() => ({}))
+      if (res.ok && data.success) {
+        toastSuccess("메일을 다시 보냈어요", { description: log.to_email })
+        void load()
+        router.refresh()
+      } else {
+        const msg = res.status === 502 ? "이번에도 보내지 못했어요. 받는 주소를 확인해 주세요." : friendlyError(res.status, data.error, "다시 보내지 못했어요.")
+        setResendError({ id: log.id, message: msg })
+        void load()
       }
-      fetchLogs(statusFilter)
     } catch {
-      alert("서버 오류가 발생했습니다")
+      setResendError({ id: log.id, message: friendlyError(0, null, "다시 보내지 못했어요.") })
     } finally {
       setResendingId(null)
     }
   }
 
-  const openCompose = async () => {
-    setSubject("")
-    setBodyHtml("")
-    setSelectedIds(new Set())
-    setComposeError("")
-    setSendResult(null)
-    setComposeOpen(true)
-    setTenantOptions([])
-    try {
-      const res = await fetch("/api/admin/tenants?status=active", { credentials: "include" })
-      const data = await res.json()
-      if (data.success) {
-        setTenantOptions(data.tenants)
-      } else {
-        setComposeError(data.error || "기업 목록을 불러오지 못했습니다")
-      }
-    } catch {
-      setComposeError("기업 목록을 불러오지 못했습니다")
-    }
-  }
+  const tabOptions = [
+    { value: "failed", label: "보내지 못함", count: counts?.failed ?? null },
+    ...(counts && (counts.not_configured > 0 || !mailEnabled) ? [{ value: "not_configured", label: "기록만 남음", count: counts.not_configured }] : []),
+    { value: "sent", label: "보냄", count: counts?.sent ?? null },
+    { value: "all", label: "전체", count: counts?.all ?? null },
+  ]
 
-  const selectableTenants = tenantOptions.filter((t) => t.account_email || t.contact_email)
-  const allSelected = selectableTenants.length > 0 && selectableTenants.every((t) => selectedIds.has(t.id))
+  // 휴대폰에서 기본 선택 탭(예: 메일 꺼짐이면 맨 끝 "전체")이 가로 스크롤 밖으로 잘리지 않게 보이는 자리로 옮긴다(페이지는 움직이지 않음)
+  const tabCountsKey = tabOptions.map((o) => `${o.value}:${o.count ?? ""}`).join("|")
+  useEffect(() => {
+    const box = tabsRef.current?.querySelector<HTMLElement>(".overflow-x-auto")
+    const on = box?.querySelector<HTMLElement>('[data-state="on"]')
+    if (!box || !on) return
+    const b = box.getBoundingClientRect()
+    const e = on.getBoundingClientRect()
+    if (e.right > b.right) box.scrollLeft += e.right - b.right + 4
+    else if (e.left < b.left) box.scrollLeft -= b.left - e.left + 4
+  }, [view, tabCountsKey])
 
-  const toggleAll = () => {
-    if (allSelected) {
-      setSelectedIds(new Set())
-    } else {
-      setSelectedIds(new Set(selectableTenants.map((t) => t.id)))
-    }
-  }
+  const filtered = Boolean(type || q)
+  const periodLabel = PERIODS.find((p) => p.value === validPeriod)!.label
 
-  const toggleOne = (id: number) => {
-    const next = new Set(selectedIds)
-    if (next.has(id)) next.delete(id)
-    else next.add(id)
-    setSelectedIds(next)
-  }
-
-  const handleSend = async () => {
-    if (selectedIds.size === 0) {
-      setComposeError("수신 기업을 선택해주세요")
-      return
+  const rowActions = (log: MailLogRow) => {
+    const a = resendAvailability(log, mailEnabled)
+    const items: { label: string; onSelect?: () => void; disabled?: boolean; disabledReason?: string }[] = [
+      { label: "자세히 보기", onSelect: () => setLogParam(log.id) },
+    ]
+    if (log.status === "failed" && mailRowStatus(log) !== "not_configured") {
+      items.push({ label: "같은 내용으로 다시 보내기", onSelect: () => void resend(log), disabled: !a.canResend || resendingId !== null, disabledReason: a.reason ?? undefined })
     }
-    if (!subject.trim() || !bodyHtml.trim()) {
-      setComposeError("제목과 본문을 입력해주세요")
-      return
-    }
-    setSending(true)
-    setComposeError("")
-    try {
-      const res = await fetch("/api/admin/emails", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          tenant_ids: Array.from(selectedIds),
-          subject,
-          body_html: bodyHtml,
-        }),
-      })
-      const data = await res.json()
-      if (data.success) {
-        setSendResult({ sent: data.sent, failed: data.failed, skipped: data.skipped || [] })
-        fetchLogs(statusFilter)
-      } else {
-        setComposeError(data.error || "발송에 실패했습니다")
-      }
-    } catch {
-      setComposeError("서버 오류가 발생했습니다")
-    } finally {
-      setSending(false)
-    }
+    return <RowActions label={log.tenant_name ?? log.to_email} items={items} />
   }
 
   return (
-    <div>
-      <div className="mb-4 flex items-center justify-between">
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-36">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">전체</SelectItem>
-            <SelectItem value="sent">발송 성공</SelectItem>
-            <SelectItem value="failed">발송 실패</SelectItem>
-          </SelectContent>
-        </Select>
-        <Button onClick={openCompose}>
-          <PenSquare className="h-4 w-4" />
-          새 메일
-        </Button>
-      </div>
+    <>
+      <PageHeader
+        title="메일"
+        description="시스템이 보낸 메일 기록을 보고, 입주기업에 새 메일을 보내요"
+        help={EMAILS_HELP}
+        secondary={
+          <Button asChild variant="outline" className="hover:bg-warm-beige hover:text-dark">
+            <Link href="/admin/emails/templates">메일 템플릿</Link>
+          </Button>
+        }
+        primary={
+          <Button onClick={() => setComposeOpen(true)}>
+            <PenSquare className="size-4" aria-hidden />
+            새 메일
+          </Button>
+        }
+      />
 
-      {error && (
-        <div className="mb-4 rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</div>
+      {!mailEnabled && (
+        <Notice tone="info" title="메일 발송이 설정되지 않았어요" className="mb-4">
+          지금은 보내려던 기록만 남아요. 청구서는 PDF로 직접 전달해 주세요.
+        </Notice>
       )}
 
-      <div className="rounded-lg border border-warm-tan bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>수신자</TableHead>
-              <TableHead>템플릿</TableHead>
-              <TableHead>제목</TableHead>
-              <TableHead>상태</TableHead>
-              <TableHead>시각</TableHead>
-              <TableHead className="text-right">관리</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={6} className="py-10 text-center text-text-secondary">
-                  불러오는 중...
-                </TableCell>
-              </TableRow>
-            ) : logs.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="py-10 text-center text-text-secondary">
-                  발송 이력이 없습니다
-                </TableCell>
-              </TableRow>
-            ) : (
-              logs.map((log) => (
-                <TableRow key={log.id}>
-                  <TableCell>
-                    <div className="text-sm">{log.to_email}</div>
-                    {log.tenant_name && (
-                      <div className="text-xs text-text-secondary">{log.tenant_name}</div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-mono text-xs">{log.template_code || "-"}</span>
-                  </TableCell>
-                  <TableCell className="max-w-56 truncate text-sm" title={log.subject || ""}>
-                    {log.subject || "-"}
-                  </TableCell>
-                  <TableCell>
-                    {log.status === "sent" ? (
-                      <Badge>성공</Badge>
-                    ) : log.status === "failed" ? (
-                      <div>
-                        <Badge variant="destructive">실패</Badge>
-                        {log.error && (
-                          <div className="mt-1 max-w-44 truncate text-xs text-destructive" title={log.error}>
-                            {log.error}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <Badge variant="secondary">대기</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-sm text-text-secondary">
-                    {formatDateTime(log.sent_at || log.created_at)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {/* tenant_welcome은 비밀번호가 마스킹되어 재발송 불가 (비밀번호 초기화로 재발급) */}
-                    {log.status === "failed" && log.template_code !== "tenant_welcome" && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleResend(log)}
-                        disabled={resendingId === log.id}
-                      >
-                        <RotateCcw className="h-3.5 w-3.5" />
-                        {resendingId === log.id ? "재발송 중..." : "재발송"}
-                      </Button>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+      <div ref={tabsRef}>
+        <FilterTabs label="메일 상태" options={tabOptions} value={view} onValueChange={(v) => v && setStatusParam(v)} className="mb-3" />
       </div>
 
-      {/* 새 메일 Dialog */}
-      <Dialog open={composeOpen} onOpenChange={setComposeOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>새 메일 발송</DialogTitle>
-            <DialogDescription>
-              입주 중인 기업에 직접 작성한 메일을 발송합니다. 본문에 {"{{tenant_name}}"}(기업명),{" "}
-              {"{{portal_url}}"}(포털 로그인 주소)를 쓸 수 있습니다.
-            </DialogDescription>
-          </DialogHeader>
+      <FilterBar
+        search={{ value: searchText, onChange: setSearchText, label: "기업·받는 사람·제목 검색", placeholder: "기업·받는 사람·제목 검색" }}
+        filters={
+          <>
+            <Select value={type || "__all"} onValueChange={(v) => setType(v === "__all" ? null : v)}>
+              <SelectTrigger className="h-9 w-40 bg-card text-[15px]" aria-label="메일 종류">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all">모든 종류</SelectItem>
+                {TYPE_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={validPeriod} onValueChange={(v) => setPeriod(v)}>
+              <SelectTrigger className="h-9 w-32 bg-card text-[15px]" aria-label="조회 기간">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PERIODS.map((p) => (
+                  <SelectItem key={p.value} value={p.value}>
+                    {p.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </>
+        }
+        chips={[
+          ...(type ? [{ label: `종류: ${mailTypeLabel(type)}`, onRemove: () => setType(null) }] : []),
+          ...(q ? [{ label: `검색: ${q}`, onRemove: () => { setSearchText(""); setQ(null) } }] : []),
+        ]}
+        onClearAll={filtered ? () => { setType(null); setSearchText(""); setQ(null) } : undefined}
+        summary={state === "ready" ? `${periodLabel} · ${logs.length}${hasMore ? "+" : ""}건` : undefined}
+      />
 
-          {sendResult ? (
-            <div className="grid gap-3">
-              <div className="rounded-md bg-warm-beige px-4 py-3 text-sm">
-                <p className="font-medium text-dark">
-                  발송 완료: 성공 {sendResult.sent}건
-                  {sendResult.failed > 0 && `, 실패 ${sendResult.failed}건`}
-                </p>
-                {sendResult.skipped.length > 0 && (
-                  <p className="mt-1 text-xs text-text-secondary">
-                    이메일이 없어 건너뜀: {sendResult.skipped.join(", ")}
-                  </p>
-                )}
-              </div>
-              <DialogFooter>
-                <Button onClick={() => setComposeOpen(false)}>닫기</Button>
-              </DialogFooter>
-            </div>
-          ) : (
-            <>
-              {composeError && (
-                <div className="rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                  {composeError}
-                </div>
-              )}
+      {resendError && !selectedLog && (
+        <Notice tone="danger" className="mb-3" onClose={() => setResendError(null)}>
+          {resendError.message}
+        </Notice>
+      )}
 
-              <div className="grid gap-4">
-                <div className="grid gap-1.5">
-                  <div className="flex items-center justify-between">
-                    <Label>수신 기업 ({selectedIds.size}곳 선택됨)</Label>
-                    <button
-                      type="button"
-                      onClick={toggleAll}
-                      className="text-xs text-gold hover:underline"
-                    >
-                      {allSelected ? "전체 해제" : "전체 선택"}
-                    </button>
-                  </div>
-                  <div className="max-h-48 overflow-y-auto rounded-md border border-warm-tan p-2">
-                    {selectableTenants.length === 0 ? (
-                      <p className="px-2 py-3 text-sm text-text-secondary">
-                        메일을 보낼 수 있는 기업이 없습니다
-                      </p>
-                    ) : (
-                      selectableTenants.map((t) => (
-                        <label
-                          key={t.id}
-                          className="flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 hover:bg-warm-beige"
+      {state === "loading" ? (
+        showSkeleton ? <TableSkeleton rows={6} columns={5} label="메일 기록을 불러오는 중…" /> : <div className="min-h-40" aria-hidden />
+      ) : state === "error" ? (
+        <EmptyState kind="error" bordered title="메일 기록을 불러오지 못했어요" description={loadError} onRetry={() => void load()} />
+      ) : logs.length === 0 ? (
+        filtered ? (
+          <EmptyState
+            kind="no-results"
+            bordered
+            title="조건에 맞는 메일 기록이 없어요"
+            onClear={() => {
+              setType(null)
+              setSearchText("")
+              setQ(null)
+            }}
+          />
+        ) : (
+          <EmptyState
+            bordered
+            title={view === "failed" ? `${periodLabel} 동안 보내지 못한 메일이 없어요` : `${periodLabel} 동안 메일 기록이 없어요`}
+            description="기간을 넓히거나 다른 탭을 골라 보세요"
+          />
+        )
+      ) : (
+        <>
+          {/* 넓은 화면: 표 */}
+          <div className="hidden overflow-hidden rounded-md border border-warm-tan bg-card md:block">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-warm-beige/60 hover:bg-warm-beige/60">
+                  <TableHead className="w-32">상태</TableHead>
+                  <TableHead className="w-32">종류</TableHead>
+                  <TableHead>받는 사람</TableHead>
+                  <TableHead>제목</TableHead>
+                  <TableHead className="w-32">보낸 시각</TableHead>
+                  <TableHead className="w-12">
+                    <span className="sr-only">동작</span>
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {logs.map((log) => {
+                  const st = mailRowStatus(log)
+                  return (
+                    <TableRow key={log.id} className="cursor-pointer text-[15px]" onClick={() => setLogParam(log.id)}>
+                      <TableCell className="align-top">
+                        <StatusBadge domain="email" status={st} showDefaultDetail={false} />
+                      </TableCell>
+                      <TableCell className="align-top">{mailTypeLabel(log.template_code)}</TableCell>
+                      <TableCell className="max-w-56 align-top">
+                        <button
+                          type="button"
+                          className="block max-w-full truncate text-left font-medium text-dark underline-offset-2 hover:underline"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setLogParam(log.id)
+                          }}
                         >
-                          <Checkbox
-                            checked={selectedIds.has(t.id)}
-                            onCheckedChange={() => toggleOne(t.id)}
-                          />
-                          <span className="text-sm text-dark">{t.name}</span>
-                          <span className="text-xs text-text-secondary">
-                            {t.account_email || t.contact_email}
-                          </span>
-                        </label>
-                      ))
-                    )}
-                  </div>
-                </div>
+                          {log.tenant_name ?? log.to_email}
+                        </button>
+                        {log.tenant_name && <span className="block truncate text-sm text-text-secondary">{log.to_email}</span>}
+                      </TableCell>
+                      <TableCell className="max-w-72 align-top">
+                        <span className="block truncate" title={log.subject ?? ""}>
+                          {log.subject || "-"}
+                        </span>
+                        {st === "failed" && <span className="block text-sm text-red-800 [word-break:keep-all]">{friendlyMailError(log.error)}</span>}
+                      </TableCell>
+                      <TableCell className="align-top text-text-secondary" title={dateTime(log.sent_at || log.created_at)}>
+                        {relative(log.sent_at || log.created_at)}
+                      </TableCell>
+                      <TableCell className="align-top" onClick={(e) => e.stopPropagation()}>
+                        {rowActions(log)}
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          </div>
 
-                <div className="grid gap-1.5">
-                  <Label htmlFor="mail-subject">제목</Label>
-                  <Input
-                    id="mail-subject"
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                  />
-                </div>
+          {/* 휴대폰: 카드 목록(상태 배지가 맨 앞) */}
+          <ul className="divide-y divide-warm-tan/70 overflow-hidden rounded-md border border-warm-tan bg-card md:hidden">
+            {logs.map((log) => {
+              const st = mailRowStatus(log)
+              return (
+                <li key={log.id} className="flex items-start gap-1 pr-1">
+                  <button type="button" onClick={() => setLogParam(log.id)} className="min-w-0 flex-1 px-4 py-3 text-left">
+                    <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <StatusBadge domain="email" status={st} showDefaultDetail={false} />
+                      <span className="text-sm text-[#3f3f4e]">{mailTypeLabel(log.template_code)}</span>
+                      <span className="ml-auto text-sm text-text-secondary">{relative(log.sent_at || log.created_at)}</span>
+                    </span>
+                    <span className="mt-1 block truncate text-base font-medium text-dark">{log.tenant_name ?? log.to_email}</span>
+                    <span className="block truncate text-[15px] text-[#3f3f4e]">{log.subject || "-"}</span>
+                    {st === "failed" && <span className="mt-0.5 block text-sm text-red-800 [word-break:keep-all]">{friendlyMailError(log.error)}</span>}
+                  </button>
+                  <div className="pt-2">{rowActions(log)}</div>
+                </li>
+              )
+            })}
+          </ul>
 
-                <div className="grid gap-1.5">
-                  <Label htmlFor="mail-body">본문 (HTML)</Label>
-                  <Textarea
-                    id="mail-body"
-                    rows={10}
-                    value={bodyHtml}
-                    onChange={(e) => setBodyHtml(e.target.value)}
-                    placeholder="<p>{{tenant_name}} 담당자님, 안녕하세요.</p>"
-                  />
-                </div>
-              </div>
-
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setComposeOpen(false)} disabled={sending}>
-                  취소
-                </Button>
-                <Button onClick={handleSend} disabled={sending}>
-                  <Send className="h-4 w-4" />
-                  {sending ? "발송 중..." : `${selectedIds.size}곳에 발송`}
-                </Button>
-              </DialogFooter>
-            </>
+          {hasMore && (
+            <div className="mt-3 flex justify-center">
+              <BusyButton variant="outline" busy={moreLoading} busyLabel={MSG.busyLoad} onClick={loadMore} className="hover:bg-warm-beige hover:text-dark">
+                더 보기
+              </BusyButton>
+            </div>
           )}
-        </DialogContent>
-      </Dialog>
-    </div>
+        </>
+      )}
+
+      <LogSheet
+        log={selectedLog}
+        open={!!logParam && !!selectedLog}
+        onOpenChange={(o) => !o && setLogParam(null)}
+        mailEnabled={mailEnabled}
+        resending={resendingId !== null}
+        error={selectedLog && resendError?.id === selectedLog.id ? resendError.message : null}
+        onResend={resend}
+      />
+
+      <ComposeSheet open={composeOpen} onOpenChange={setComposeOpen} mailEnabled={mailEnabled} onSent={() => void load()} />
+    </>
+  )
+}
+
+function LogSheet({
+  log,
+  open,
+  onOpenChange,
+  mailEnabled,
+  resending,
+  error,
+  onResend,
+}: {
+  log: MailLogRow | null
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  mailEnabled: boolean
+  resending: boolean
+  error: string | null
+  onResend: (log: MailLogRow) => void
+}) {
+  if (!log) return null
+  const st = mailRowStatus(log)
+  const a = resendAvailability(log, mailEnabled)
+  const showResend = log.status === "failed" && st !== "not_configured"
+  return (
+    <DetailSheet
+      open={open}
+      onOpenChange={onOpenChange}
+      title={log.subject || "(제목 없음)"}
+      badge={<StatusBadge domain="email" status={st} showDefaultDetail={false} />}
+      size="md"
+      highlights={[
+        { label: "종류", value: mailTypeLabel(log.template_code) },
+        { label: st === "sent" ? "보낸 시각" : "기록 시각", value: dateTime(log.sent_at || log.created_at) },
+      ]}
+      footer={
+        showResend ? (
+          <BusyButton busy={resending} busyLabel="보내는 중…" disabled={!a.canResend} onClick={() => onResend(log)}>
+            같은 내용으로 다시 보내기
+          </BusyButton>
+        ) : undefined
+      }
+    >
+      <div className="grid gap-4 px-5 py-5 text-base">
+        {error && <Notice tone="danger">{error}</Notice>}
+        <dl className="grid gap-3">
+          <div>
+            <dt className="text-sm text-text-secondary">받는 사람</dt>
+            <dd className="break-all text-dark">
+              {log.tenant_name ? `${log.tenant_name} · ` : ""}
+              {log.to_email}
+            </dd>
+          </div>
+          {log.status === "failed" && (
+            <div>
+              <dt className="text-sm text-text-secondary">무슨 일이 있었나요</dt>
+              <dd className="text-dark [word-break:keep-all]">{friendlyMailError(log.error)}</dd>
+              {log.error && (
+                <details className="mt-1">
+                  <summary className="cursor-pointer text-sm text-[#3f3f4e]">오류 원문 보기</summary>
+                  <p className="mt-1 break-all rounded-sm bg-warm-beige/60 px-2 py-1 font-mono text-sm text-dark">{log.error}</p>
+                </details>
+              )}
+            </div>
+          )}
+          {a.billMail && log.related_id && (
+            <div>
+              <dt className="text-sm text-text-secondary">관련 청구서</dt>
+              <dd>
+                <Link href={billsHref({ bill: log.related_id })} className="text-link underline underline-offset-2 hover:text-dark">
+                  청구서 열기{log.bill_period ? ` (${billMonthShort(log.bill_period.trim())})` : ""}
+                </Link>
+              </dd>
+            </div>
+          )}
+        </dl>
+        {showResend && (
+          <p className="rounded-md bg-warm-beige/60 px-3 py-2 text-sm leading-relaxed text-[#3f3f4e] [word-break:keep-all]">
+            {a.canResend
+              ? a.billMail
+                ? "다시 보내면 첨부 PDF 없이 그때 보낸 본문 그대로 다시 가요. PDF가 필요하면 청구서 화면에서 받아 따로 전달해 주세요."
+                : "다시 보내면 그때 보낸 제목과 본문 그대로 다시 가요."
+              : a.reason}
+          </p>
+        )}
+        {st === "not_configured" && (
+          <p className="rounded-md bg-warm-beige/60 px-3 py-2 text-sm text-[#3f3f4e]">메일 발송 설정이 없던 때의 기록이라 다시 보내지 않아요.</p>
+        )}
+      </div>
+    </DetailSheet>
   )
 }

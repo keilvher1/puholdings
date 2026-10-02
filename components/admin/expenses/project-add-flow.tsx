@@ -51,7 +51,7 @@ export function ProjectAddFlow({
     const e = validateProjectForm(form)
     setErrors(e)
     if (hasErrors(e)) {
-      setError("빨간 칸을 확인하세요.")
+      setError("표시한 칸을 확인해 주세요.")
       return
     }
     setSaving(true)
@@ -72,9 +72,9 @@ export function ProjectAddFlow({
         <MethodCard
           onClick={() => setMethod("ai")}
           title="자료에서 불러오기"
-          description="사업계획서·협약서·선정 공문(PDF·사진·텍스트, 최대 5개)에서 과제명·기간·총사업비·비목별 예산을 불러옵니다."
+          description="사업계획서·협약서·선정 공문(PDF·사진·텍스트, 최대 5개)에서 과제명·기간·총사업비·비목별 예산을 자동으로 채워요. 저장은 확인한 뒤 직접 눌러요."
         />
-        <MethodCard onClick={() => startManual()} title="직접 입력" description="프로젝트명만 필수. 예산·기간은 나중에 입력 가능." />
+        <MethodCard onClick={() => startManual()} title="직접 입력" description="프로젝트명만 넣으면 돼요. 예산·기간은 나중에 넣어도 돼요." />
       </div>
     )
   }
@@ -116,11 +116,11 @@ export function ProjectAddFlow({
             idPrefix="manual"
             disabled={saving}
           />
-          {nameTaken && <InlineNotice tone="warning">같은 이름의 프로젝트가 이미 있습니다.</InlineNotice>}
+          {nameTaken && <InlineNotice tone="warning">같은 이름의 프로젝트가 이미 있어요.</InlineNotice>}
           {error && <InlineNotice tone="danger">{error}</InlineNotice>}
           <div className="flex flex-wrap items-center justify-end gap-2 border-t border-warm-tan pt-3">
-            <span className="mr-auto text-xs text-text-secondary">
-              <span className="text-destructive">*</span> 필수
+            <span className="mr-auto text-sm text-text-secondary">
+              <span className="text-red-800" aria-hidden>*</span> 표시는 꼭 넣어야 해요
             </span>
             <Button type="submit" disabled={saving}>
               {saving ? (

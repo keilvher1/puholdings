@@ -103,36 +103,36 @@ export function formToInput(f: ProjectFormState): ProjectInput {
 
 export function validateProjectForm(f: ProjectFormState): ProjectFormErrors {
   const e: ProjectFormErrors = {}
-  if (!f.name.trim()) e.name = "프로젝트(과제)명을 입력하세요"
-  else if (f.name.trim().length > 200) e.name = "프로젝트명은 200자 이내로 입력하세요"
-  if (f.program_name.length > 200) e.program_name = "200자 이내로 입력하세요"
-  if (f.agency.length > 200) e.agency = "200자 이내로 입력하세요"
-  if (f.start_date && !isValidDate(f.start_date)) e.start_date = "날짜 형식이 올바르지 않습니다"
-  if (f.end_date && !isValidDate(f.end_date)) e.end_date = "날짜 형식이 올바르지 않습니다"
+  if (!f.name.trim()) e.name = "프로젝트(과제)명을 입력해 주세요"
+  else if (f.name.trim().length > 200) e.name = "프로젝트명은 200자 안으로 줄여 주세요"
+  if (f.program_name.length > 200) e.program_name = "200자 안으로 줄여 주세요"
+  if (f.agency.length > 200) e.agency = "200자 안으로 줄여 주세요"
+  if (f.start_date && !isValidDate(f.start_date)) e.start_date = "날짜를 다시 골라 주세요"
+  if (f.end_date && !isValidDate(f.end_date)) e.end_date = "날짜를 다시 골라 주세요"
   if (!e.start_date && !e.end_date && f.start_date && f.end_date && f.end_date < f.start_date) {
-    e.end_date = "종료일이 시작일보다 빠릅니다"
+    e.end_date = "종료일이 시작일보다 빨라요. 날짜를 다시 골라 주세요"
   }
   if (f.total_budget !== null && (!isWholeWon(f.total_budget) || f.total_budget < 0)) {
-    e.total_budget = "총사업비는 0 이상의 원 단위 금액이어야 합니다"
+    e.total_budget = "총사업비를 0 이상의 원 단위로 입력해 주세요"
   }
   const seen = new Set<string>()
   for (const b of f.budget_items) {
     const name = normalizeName(b.name)
     if (!name && b.amount === null) continue
     if (!name) {
-      e.budget_items = "금액을 넣은 비목에는 이름을 입력하세요"
+      e.budget_items = "금액을 넣은 비목에는 이름을 입력해 주세요"
       break
     }
     if (name.length > 100) {
-      e.budget_items = `비목 이름이 너무 깁니다: ${name.slice(0, 20)}…`
+      e.budget_items = `비목 이름이 너무 길어요: ${name.slice(0, 20)}…`
       break
     }
     if (b.amount !== null && (!isWholeWon(b.amount) || b.amount < 0)) {
-      e.budget_items = `'${name}' 금액을 0 이상의 원 단위로 입력하세요`
+      e.budget_items = `'${name}' 금액을 0 이상의 원 단위로 입력해 주세요`
       break
     }
     if (seen.has(name)) {
-      e.budget_items = `'${name}' 비목이 두 번 들어 있습니다. 하나로 합치세요`
+      e.budget_items = `'${name}' 비목이 두 번 들어 있어요. 하나로 합쳐 주세요`
       break
     }
     seen.add(name)
@@ -146,11 +146,11 @@ export function hasErrors(e: ProjectFormErrors): boolean {
 
 function FieldError({ message }: { message?: string }) {
   if (!message) return null
-  return <p className="text-xs text-destructive">{message}</p>
+  return <p role="alert" className="text-sm text-red-800">{message}</p>
 }
 
 function Hint({ children }: { children: React.ReactNode }) {
-  return <p className="text-xs leading-relaxed text-text-secondary [word-break:keep-all]">{children}</p>
+  return <p className="text-sm leading-relaxed text-text-secondary [word-break:keep-all]">{children}</p>
 }
 
 export function ProjectForm({
@@ -178,7 +178,7 @@ export function ProjectForm({
     <div className="grid gap-5">
       <div className="grid gap-1.5">
         <Label htmlFor={id("name")}>
-          프로젝트(과제)명 <span className="text-destructive">*</span>
+          프로젝트(과제)명 <span className="text-red-800" aria-hidden>*</span>
         </Label>
         <Input
           id={id("name")}
@@ -189,7 +189,7 @@ export function ProjectForm({
           placeholder="예: 공정 불량 예측 솔루션 사업화"
         />
         <FieldError message={errors.name} />
-        {!errors.name && <Hint>증빙 등록 시 선택 목록에 표시</Hint>}
+        {!errors.name && <Hint>증빙을 올릴 때 이 이름으로 골라요</Hint>}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -246,7 +246,7 @@ export function ProjectForm({
           <Hint>
             {period !== null
               ? `총 ${period.toLocaleString("ko-KR")}일 · 약 ${Math.max(1, Math.round(period / 30.44))}개월`
-              : "협약(수행) 기간"}
+              : "협약(수행) 기간이에요"}
           </Hint>
         )}
       </div>
@@ -262,7 +262,7 @@ export function ProjectForm({
           placeholder="0"
         />
         <FieldError message={errors.total_budget} />
-        {!errors.total_budget && <Hint>집행률 계산 기준</Hint>}
+        {!errors.total_budget && <Hint>집행률(집행액 ÷ 총사업비)의 기준이에요</Hint>}
       </div>
 
       <BudgetItemsEditor
@@ -295,12 +295,12 @@ export function ProjectForm({
               <li key={f.pathname}>
                 <a
                   href={fileUrl(f.pathname, { download: true, name: f.name })}
-                  className="inline-flex max-w-[260px] items-center gap-1.5 rounded-md border border-warm-tan bg-card px-2.5 py-1 text-xs text-dark transition-colors hover:border-dark/40 hover:bg-warm-ivory/60"
-                  title={`${f.name} 내려받기`}
+                  className="inline-flex max-w-[260px] items-center gap-1.5 rounded-md border border-warm-tan bg-card px-2.5 py-1 text-sm text-dark transition-colors hover:border-dark/40 hover:bg-warm-ivory/60"
+                  aria-label={`${f.name} 내려받기`}
                 >
                   <span className="truncate">{f.name}</span>
                   <span className="shrink-0 tabular-nums text-text-secondary">{formatBytes(f.size)}</span>
-                  <Download className="h-3 w-3 shrink-0 text-text-secondary" aria-hidden />
+                  <Download className="size-4 shrink-0 text-text-secondary" aria-hidden />
                 </a>
               </li>
             ))}
@@ -350,9 +350,9 @@ function BudgetItemsEditor({
     if (totalBudget === null) {
       status = (
         <span className="flex flex-wrap items-center gap-2 text-text-secondary">
-          총사업비 미입력
+          총사업비를 아직 넣지 않았어요
           {!disabled && (
-            <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={() => onFillTotal(sum)}>
+            <Button type="button" variant="outline" size="sm" className="h-8 text-sm hover:bg-warm-beige" onClick={() => onFillTotal(sum)}>
               비목 합계({wonNumber(sum)}원)로 채우기
             </Button>
           )}
@@ -360,22 +360,22 @@ function BudgetItemsEditor({
       )
     } else if (sum === totalBudget) {
       status = (
-        <span className="flex items-center gap-1 font-medium text-green-700">
-          <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
-          총사업비와 일치
+        <span className="flex items-center gap-1 font-medium text-green-800">
+          <CheckCircle2 className="size-4" aria-hidden />
+          총사업비와 같아요
         </span>
       )
     } else if (sum < totalBudget) {
       status = (
         <span className="text-text-secondary">
-          <b className="font-semibold tabular-nums text-dark">{wonNumber(totalBudget - sum)}원</b> 미배분
+          <b className="font-semibold tabular-nums text-dark">{wonNumber(totalBudget - sum)}원</b>을 아직 비목에 나누지 않았어요
         </span>
       )
     } else {
       status = (
         <span className="flex items-center gap-1 font-medium text-amber-800">
-          <TriangleAlert className="h-3.5 w-3.5" aria-hidden />
-          <span className="tabular-nums">{wonNumber(sum - totalBudget)}원</span> 초과
+          <TriangleAlert className="size-4" aria-hidden />
+          비목 합계가 총사업비보다 <span className="tabular-nums">{wonNumber(sum - totalBudget)}원</span> 많아요
         </span>
       )
     }
@@ -385,7 +385,7 @@ function BudgetItemsEditor({
     <div className="grid gap-2">
       <div>
         <Label>비목별 예산 (선택)</Label>
-        <Hint>입력 시 증빙 내역에 비목별 집행률 표시</Hint>
+        <Hint>넣어 두면 증빙 내역에 비목별 집행률·잔액이 보여요</Hint>
       </div>
 
       <datalist id={listId}>
@@ -396,7 +396,7 @@ function BudgetItemsEditor({
 
       {rows.length > 0 && (
         <div className="overflow-hidden rounded-md border border-warm-tan">
-          <div className="hidden grid-cols-[1fr_11rem_2.25rem] gap-2 border-b border-warm-tan bg-warm-beige px-3 py-1.5 text-xs font-semibold text-dark sm:grid">
+          <div className="hidden grid-cols-[1fr_11rem_2.25rem] gap-2 border-b border-warm-tan bg-warm-beige px-3 py-1.5 text-sm font-semibold text-dark sm:grid">
             <span>비목</span>
             <span className="text-right">예산</span>
             <span />
@@ -428,16 +428,16 @@ function BudgetItemsEditor({
                   variant="ghost"
                   size="icon"
                   disabled={disabled}
-                  className="col-start-2 row-start-1 h-9 w-9 text-text-secondary hover:text-destructive sm:col-start-auto sm:row-start-auto"
+                  className="col-start-2 row-start-1 h-9 w-9 text-text-secondary hover:bg-red-50 hover:text-red-800 sm:col-start-auto sm:row-start-auto"
                   aria-label={`${r.name || `${i + 1}번째`} 비목 삭제`}
                   onClick={() => remove(r.key)}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4" aria-hidden />
                 </Button>
               </li>
             ))}
           </ul>
-          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-warm-tan bg-warm-ivory px-3 py-2 text-xs">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-warm-tan bg-warm-ivory px-3 py-2 text-sm">
             <span className="text-text-secondary">
               비목 합계 <b className="font-semibold tabular-nums text-dark">{wonNumber(sum)}원</b>
             </span>
@@ -446,23 +446,23 @@ function BudgetItemsEditor({
         </div>
       )}
 
-      {error && <p className="text-xs text-destructive">{error}</p>}
+      {error && <p role="alert" className="text-sm text-red-800">{error}</p>}
 
       {!disabled && (
         <div className="flex flex-wrap items-center gap-1.5">
-          <Button type="button" variant="outline" size="sm" onClick={() => add()}>
-            <Plus className="h-3.5 w-3.5" />
+          <Button type="button" variant="outline" size="sm" className="hover:bg-warm-beige" onClick={() => add()}>
+            <Plus className="size-4" aria-hidden />
             비목 추가
           </Button>
           {quick.length > 0 && (
             <>
-              <span className="ml-1 text-xs text-text-secondary">빠른 추가:</span>
+              <span className="ml-1 text-sm text-text-secondary">빠른 추가:</span>
               {quick.slice(0, 8).map((n) => (
                 <button
                   key={n}
                   type="button"
                   onClick={() => add(n)}
-                  className="rounded-sm border border-warm-tan bg-card px-2 py-0.5 text-xs text-dark transition-colors hover:border-dark/40 hover:bg-warm-ivory/60 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                  className="min-h-8 rounded-sm border border-warm-tan bg-card px-2 py-0.5 text-sm text-dark transition-colors hover:border-dark/40 hover:bg-warm-ivory/60 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
                 >
                   + {n}
                 </button>

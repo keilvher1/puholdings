@@ -35,6 +35,9 @@ import {
   type SimilarReceipt,
 } from "@/lib/expense-dedupe"
 
+import { addMonths, date as formatDate, dateShort, won } from "@/lib/format"
+import { statusMeta } from "@/lib/status"
+
 export type { SimilarReceipt } from "@/lib/expense-dedupe"
 
 // 화면에 필요한 프로젝트 정보만. ExpenseProject를 그대로 넘겨도 된다(구조적으로 호환).
@@ -95,6 +98,8 @@ export interface DraftRow {
   serverErrors: string[]
   // 외화 행의 결제일 환율 조회 상태(화면 전용, 임시 보관하지 않는다)
   fx?: FxState | null
+  // [확인했어요]로 확인 처리한 사유의 id(RowReason.id). 화면 상태일 뿐 DB에 쓰지 않는다. 저장 대상(selected)은 바꾸지 않는다.
+  ackReasons?: string[]
 }
 
 export type FxState = { status: "loading" } | { status: "error"; message: string }
@@ -349,7 +354,7 @@ export function fxDateNote(f: Pick<ReceiptFields, "issue_date" | "exchange_rate_
 
 // /fx 응답 해석
 export function parseFxResponse(data: unknown): FxRateResponse {
-  if (!data || typeof data !== "object") return { success: false, error: "환율 응답을 읽지 못했습니다" }
+  if (!data || typeof data !== "object") return { success: false, error: "환율 응답을 읽지 못했어요" }
   const o = data as Record<string, unknown>
   if (o.success === true && typeof o.rate === "number" && o.rate > 0 && typeof o.rate_date === "string") {
     const source = o.source === "koreaexim" ? "koreaexim" : "ecb"
@@ -362,7 +367,7 @@ export function parseFxResponse(data: unknown): FxRateResponse {
       source,
     }
   }
-  return { success: false, error: typeof o.error === "string" && o.error ? o.error : "환율을 받지 못했습니다" }
+  return { success: false, error: typeof o.error === "string" && o.error ? o.error : "환율을 받지 못했어요" }
 }
 
 // ── 프로젝트 초기 선택 ─────────────────────────────────────────────────────────
@@ -436,7 +441,7 @@ export function rowsFromScan(
   if (drafts.length === 0) {
     return [
       blankRow(fileKey, file, projects, defaultProjectId, {
-        warning: "인식된 내용 없음 · 직접 입력하거나 행을 삭제하세요.",
+        warning: "인식한 내용이 없어요 · 직접 입력하거나 행을 지워 주세요",
         duplicates,
       }),
     ]
@@ -714,12 +719,35 @@ export function normalizeFields(f: ReceiptFields): ReceiptFields {
   }
 }
 
-export const PROJECT_REQUIRED = "프로젝트를 선택하세요"
+export const PROJECT_REQUIRED = "프로젝트를 골라 주세요"
 
 export function rowErrors(row: DraftRow): string[] {
   const errors = validateReceiptFields(normalizeFields(row.fields))
   if (!row.project_id) errors.push(PROJECT_REQUIRED)
   return errors
+}
+
+// lib/expenses의 검증 문구(개발 형식 "YYYY-MM-DD" 등)를 화면 문구(해요체)로 바꾼다. 모르는 문구는 그대로.
+const FRIENDLY_ERRORS: [RegExp, string | ((m: RegExpMatchArray) => string)][] = [
+  [/^거래일자를 YYYY-MM-DD 형식으로 입력하세요$/, "거래일자를 골라 주세요"],
+  [/^거래처명을 입력하세요$/, "거래처를 입력해 주세요"],
+  [/^거래처명이 너무 깁니다$/, "거래처 이름이 너무 길어요(200자까지)"],
+  [/^합계 금액을 원 단위 정수로 입력하세요$/, "합계를 원 단위로 입력해 주세요"],
+  [/^공급가액은 원 단위 정수여야 합니다$/, "공급가액을 원 단위로 입력해 주세요"],
+  [/^부가세는 원 단위 정수여야 합니다$/, "부가세를 원 단위로 입력해 주세요"],
+  [/^사업자등록번호 형식이 올바르지 않습니다$/, "사업자번호를 000-00-00000 모양으로 입력해 주세요"],
+  [/^비목이 너무 깁니다$/, "비목 이름이 너무 길어요(100자까지)"],
+  [/^([A-Z]{3}) 금액을 입력하세요$/, (m) => `${m[1]} 금액을 입력해 주세요`],
+  [/^적용 환율을 입력하세요$/, "적용 환율을 입력해 주세요"],
+  [/^귀속월은 YYYY-MM 형식이어야 합니다$/, "귀속월을 골라 주세요"],
+]
+
+export function friendlyFieldError(e: string): string {
+  for (const [re, to] of FRIENDLY_ERRORS) {
+    const m = e.match(re)
+    if (m) return typeof to === "string" ? to : to(m)
+  }
+  return e
 }
 
 export type InvalidMap = Partial<Record<keyof ReceiptFields | "project_id", boolean>>
@@ -832,12 +860,27 @@ export function normalizeFileMeta(v: UploadedFileMeta): UploadedFileMeta {
 }
 
 export function httpErrorMessage(status: number, fallback?: string): string {
-  if (status === 401) return "로그인이 만료되었습니다. 새 탭에서 관리자 로그인을 다시 한 뒤 이 화면에서 다시 시도하세요(입력한 내용은 그대로 있습니다)."
-  if (status === 413) return "파일이 너무 커서 서버가 받지 못했습니다. 4MB 이하로 줄여 다시 올리세요."
-  if (status === 504 || status === 524) return "인식 시간 초과로 중단되었습니다. 다시 시도하세요."
-  if (status === 429) return "요청이 많아 일시 제한되었습니다. 1분 후 다시 시도하세요."
-  if (status >= 500) return fallback || "서버 오류가 발생했습니다. 잠시 후 다시 시도하세요."
-  return fallback || `요청이 실패했습니다 (오류 ${status})`
+  if (status === 401) return "로그인이 끝났어요. 새 탭에서 관리자 로그인을 다시 한 뒤 이 화면에서 다시 눌러 주세요(입력한 내용은 그대로 있어요)."
+  if (status === 413) return "파일이 너무 커서 받지 못했어요. 4MB 이하로 줄여 다시 올려 주세요."
+  if (status === 504 || status === 524) return "인식 시간이 너무 길어 멈췄어요. 다시 시도해 주세요."
+  if (status === 429) return "요청이 많아 잠시 막혔어요. 1분 뒤 다시 시도해 주세요."
+  const safe = fallback && isScreenSafeText(fallback) ? fallback : undefined
+  if (status >= 500) return safe || "처리하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요."
+  return safe || `요청을 처리하지 못했어요(오류 ${status}). 다시 시도해 주세요.`
+}
+
+// 서버·자동 인식 오류 문구를 화면에 그대로 보여도 되는지(환경변수 이름·"시스템 관리자" 같은 개발 안내가 없을 때만).
+// 자동 인식 키 문제 등은 lib/expense-ai.ts가 개발 안내를 섞어 보내므로, 그런 문구는 화면 문구로 바꾼다(계획서 2.5).
+export function isScreenSafeText(text: string): boolean {
+  return !/[A-Z][A-Z0-9]*_[A-Z0-9_]+|시스템 (관리자|담당자)|OpenAI|API 키|\(설정:/.test(text)
+}
+
+// 자동 인식이 꺼져 있거나(키 없음·만료) 쓸 수 없을 때 화면에 보이는 문구
+export const AI_OFF_TEXT = "자동 인식을 쓸 수 없어요. 파일은 보관됐으니 표에 직접 입력해 주세요."
+
+export function screenSafeError(text: string | null | undefined, fallback = AI_OFF_TEXT): string {
+  const t = (text ?? "").trim()
+  return t && isScreenSafeText(t) ? t : fallback
 }
 
 // ── 임시 보관(새로고침·실수로 닫았을 때 복구) ──────────────────────────────────
@@ -884,10 +927,455 @@ export function parseBackup(raw: string | null, projects: UploaderProject[]): Up
         manual: !!r.manual,
         showErrors: false,
         serverErrors: [],
+        ackReasons: Array.isArray(r.ackReasons) ? r.ackReasons.map(toStr).filter(Boolean) : [],
       })
     }
     return rows.length > 0 ? { savedAt: data.savedAt, rows } : null
   } catch {
     return null
+  }
+}
+
+// ── 행 상태 4개 + 사유(계획서 4.2.1) ──────────────────────────────────────────
+// 상태는 넷뿐이다: 입력 필요(저장 불가) · 확인 필요(저장은 되지만 사람이 한 번 봐야 함) · 준비 완료 · 제외(저장 안 함).
+// - "확인 필요"의 사유: 인식 신뢰도 낮음(노란 칸), 금액 불일치, 사업 기간 밖, 예산 외 비목, 비목 빈칸, 그 밖의 자동 인식 경고.
+//   같은 주제(금액·날짜·사업자번호·환율)의 화면 검사 문장과 자동 인식 문장은 한 사유로 합친다.
+// - 사유마다 [확인했어요]가 있고, 누르면 그 사유는 회색으로 접힌다(ackReasons). 확인 처리는 selected를 바꾸지 않는다.
+// - 중복 의심(이미 저장된 증빙·표 안의 다른 행과 같은 파일·같은 거래)은 "확인 필요"가 아니다. 저장 대상에서 자동으로
+//   빠지므로(selected=false) "제외 · 중복 의심"이고, 다시 넣는 길은 검토 창의 "저장 대상 포함" 스위치(setIncluded)뿐이다.
+// - 안내(회색, 상태와 무관): "이 파일 속 증빙 1/2", 주말·휴일 직전 영업일 환율.
+
+export type RowStatusKey = "needs_input" | "needs_review" | "ready" | "excluded"
+export type ReasonField = keyof ReceiptFields | "project_id"
+
+export interface RowReason {
+  /** 확인 처리를 기억하는 고정 키(low · amount · period · budget:<이름> · budget_empty · ai:<문장>) */
+  id: string
+  kind: "low" | "amount" | "period" | "budget_outside" | "budget_empty" | "ai"
+  /** 사유 한 문장(해요체) */
+  text: string
+  /** 같은 주제로 합친 자동 인식 문장 */
+  detail: string[]
+  /** 누르면 포커스할 칸(앞이 먼저) */
+  fields: ReasonField[]
+  /** 원본을 봐야 판단할 수 있는 사유(인식 불확실) — 표에서는 [원본 보며 확인] */
+  needsOriginal: boolean
+}
+
+export interface RowAssessment {
+  status: RowStatusKey
+  /** "입력 필요" · "확인 필요" · "준비 완료" · "제외" */
+  label: string
+  /** 제외 사유("중복 의심") — 배지 옆 보조 글자 */
+  detail: string | null
+  duplicateSuspect: boolean
+  /** 입력 필요(저장 불가) 사유 */
+  errors: string[]
+  /** 남은 확인 사유 */
+  reasons: RowReason[]
+  /** [확인했어요]로 접은 사유 */
+  acknowledged: RowReason[]
+  /** 회색 안내(상태에 영향 없음) */
+  infos: string[]
+}
+
+export const RECEIPT_FIELD_LABELS: Record<ReasonField, string> = {
+  doc_type: "문서 종류",
+  issue_date: "거래일자",
+  vendor_name: "거래처",
+  vendor_biz_no: "사업자번호",
+  supply_amount: "공급가액",
+  vat_amount: "부가세",
+  total_amount: "합계",
+  payment_method: "결제 수단",
+  approval_no: "승인번호",
+  items: "품목",
+  budget_item: "비목",
+  purpose: "적요",
+  memo: "메모",
+  currency: "통화",
+  foreign_amount: "외화 금액",
+  exchange_rate: "환율",
+  exchange_rate_date: "환율 기준일",
+  exchange_rate_source: "환율 출처",
+  payroll_month: "귀속월",
+  project_id: "프로젝트",
+}
+
+export function fieldLabels(fields: ReasonField[]): string[] {
+  return fields.map((f) => RECEIPT_FIELD_LABELS[f]).filter(Boolean)
+}
+
+type WarningTopic = "info" | "amount" | "biz" | "date" | "fx" | "quality" | "other"
+
+// 자동 인식 경고 문장을 주제로 나눈다(같은 주제는 화면 검사 사유 하나로 합치기 위해).
+export function warningTopic(w: string): WarningTopic {
+  const t = w.trim()
+  if (/이 파일 속 증빙|건으로 나눴|인식한 내용이 없어요|인식된 내용 없음|직전 영업일|주말|공휴일|고시 전/.test(t)) return "info"
+  if (isFxFailureWarning(t) || /환율|금액을 읽지 못했습니다/.test(t)) return "fx"
+  if (/공급가액|부가세|합계|면세|봉사료/.test(t)) return "amount"
+  if (/사업자/.test(t)) return "biz"
+  if (/거래일자|날짜/.test(t)) return "date"
+  if (/흐려|흐릿|해상도|기울|추정|잘려|잘린|읽지 못|불확실|번져|번짐|가려/.test(t)) return "quality"
+  return "other"
+}
+
+// 결제일 고시가 없어 직전 영업일(또는 최근 고시) 환율을 쓴 경우의 회색 안내
+export function fxInfoText(f: Pick<ReceiptFields, "issue_date" | "exchange_rate_date" | "exchange_rate_source">): string {
+  if (!fxDateNote(f)) return ""
+  return f.exchange_rate_date < f.issue_date
+    ? `주말·휴일이라 직전 영업일인 ${dateShort(f.exchange_rate_date)} 환율을 썼어요`
+    : `결제일 환율이 아직 고시 전이라 최근 고시일인 ${dateShort(f.exchange_rate_date)} 환율을 썼어요`
+}
+
+function uniq<T>(xs: T[]): T[] {
+  return Array.from(new Set(xs))
+}
+
+// 표 안의 다른 행과 같은 파일·같은 거래로 보여 이 행이 빠져 있는지(다른 쪽이 저장 대상)
+function tableMatchExcluded(row: DraftRow, matches: TableMatch[] | undefined): boolean {
+  return !row.selected && !!matches && matches.some((m) => m.otherSelected)
+}
+
+export function isDuplicateSuspect(row: DraftRow, matches?: TableMatch[]): boolean {
+  if (row.duplicates.length > 0 || row.similar.length > 0) return true
+  if (!matches || matches.length === 0) return false
+  return row.selected ? matches.some((m) => m.otherSelected) : tableMatchExcluded(row, matches)
+}
+
+export function assessRow(row: DraftRow, project: UploaderProject | undefined, matches?: TableMatch[]): RowAssessment {
+  const f = row.fields
+  const ack = new Set(row.ackReasons ?? [])
+  const errors = uniq([...rowErrors(row).map(friendlyFieldError), ...row.serverErrors])
+  const infos: string[] = []
+  const all: RowReason[] = []
+
+  // 1) 인식 불확실(노란 칸) + 전체 신뢰도 낮음 → 한 사유
+  const pendingLow = row.lowFields.filter((x) => !row.checkedFields.includes(x))
+  const readSomething = !!row.aiRaw && !!(row.aiRaw.vendor_name || row.aiRaw.issue_date || row.aiRaw.total_amount !== null)
+  const lowOverall = row.confidence === "low" && readSomething
+  const lowAll = new Set<ReasonField>(row.lowFields)
+  const hasLow = row.lowFields.length > 0 || lowOverall
+  const lowReason: RowReason | null = hasLow
+    ? {
+        id: "low",
+        kind: "low",
+        text: "",
+        detail: [],
+        fields: pendingLow.length > 0 ? pendingLow : row.lowFields,
+        needsOriginal: true,
+      }
+    : null
+  if (lowReason) {
+    const names = fieldLabels(lowReason.fields).join("·")
+    lowReason.text = lowOverall ? `인식 신뢰도가 낮아요${names ? ` · ${names} 칸 확인` : " · 원본과 전체 대조"}` : `${names} 칸 확인`
+  }
+
+  // 2) 금액 불일치(화면 검사)
+  const mismatch = amountMismatch(f)
+  const amountReason: RowReason | null = mismatch
+    ? {
+        id: "amount",
+        kind: "amount",
+        text: `금액이 맞지 않아요: 공급가액+부가세 ${won((f.supply_amount ?? 0) + (f.vat_amount ?? 0))} ≠ 합계 ${won(f.total_amount)}`,
+        detail: [],
+        fields: ["total_amount", "supply_amount", "vat_amount"],
+        needsOriginal: false,
+      }
+    : null
+
+  // 3) 자동 인식 경고를 주제별로 합친다
+  const extra: RowReason[] = []
+  const fxNote = fxInfoText(f)
+  if (fxNote) infos.push(fxNote)
+  const fxError = errors.some((e) => /환율|금액을 입력/.test(e))
+  for (const raw of row.warnings) {
+    const w = raw.trim()
+    if (!w) continue
+    switch (warningTopic(w)) {
+      case "info":
+        // 환율 날짜 안내는 위에서 화면 계산으로 한 번만 쓴다
+        if (/직전 영업일|주말|공휴일|고시 전/.test(w)) {
+          if (!fxNote) infos.push(w)
+        } else infos.push(w)
+        break
+      case "amount":
+        // 화면 검사 문장과 같은 말(공급가액+부가세 ≠ 합계)은 버리고, 면세·봉사료 같은 설명만 덧붙인다
+        if (amountReason) {
+          if (/면세|봉사료/.test(w)) amountReason.detail.push(w)
+        } else infos.push(w)
+        break
+      case "biz":
+        if (lowReason && lowAll.has("vendor_biz_no")) lowReason.detail.push(w)
+        else extra.push(aiReason(w, ["vendor_biz_no"]))
+        break
+      case "date":
+        if (lowReason && lowAll.has("issue_date")) lowReason.detail.push(w)
+        else extra.push(aiReason(w, ["issue_date"]))
+        break
+      case "fx":
+        if (!fxError && f.currency !== "KRW" && f.exchange_rate === null) extra.push(aiReason(w, ["exchange_rate"]))
+        break
+      case "quality":
+        if (lowReason) lowReason.detail.push(w)
+        else extra.push(aiReason(w, []))
+        break
+      default:
+        extra.push(aiReason(w, []))
+    }
+  }
+
+  if (lowReason) all.push(lowReason)
+  if (amountReason) all.push(amountReason)
+
+  // 4) 사업 기간 밖 · 예산 외 비목 · 비목 빈칸
+  if (project && isValidDate(f.issue_date)) {
+    if (project.start_date && f.issue_date < project.start_date) {
+      all.push({ id: "period", kind: "period", text: `사업 기간 전 거래예요(시작 ${formatDate(project.start_date)})`, detail: [], fields: ["issue_date"], needsOriginal: false })
+    } else if (project.end_date && f.issue_date > project.end_date) {
+      all.push({ id: "period", kind: "period", text: `사업 기간 뒤 거래예요(종료 ${formatDate(project.end_date)})`, detail: [], fields: ["issue_date"], needsOriginal: false })
+    }
+  }
+  const budget = f.budget_item.trim()
+  if (!budget) {
+    all.push({ id: "budget_empty", kind: "budget_empty", text: "비목이 비어 있어요", detail: [], fields: ["budget_item"], needsOriginal: false })
+  } else if (project && project.budget_items.length > 0 && !project.budget_items.some((b) => b.name.trim() === budget)) {
+    all.push({ id: `budget:${budget}`, kind: "budget_outside", text: `예산에 없는 비목이에요: ${budget}`, detail: [], fields: ["budget_item"], needsOriginal: false })
+  }
+  const seen = new Set(all.map((r) => r.id))
+  for (const r of extra) {
+    if (seen.has(r.id)) continue
+    seen.add(r.id)
+    all.push(r)
+  }
+  for (const r of all) r.detail = uniq(r.detail)
+
+  // 인식 불확실 사유는 노란 칸을 모두 확인했고(checkedFields) 전체 신뢰도 낮음도 확인했을 때 접힌다.
+  const isAcked = (r: RowReason) => (r.id === "low" ? pendingLow.length === 0 && (!lowOverall || ack.has("low")) : ack.has(r.id))
+  const reasons = all.filter((r) => !isAcked(r))
+  const acknowledged = all.filter(isAcked)
+
+  const duplicateSuspect = isDuplicateSuspect(row, matches)
+  if (row.selected && duplicateSuspect) infos.push("중복 의심이지만 저장 대상에 넣었어요(저장할 때 한 번 더 물어요)")
+
+  const status: RowStatusKey = !row.selected ? "excluded" : errors.length > 0 ? "needs_input" : reasons.length > 0 ? "needs_review" : "ready"
+  return {
+    status,
+    label: statusMeta("expenseRow", status).label,
+    detail: status === "excluded" && duplicateSuspect ? "중복 의심" : null,
+    duplicateSuspect,
+    errors,
+    reasons,
+    acknowledged,
+    infos: uniq(infos),
+  }
+}
+
+function aiReason(text: string, fields: ReasonField[]): RowReason {
+  return { id: `ai:${text}`, kind: "ai", text, detail: [], fields, needsOriginal: fields.length === 0 }
+}
+
+// [확인했어요] 한 번 — 그 사유만 접는다. selected는 바꾸지 않는다(가드 7.2 #23).
+export function acknowledgeReason(row: DraftRow, reasonId: string): DraftRow {
+  const ack = row.ackReasons ?? []
+  if (reasonId === "low") {
+    return {
+      ...row,
+      checkedFields: uniq([...row.checkedFields, ...row.lowFields]),
+      ackReasons: ack.includes("low") ? ack : [...ack, "low"],
+    }
+  }
+  return ack.includes(reasonId) ? row : { ...row, ackReasons: [...ack, reasonId] }
+}
+
+// 검토 창의 "확인했어요 · 다음" — 남은 사유를 모두 접는다. selected는 바꾸지 않는다.
+export function acknowledgeAll(row: DraftRow, project: UploaderProject | undefined, matches?: TableMatch[]): DraftRow {
+  let next = row
+  for (const r of assessRow(row, project, matches).reasons) next = acknowledgeReason(next, r.id)
+  return next
+}
+
+// 저장 대상 포함 스위치(검토 창). 중복 의심 행을 다시 넣는 유일한 길이다.
+export function setIncluded(row: DraftRow, included: boolean): DraftRow {
+  return row.selected === included ? row : { ...row, selected: included }
+}
+
+export interface SaveSummary {
+  /** 저장할 증빙 = selected 행 수(입력 필요 포함 — 누르면 빠진 것을 알려 준다) */
+  count: number
+  sum: number
+  review: number
+  input: number
+}
+
+export function saveSummary(rows: DraftRow[], assess: (row: DraftRow) => RowAssessment): SaveSummary {
+  let count = 0
+  let sum = 0
+  let review = 0
+  let input = 0
+  for (const r of rows) {
+    if (!r.selected) continue
+    count++
+    sum += typeof r.fields.total_amount === "number" ? r.fields.total_amount : 0
+    const st = assess(r).status
+    if (st === "needs_review") review++
+    else if (st === "needs_input") input++
+  }
+  return { count, sum, review, input }
+}
+
+export type UploadView = "all" | "review" | "input" | "ready" | "excluded"
+
+export const VIEW_STATUS: Record<Exclude<UploadView, "all">, RowStatusKey> = {
+  review: "needs_review",
+  input: "needs_input",
+  ready: "ready",
+  excluded: "excluded",
+}
+
+export function isUploadView(v: string): v is UploadView {
+  return v === "all" || v === "review" || v === "input" || v === "ready" || v === "excluded"
+}
+
+// ── 인건비: 지난달 내역 불러오기(계획서 4.2.4 P-1) ─────────────────────────────
+// 선택 프로젝트의 가장 최근 귀속월 인건비(doc_type 'payroll')를 한 달 뒤로 옮긴 행으로 만든다. 저장은 하지 않는다.
+// - 귀속월 = payroll_month(없으면 지급일의 달). 이번 달보다 뒤 귀속월은 근거로 쓰지 않는다.
+// - 기본 규칙(명세): 가장 최근 귀속월(L) → L+1. L+1이 이번 달보다 뒤면(= L이 이미 이번 달) 다음 달을 만들지 않는다.
+// - L이 이번 달이고 그 앞달(P = L−1)에만 있던 대상자가 있으면 "이번 달 등록하다 만 사람" 후보로 L 귀속 행을 만든다.
+//   이 행들은 퇴사·교체일 수 있으므로 **모두 기본 제외**(include false, missing true)다. 사람이 골라서 넣는다.
+//   L에 이미 있는 대상자는 "이미 등록됨"(existing)으로 함께 기본 제외한다. 서버 중복 판정은
+//   "같은 프로젝트·지급일·대상자·금액"이라 지급일이 하루만 달라도 통과하므로 여기서 막는다.
+// - 인원이 바뀐 달(퇴사·교체)도 L → L+1 규칙을 그대로 쓴다. 지난 달을 다시 채우자고 제안하지 않는다(검토 M1).
+
+export interface PayrollSourceReceipt {
+  project_id: number
+  doc_type: string
+  issue_date: string
+  vendor_name: string
+  total_amount: number | null
+  payroll_month: string
+  payment_method: ReceiptFields["payment_method"]
+  budget_item: string
+  purpose: string
+}
+
+export interface PayrollImportRow {
+  vendor_name: string
+  amount: number | null
+  issue_date: string
+  payroll_month: string
+  purpose: string
+  payment_method: ReceiptFields["payment_method"]
+  budget_item: string
+  /** 새 귀속월에 같은 대상자가 이미 등록돼 있음 → 기본 제외 */
+  existing: boolean
+  /** 이번 달 기록에는 없고 지난달에만 있던 대상자(퇴사·교체일 수 있음) → 기본 제외, 골라서 넣기 */
+  missing: boolean
+  include: boolean
+}
+
+export interface PayrollImportPlan {
+  sourceMonth: string | null
+  targetMonth: string | null
+  blocked: "this_month" | null
+  /** "next": L → L+1 기본 불러오기 · "fill": L이 이번 달이라 지난달에만 있던 사람을 골라 넣는 후보만 */
+  mode: "next" | "fill" | null
+  rows: PayrollImportRow[]
+}
+
+function attributionMonth(r: Pick<PayrollSourceReceipt, "payroll_month" | "issue_date">): string {
+  const m = (r.payroll_month || "").trim()
+  if (/^\d{4}-(0[1-9]|1[0-2])$/.test(m)) return m
+  return isValidDate(r.issue_date) ? r.issue_date.slice(0, 7) : ""
+}
+
+function normalizePerson(name: string): string {
+  return name.replace(/\s+/g, "").toLowerCase()
+}
+
+// 날짜를 한 달 뒤로(말일 넘침은 그 달 말일로: 1월 31일 → 2월 28일)
+export function shiftDateOneMonth(d: string): string {
+  if (!isValidDate(d)) return ""
+  const [y, m, day] = d.split("-").map(Number)
+  const ny = m === 12 ? y + 1 : y
+  const nm = m === 12 ? 1 : m + 1
+  const last = new Date(Date.UTC(ny, nm, 0)).getUTCDate()
+  return `${ny}-${String(nm).padStart(2, "0")}-${String(Math.min(day, last)).padStart(2, "0")}`
+}
+
+// 적요 속 "2026년 9월"·"2026년 09월"·"2026-09"를 새 달로 바꾼다.
+export function shiftPurposeMonth(purpose: string, from: string, to: string): string {
+  const [fy, fm] = from.split("-").map(Number)
+  const [ty, tm] = to.split("-").map(Number)
+  return purpose
+    .replace(new RegExp(`${fy}년\\s*0?${fm}월`, "g"), `${ty}년 ${tm}월`)
+    .split(from)
+    .join(to)
+}
+
+export function planPayrollImport(receipts: PayrollSourceReceipt[], projectId: number, today: string): PayrollImportPlan {
+  const thisMonth = today.slice(0, 7)
+  const mine = receipts.filter((r) => r.project_id === projectId && r.doc_type === "payroll" && r.vendor_name.trim())
+  const byMonth = new Map<string, PayrollSourceReceipt[]>()
+  for (const r of mine) {
+    const m = attributionMonth(r)
+    if (!m || m > thisMonth) continue
+    const list = byMonth.get(m)
+    if (list) list.push(r)
+    else byMonth.set(m, [r])
+  }
+  const months = Array.from(byMonth.keys()).sort()
+  if (months.length === 0) return { sourceMonth: null, targetMonth: null, blocked: null, mode: null, rows: [] }
+  const latest = months[months.length - 1]
+  const people = (m: string) => new Set((byMonth.get(m) ?? []).map((r) => normalizePerson(r.vendor_name)))
+
+  const build = (sourceMonth: string, targetMonth: string, pick: (r: PayrollSourceReceipt) => { existing: boolean; missing: boolean }) =>
+    (byMonth.get(sourceMonth) ?? [])
+      .slice()
+      .sort((a, b) => a.issue_date.localeCompare(b.issue_date) || a.vendor_name.localeCompare(b.vendor_name, "ko"))
+      .map((r): PayrollImportRow => {
+        const { existing, missing } = pick(r)
+        return {
+          vendor_name: r.vendor_name.trim(),
+          amount: typeof r.total_amount === "number" ? r.total_amount : null,
+          // 지급일이 귀속월과 다른 달(다음 달 지급)이어도 한 달 뒤로 옮긴다
+          issue_date: shiftDateOneMonth(r.issue_date),
+          payroll_month: targetMonth,
+          purpose: shiftPurposeMonth(r.purpose, sourceMonth, targetMonth),
+          payment_method: r.payment_method,
+          budget_item: r.budget_item,
+          existing,
+          missing,
+          include: !existing && !missing,
+        }
+      })
+
+  // 기본: L → L+1(이번 달 이하일 때만)
+  const next = addMonths(latest, 1)
+  if (next <= thisMonth) {
+    const already = people(next) // 정의상 비어 있지만(있으면 그 달이 L), 판정은 그대로 둔다
+    return {
+      sourceMonth: latest,
+      targetMonth: next,
+      blocked: null,
+      mode: "next",
+      rows: build(latest, next, (r) => ({ existing: already.has(normalizePerson(r.vendor_name)), missing: false })),
+    }
+  }
+
+  // L이 이번 달: 다음 달은 만들지 않는다. 바로 앞달에만 있던 사람이 있으면 골라 넣을 후보로만 보여 준다.
+  const prev = addMonths(latest, -1)
+  const latestPeople = people(latest)
+  const onlyPrev = byMonth.has(prev) && Array.from(people(prev)).some((n) => !latestPeople.has(n))
+  if (!onlyPrev) return { sourceMonth: latest, targetMonth: null, blocked: "this_month", mode: null, rows: [] }
+  return {
+    sourceMonth: prev,
+    targetMonth: latest,
+    blocked: "this_month",
+    mode: "fill",
+    rows: build(prev, latest, (r) => {
+      const existing = latestPeople.has(normalizePerson(r.vendor_name))
+      return { existing, missing: !existing }
+    }),
   }
 }

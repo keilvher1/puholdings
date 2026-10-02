@@ -61,7 +61,7 @@ export function FileUpload({ value, onChange, folder = "attachments", label = "�
           setError(`${file.name}: ${data.error || "업로드 실패"}`)
         }
       } catch {
-        setError(`${file.name}: 서버 오류가 발생했습니다`)
+        setError(`${file.name}: 올리지 못했어요. 인터넷 연결을 확인하고 다시 올려 주세요`)
       }
     }
 
@@ -135,7 +135,7 @@ export function FileUpload({ value, onChange, folder = "attachments", label = "�
       >
         {uploading ? (
           <>
-            <Loader2 className="h-4 w-4 animate-spin text-gold" /> 업로드 중...
+            <Loader2 className="h-4 w-4 animate-spin text-gold" /> 올리는 중…
           </>
         ) : (
           <>

@@ -1,32 +1,21 @@
-"use client"
+// 관리비 정산 하위 탭(월 마감 · 청구서 · 기준 정보) — 공통 SubNav로 다시 만들었다(export 이름 BillingNav 유지).
+// 현재 탭에 aria-current="page". 서버·클라이언트 어디서든 쓸 수 있다(SubNav가 클라이언트 부품).
+//
+// 사용 예:
+//   <BillingNav />
+//   <BillingNav billsCount={badges?.billing} />                 // 청구서 탭에 건수(선택)
+//   <SubNav label="관리비 정산 메뉴" items={billingNavItems({ billsCount: 4 })} />   // 클라이언트 컴포넌트 안에서 직접 그릴 때
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { SubNav, type SubNavItem } from "@/components/saas/page-header"
 
-const tabs = [
-  { href: "/admin/billing", label: "월 마감" },
-  { href: "/admin/billing/bills", label: "청구서" },
-  { href: "/admin/billing/settings", label: "설정" },
-]
+export function billingNavItems({ billsCount }: { billsCount?: number | null } = {}): SubNavItem[] {
+  return [
+    { href: "/admin/billing", label: "월 마감", exact: true },
+    { href: "/admin/billing/bills", label: "청구서", count: billsCount ?? null },
+    { href: "/admin/billing/settings", label: "기준 정보" },
+  ]
+}
 
-export function BillingNav() {
-  const pathname = usePathname()
-  return (
-    <div className="mb-6 flex gap-1 border-b border-warm-tan">
-      {tabs.map((tab) => {
-        const active = pathname === tab.href
-        return (
-          <Link
-            key={tab.href}
-            href={tab.href}
-            className={`-mb-px border-b-2 px-4 py-2.5 text-sm font-medium transition-colors ${
-              active ? "border-gold text-dark" : "border-transparent text-text-secondary hover:text-dark"
-            }`}
-          >
-            {tab.label}
-          </Link>
-        )
-      })}
-    </div>
-  )
+export function BillingNav({ billsCount }: { billsCount?: number | null } = {}) {
+  return <SubNav label="관리비 정산 메뉴" items={billingNavItems({ billsCount })} />
 }

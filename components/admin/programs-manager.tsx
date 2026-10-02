@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
 import {
   Dialog,
   DialogContent,
@@ -32,7 +31,10 @@ import {
 } from "@/components/ui/table"
 import { FileUpload } from "@/components/admin/file-upload"
 import { Pencil, Trash2, Plus, ChevronRight } from "lucide-react"
-import { PROGRAM_STATUS_LABELS } from "@/lib/programs"
+import { BusyButton, EmptyState, Notice, StatusBadge, TableSkeleton, toastSuccess, useConfirm, useDelayedFlag } from "@/components/saas"
+import { dateShort } from "@/lib/format"
+import { friendlyError, MSG } from "@/lib/messages"
+import { emailsHref } from "@/lib/links"
 import type { Attachment } from "@/lib/db"
 
 interface Program {
@@ -59,18 +61,26 @@ const EMPTY_FORM = {
   status: "draft",
 }
 
-function statusBadge(status: Program["status"]) {
-  const label = PROGRAM_STATUS_LABELS[status] || status
-  if (status === "open") return <Badge>{label}</Badge>
-  if (status === "closed") return <Badge variant="outline">{label}</Badge>
-  if (status === "archived") return <Badge variant="secondary">{label}</Badge>
-  return <Badge variant="secondary">{label}</Badge>
-}
+const d = (v: string | null) => (v ? dateShort(v) : "-")
 
-export function ProgramsManager() {
+/** failedLink: 보내지 못한 메일 보기 / logLink: 공지 메일 기록 보기(결과 건수를 응답으로 받지 못했을 때) */
+type MailResult = { tone: "success" | "warning" | "info"; text: string; failedLink: boolean; logLink?: boolean }
+
+/**
+ * 프로그램 목록·등록·수정(계획서 4.1.7: 브라우저 팝업 → useConfirm·Notice).
+ * mailEnabled·recipientCount는 서버 page가 넘긴다(공지 메일 문구를 메일 꺼짐에 맞춰 바꾸려고).
+ */
+export function ProgramsManager({ mailEnabled = false, recipientCount = null }: { mailEnabled?: boolean; recipientCount?: number | null }) {
+  const who = recipientCount === null ? "입주기업 전체" : `입주기업 ${recipientCount}곳`
+  const whoShort = recipientCount === null ? "전체" : `${recipientCount}곳`
+  const ask = useConfirm()
   const [programs, setPrograms] = useState<Program[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [mailResult, setMailResult] = useState<MailResult | null>(null)
+  const [actionError, setActionError] = useState("")
+  const [deletingId, setDeletingId] = useState<number | null>(null)
+  const showSkeleton = useDelayedFlag(loading)
 
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Program | null>(null)
@@ -84,14 +94,14 @@ export function ProgramsManager() {
     setError("")
     try {
       const res = await fetch("/api/admin/programs", { credentials: "include" })
-      const data = await res.json()
-      if (data.success) {
+      const data = await res.json().catch(() => ({}))
+      if (res.ok && data.success) {
         setPrograms(data.programs)
       } else {
-        setError(data.error || "목록을 불러오지 못했습니다")
+        setError(friendlyError(res.status, data.error, MSG.loadFailed))
       }
     } catch {
-      setError("서버 오류가 발생했습니다")
+      setError(friendlyError(0, null, MSG.loadFailed))
     } finally {
       setLoading(false)
     }
@@ -127,12 +137,27 @@ export function ProgramsManager() {
 
   const handleSave = async () => {
     if (!form.title.trim()) {
-      setFormError("제목은 필수입니다")
+      setFormError("제목을 입력해 주세요")
+      document.getElementById("p-title")?.focus()
       return
     }
-    // draft → open 전환은 전체 메일이 나가므로 한번 더 확인
-    if (editing && editing.status === "draft" && form.status === "open") {
-      if (!confirm("모집 중으로 전환하면 모든 입주기업에 공지 메일이 발송됩니다. 계속할까요?")) return
+    // 작성 중 → 모집 중(또는 처음부터 모집 중으로 등록)은 입주기업 전체에 공지 메일이 나가므로 한 번 더 확인
+    const opening = form.status === "open" && (!editing || editing.status === "draft")
+    if (opening) {
+      const ok = mailEnabled
+        ? await ask({
+            title: `모집을 시작하고 ${who}에 메일을 보낼까요?`,
+            summary: [{ label: "프로그램", value: form.title.trim() }],
+            consequences: ["보낸 공지 메일은 되돌릴 수 없어요"],
+            confirmLabel: `모집 시작하고 ${whoShort}에 메일 보내기`,
+          })
+        : await ask({
+            title: "모집을 시작할까요?",
+            body: "메일 발송이 설정되지 않아 공지 메일은 나가지 않아요.",
+            summary: [{ label: "프로그램", value: form.title.trim() }],
+            confirmLabel: "모집 시작하기",
+          })
+      if (!ok) return
     }
     setSaving(true)
     setFormError("")
@@ -154,35 +179,67 @@ export function ProgramsManager() {
         credentials: "include",
         body: JSON.stringify(body),
       })
-      const data = await res.json()
-      if (data.success) {
+      const data = await res.json().catch(() => ({}))
+      if (res.ok && data.success) {
         setFormOpen(false)
         fetchPrograms()
-        if (data.mail) {
-          alert(`공지 메일 발송: 성공 ${data.mail.sent}건${data.mail.failed ? `, 실패 ${data.mail.failed}건` : ""}`)
+        setActionError("")
+        if (opening && !mailEnabled) {
+          setMailResult({ tone: "info", text: "모집을 시작했어요. 메일 발송이 설정되지 않아 공지 메일은 나가지 않았어요.", failedLink: false })
+        } else if (data.mail) {
+          const { sent, failed } = data.mail as { sent: number; failed: number }
+          setMailResult(
+            failed > 0
+              ? { tone: "warning", text: `모집을 시작했어요. 공지 메일 ${sent + failed}건 중 ${failed}건을 보내지 못했어요.`, failedLink: true }
+              : { tone: "success", text: `모집을 시작하고 공지 메일 ${sent}건을 보냈어요.`, failedLink: false },
+          )
+        } else if (opening && !editing) {
+          // 처음부터 모집 중으로 등록하면 POST가 공지 메일을 보내지만 결과 건수를 돌려주지 않는다(API는 그대로 둔다)
+          setMailResult({
+            tone: "info",
+            text: "프로그램을 등록하고 모집을 시작했어요. 공지 메일을 몇 건 보냈는지는 메일 화면에서 확인해 주세요.",
+            failedLink: false,
+            logLink: true,
+          })
+        } else {
+          toastSuccess(editing ? "프로그램을 저장했어요" : "프로그램을 등록했어요")
         }
       } else {
-        setFormError(data.error || "저장에 실패했습니다")
+        setFormError(friendlyError(res.status, data.error, MSG.saveFailed))
       }
     } catch {
-      setFormError("서버 오류가 발생했습니다")
+      setFormError(friendlyError(0, null, MSG.saveFailed))
     } finally {
       setSaving(false)
     }
   }
 
   const handleDelete = async (p: Program) => {
-    if (!confirm(`'${p.title}'을(를) 삭제할까요? 신청·제출 기록도 함께 삭제됩니다.`)) return
+    if (
+      !(await ask({
+        title: `‘${p.title}’ 프로그램을 삭제할까요?`,
+        consequences: [`신청 ${p.application_count}건·제출 ${p.submission_count}건도 함께 지워져요`, "되돌릴 수 없어요"],
+        confirmLabel: "삭제하기",
+        tone: "danger",
+      }))
+    )
+      return
+    setDeletingId(p.id)
+    setActionError("")
     try {
       const res = await fetch(`/api/admin/programs?id=${p.id}`, {
         method: "DELETE",
         credentials: "include",
       })
-      const data = await res.json()
-      if (data.success) fetchPrograms()
-      else alert(data.error || "삭제에 실패했습니다")
+      const data = await res.json().catch(() => ({}))
+      if (res.ok && data.success) {
+        toastSuccess(`‘${p.title}’ 프로그램을 삭제했어요`)
+        fetchPrograms()
+      } else setActionError(friendlyError(res.status, data.error, MSG.deleteFailed))
     } catch {
-      alert("서버 오류가 발생했습니다")
+      setActionError(friendlyError(0, null, MSG.deleteFailed))
+    } finally {
+      setDeletingId(null)
     }
   }
 
@@ -195,8 +252,30 @@ export function ProgramsManager() {
         </Button>
       </div>
 
-      {error && (
-        <div className="mb-4 rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</div>
+      {mailResult && (
+        <Notice
+          tone={mailResult.tone}
+          className="mb-4"
+          onClose={() => setMailResult(null)}
+          action={
+            mailResult.failedLink ? (
+              <Link href={emailsHref({ status: "failed" })} className="text-link underline underline-offset-2">
+                보내지 못한 메일 보기
+              </Link>
+            ) : mailResult.logLink ? (
+              <Link href={emailsHref({ type: "program_notice" })} className="text-link underline underline-offset-2">
+                공지 메일 기록 보기
+              </Link>
+            ) : undefined
+          }
+        >
+          {mailResult.text}
+        </Notice>
+      )}
+      {actionError && (
+        <Notice tone="danger" className="mb-4" onClose={() => setActionError("")}>
+          {actionError}
+        </Notice>
       )}
 
       <div className="rounded-lg border border-warm-tan bg-card">
@@ -215,14 +294,20 @@ export function ProgramsManager() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} className="py-10 text-center text-text-secondary">
-                  불러오는 중...
+                <TableCell colSpan={7} className="p-0">
+                  {showSkeleton ? <TableSkeleton rows={4} columns={5} className="rounded-none border-0" label="프로그램을 불러오는 중…" /> : <div className="min-h-24" />}
+                </TableCell>
+              </TableRow>
+            ) : error ? (
+              <TableRow>
+                <TableCell colSpan={7}>
+                  <EmptyState kind="error" compact title="프로그램을 불러오지 못했어요" description={error} onRetry={fetchPrograms} />
                 </TableCell>
               </TableRow>
             ) : programs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="py-10 text-center text-text-secondary">
-                  등록된 프로그램이 없습니다
+                <TableCell colSpan={7}>
+                  <EmptyState compact title="아직 등록한 프로그램이 없어요" description="[프로그램 등록]으로 첫 공고를 올려요" />
                 </TableCell>
               </TableRow>
             ) : (
@@ -231,7 +316,7 @@ export function ProgramsManager() {
                   <TableCell>
                     <Link
                       href={`/admin/programs/${p.id}`}
-                      className="group flex items-center gap-1 font-medium text-dark hover:text-gold"
+                      className="group flex items-center gap-1 font-medium text-dark underline-offset-2 hover:underline"
                     >
                       {p.title}
                       <ChevronRight className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
@@ -239,19 +324,29 @@ export function ProgramsManager() {
                     {p.category && <div className="text-xs text-text-secondary">{p.category}</div>}
                   </TableCell>
                   <TableCell className="text-sm text-text-secondary">
-                    {p.apply_start || "-"} ~ {p.apply_end || "-"}
+                    {d(p.apply_start)} ~ {d(p.apply_end)}
                   </TableCell>
-                  <TableCell className="text-sm text-text-secondary">{p.submit_deadline || "-"}</TableCell>
-                  <TableCell>{statusBadge(p.status)}</TableCell>
+                  <TableCell className="text-sm text-text-secondary">{d(p.submit_deadline)}</TableCell>
+                  <TableCell>
+                    <StatusBadge domain="program" status={p.status} />
+                  </TableCell>
                   <TableCell className="text-center">{p.application_count}</TableCell>
                   <TableCell className="text-center">{p.submission_count}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
-                      <Button variant="outline" size="sm" onClick={() => openEdit(p)}>
-                        <Pencil className="h-3.5 w-3.5" />
+                      <Button variant="outline" size="icon-sm" onClick={() => openEdit(p)} aria-label={`${p.title} 수정`} title="수정" className="hover:bg-warm-beige hover:text-dark">
+                        <Pencil className="size-4" aria-hidden />
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => handleDelete(p)}>
-                        <Trash2 className="h-3.5 w-3.5" />
+                      <Button
+                        variant="outline"
+                        size="icon-sm"
+                        onClick={() => handleDelete(p)}
+                        disabled={deletingId === p.id}
+                        aria-label={`${p.title} 삭제`}
+                        title="삭제"
+                        className="hover:bg-red-50 hover:text-red-800"
+                      >
+                        <Trash2 className="size-4" aria-hidden />
                       </Button>
                     </div>
                   </TableCell>
@@ -267,19 +362,17 @@ export function ProgramsManager() {
           <DialogHeader>
             <DialogTitle>{editing ? "프로그램 수정" : "프로그램 등록"}</DialogTitle>
             <DialogDescription>
-              작성 중(draft) 상태에서 모집 중(open)으로 바꾸면 전체 입주기업에 공지 메일이 발송됩니다
+              {mailEnabled
+                ? "작성 중에서 모집 중으로 바꾸면 입주기업 전체에 공지 메일이 나가요"
+                : "메일 발송이 설정되지 않아 모집을 시작해도 공지 메일은 나가지 않아요"}
             </DialogDescription>
           </DialogHeader>
 
-          {formError && (
-            <div className="rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              {formError}
-            </div>
-          )}
+          {formError && <Notice tone="danger">{formError}</Notice>}
 
           <div className="grid gap-4">
             <div className="grid gap-1.5">
-              <Label htmlFor="p-title">제목 *</Label>
+              <Label htmlFor="p-title">제목(필수)</Label>
               <Input
                 id="p-title"
                 value={form.title}
@@ -306,7 +399,7 @@ export function ProgramsManager() {
                     <SelectItem value="draft">작성 중</SelectItem>
                     <SelectItem value="open">모집 중</SelectItem>
                     <SelectItem value="closed">모집 마감</SelectItem>
-                    <SelectItem value="archived">보관됨</SelectItem>
+                    <SelectItem value="archived">보관</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -353,12 +446,12 @@ export function ProgramsManager() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setFormOpen(false)} disabled={saving}>
-              취소
+            <Button variant="outline" onClick={() => setFormOpen(false)} disabled={saving} className="hover:bg-warm-beige hover:text-dark">
+              닫기
             </Button>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? "저장 중..." : "저장"}
-            </Button>
+            <BusyButton busy={saving} onClick={handleSave}>
+              {editing ? "저장하기" : "등록하기"}
+            </BusyButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>

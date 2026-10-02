@@ -2,9 +2,11 @@ import { NextResponse } from "next/server"
 import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/db"
 import { isValidPeriod, prevPeriod } from "@/lib/billing"
+import { addMonths } from "@/lib/format"
 import { computeElecContext } from "@/lib/billing-db"
 
 // GET /api/admin/billing/meters?period=YYYY-MM — 계량기별 전월/당월 지침·사용량·청구액 미리보기
+//   + typical_usage: 직전 3개월 사용량 평균(“평소”, 음수 달은 뺌, 없으면 null) — 월 마감 1단계의 ±50% 확인 경고용(조회만)
 export async function GET(request: Request) {
   const session = await getSession()
   if (!session) return NextResponse.json({ success: false, error: "인증이 필요합니다" }, { status: 401 })
@@ -23,6 +25,22 @@ export async function GET(request: Request) {
       ORDER BY m.sort_order
     `
     const ctx = await computeElecContext(sql, period)
+    // 직전 3개월(사용월 −1 ~ −3)의 사용량 = 그 달 지침 − 전달 지침
+    const history = await sql`
+      SELECT m.code, r.period, r.reading
+      FROM meter_readings r JOIN meters m ON m.id = r.meter_id
+      WHERE r.period >= ${addMonths(period, -4)} AND r.period <= ${prev}
+    `
+    const readingAt = new Map(history.map((h) => [`${h.code}|${String(h.period).trim()}`, Number(h.reading)]))
+    const typical = (code: string): number | null => {
+      const usages: number[] = []
+      for (let i = 1; i <= 3; i++) {
+        const cur = readingAt.get(`${code}|${addMonths(period, -i)}`)
+        const before = readingAt.get(`${code}|${addMonths(period, -i - 1)}`)
+        if (cur !== undefined && before !== undefined && cur - before >= 0) usages.push(cur - before)
+      }
+      return usages.length > 0 ? Math.round(usages.reduce((a, b) => a + b, 0) / usages.length) : null
+    }
     return NextResponse.json({
       success: true,
       period, prev_period: prev,
@@ -30,6 +48,7 @@ export async function GET(request: Request) {
         ...m,
         usage: m.curr_reading !== null && m.prev_reading !== null
           ? Number(m.curr_reading) - Number(m.prev_reading) : null,
+        typical_usage: typical(String(m.code)),
       })),
       factory: ctx.factory,
       unit_price: ctx.unitPrice,

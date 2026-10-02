@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { AdminPageHeader, AdminCard } from "@/components/admin/admin-ui"
+import { dateTime } from "@/lib/format"
 
 export const dynamic = "force-dynamic"
 
@@ -23,14 +24,7 @@ async function getPopups(): Promise<Popup[]> {
 }
 
 function formatRange(start: string, end: string) {
-  const fmt = (s: string) =>
-    new Date(s).toLocaleString("ko-KR", {
-      year: "2-digit",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    })
+  const fmt = (s: string) => dateTime(s)
   return `${fmt(start)} ~ ${fmt(end)}`
 }
 
@@ -54,7 +48,7 @@ export default async function AdminPopupsPage() {
     <div className="p-5 md:p-8">
       <AdminPageHeader
         title="팝업"
-        description="사이트 메인에 노출되는 팝업을 관리합니다"
+        description="홈페이지 첫 화면에 뜨는 팝업을 관리해요"
         actions={
           <Button asChild>
             <Link href="/admin/popups/new">
@@ -82,7 +76,7 @@ export default async function AdminPopupsPage() {
             {popups.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} className="py-10 text-center text-sm text-text-secondary">
-                  등록된 팝업이 없습니다.
+                  아직 등록한 팝업이 없어요
                 </TableCell>
               </TableRow>
             ) : (
@@ -103,20 +97,20 @@ export default async function AdminPopupsPage() {
                     {item.related_news_id ? (
                       <Badge variant="secondary">공지 #{item.related_news_id}</Badge>
                     ) : (
-                      <span className="text-xs text-text-tertiary">독립</span>
+                      <span className="text-sm text-text-secondary">독립</span>
                     )}
                   </TableCell>
                   <TableCell>
-                    <PopupActiveToggle id={item.id} isActive={item.is_active} />
+                    <PopupActiveToggle id={item.id} isActive={item.is_active} title={item.title} />
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center justify-end gap-1">
                       <Button variant="ghost" size="icon" asChild className="h-8 w-8 text-text-secondary hover:text-dark">
-                        <Link href={`/admin/popups/${item.id}/edit`}>
-                          <Pencil className="h-4 w-4" />
+                        <Link href={`/admin/popups/${item.id}/edit`} aria-label={`${item.title} 수정`}>
+                          <Pencil className="h-4 w-4" aria-hidden />
                         </Link>
                       </Button>
-                      <PopupDeleteButton id={item.id} />
+                      <PopupDeleteButton id={item.id} title={item.title} />
                     </div>
                   </TableCell>
                 </TableRow>

@@ -7,7 +7,7 @@ import { renderInvoicePdf, type InvoicePdfInput } from "./invoice-pdf"
 type Sql = NeonQueryFunction<false, false>
 
 // 원본 청구서 양식과 동일한 2줄 표기 (BILLING_BANK_INFO env로 교체 가능)
-const DEFAULT_BANK = "예금주 : ㈜ 포항연합기술지주\n계좌번호 : 910-910009-44304  하나은행"
+import { DEFAULT_BANK_TEXT as DEFAULT_BANK } from "./bank-info"
 
 interface LineRow { room_code: string | null; line_type: string; label: string | null; amount: string; unit_price: string | null }
 

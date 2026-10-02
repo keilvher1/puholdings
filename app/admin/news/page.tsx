@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { AdminPageHeader, AdminCard } from "@/components/admin/admin-ui"
+import { date } from "@/lib/format"
 
 async function getNews() {
   const sql = getDb()
@@ -30,7 +31,7 @@ export default async function AdminNewsPage() {
     <div className="p-5 md:p-8">
       <AdminPageHeader
         title="최신 소식"
-        description="뉴스 및 공지사항을 관리합니다"
+        description="뉴스와 공지사항을 관리해요"
         actions={
           <Button asChild>
             <Link href="/admin/news/new">
@@ -63,27 +64,27 @@ export default async function AdminNewsPage() {
                   <Badge variant="secondary">{item.category}</Badge>
                 </TableCell>
                 <TableCell className="whitespace-nowrap text-sm text-text-secondary">
-                  {new Date(item.published_at).toLocaleDateString("ko-KR")}
+                  {date(item.published_at)}
                 </TableCell>
                 <TableCell>
                   {item.is_visible !== false ? (
                     <span className="inline-flex items-center gap-1 text-xs font-medium text-dark">
-                      <Eye className="h-3 w-3 text-gold" /> 공개
+                      <Eye className="h-3 w-3" aria-hidden /> 공개
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 text-xs text-text-tertiary">
-                      <EyeOff className="h-3 w-3" /> 비공개
+                    <span className="inline-flex items-center gap-1 text-xs text-text-secondary">
+                      <EyeOff className="h-3 w-3" aria-hidden /> 비공개
                     </span>
                   )}
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center justify-end gap-1">
                     <Button variant="ghost" size="icon" asChild className="h-8 w-8 text-text-secondary hover:text-dark">
-                      <Link href={`/admin/news/${item.id}`}>
-                        <Pencil className="h-4 w-4" />
+                      <Link href={`/admin/news/${item.id}`} aria-label={`${item.title} 수정`}>
+                        <Pencil className="h-4 w-4" aria-hidden />
                       </Link>
                     </Button>
-                    <DeleteButton id={item.id} type="news" />
+                    <DeleteButton id={item.id} type="news" itemName={item.title} />
                   </div>
                 </TableCell>
               </TableRow>

@@ -48,8 +48,9 @@ export function PopupModal() {
   const [queue, setQueue] = useState<Popup[]>([])
   const [index, setIndex] = useState(0)
 
-  // Do not render on admin / login pages.
-  const isAdminArea = pathname?.startsWith("/admin") || pathname?.startsWith("/login") || pathname?.startsWith("/services")
+  // Do not render on admin / login pages, or in the tenant portal (업무 화면에는 공개 사이트 팝업을 띄우지 않는다).
+  const isAdminArea =
+    pathname?.startsWith("/admin") || pathname?.startsWith("/login") || pathname?.startsWith("/services") || pathname?.startsWith("/portal")
 
   useEffect(() => {
     if (isAdminArea) return

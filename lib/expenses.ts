@@ -69,6 +69,16 @@ export interface ExpenseProject extends ProjectInput {
   updated_at: string
   receipt_count: number // 저장된 증빙 수
   spent_total: number // 저장된 증빙 합계(원)
+  // 비목별 집행액(원 단위 정수, 부가세 포함 합계 = spent_total과 같은 기준). 키는 normalizeBudgetName(비목)이고
+  // 비목 미지정 증빙은 키 ""에 모인다(값을 모두 더하면 spent_total). 장부의 비목별 집행 표(buildUsageRows)와 같은 숫자다.
+  // listProjects()가 채운다. 다른 경로에서 만든 프로젝트 객체에는 없을 수 있다(선택 필드).
+  spent_by_item?: Record<string, number>
+}
+
+// 비목 이름 정규화(앞뒤 공백 제거·연속 공백 하나로). 화면의 normalizeName(client-helpers)과 같은 규칙이다.
+// 비목별 집행액 키·예산 외 판정에 쓴다.
+export function normalizeBudgetName(s: string | null | undefined): string {
+  return (s ?? "").trim().replace(/\s+/g, " ")
 }
 
 // AI가 사업 자료에서 뽑아낸 프로젝트 초안(저장 전)

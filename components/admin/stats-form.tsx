@@ -56,10 +56,10 @@ export function StatsForm({ initialData }: StatsFormProps) {
       if (data.success) {
         router.refresh()
       } else {
-        setError(data.error || "저장에 실패했습니다")
+        setError(data.error || "저장하지 못했어요. 잠시 뒤 다시 눌러 주세요")
       }
     } catch {
-      setError("서버 오류가 발생했습니다")
+      setError("저장하지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요")
     } finally {
       setLoading(false)
     }
@@ -147,7 +147,7 @@ export function StatsForm({ initialData }: StatsFormProps) {
           disabled={loading}
           className="rounded-md bg-dark px-6 py-2.5 text-sm font-medium text-primary-foreground hover:bg-dark-muted transition-colors disabled:opacity-50"
         >
-          {loading ? "저장 중..." : "모두 저장"}
+          {loading ? "저장 중…" : "모두 저장"}
         </button>
       </div>
     </form>

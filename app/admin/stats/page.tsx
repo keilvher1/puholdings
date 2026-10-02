@@ -25,7 +25,7 @@ export default async function AdminStatsPage() {
     <div className="p-5 md:p-8">
       <AdminPageHeader
         title="통계 관리"
-        description="메인 페이지에 표시되는 핵심 지표를 관리합니다"
+        description="홈페이지 첫 화면에 보이는 핵심 지표를 관리해요"
       />
       <StatsForm initialData={stats as any[]} />
     </div>

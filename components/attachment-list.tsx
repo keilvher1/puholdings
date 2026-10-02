@@ -90,7 +90,7 @@ export function AttachmentPreviewButton({ attachment }: { attachment: Attachment
   )
 }
 
-function AttachmentRow({ attachment }: { attachment: Attachment }) {
+function AttachmentRow({ attachment, touch = false }: { attachment: Attachment; touch?: boolean }) {
   const [att, setAtt] = useState(attachment)
   const [previewOpen, setPreviewOpen] = useState(false)
   const pollStartRef = useRef<number | null>(null)
@@ -158,16 +158,18 @@ function AttachmentRow({ attachment }: { attachment: Attachment }) {
           <button
             type="button"
             onClick={() => setPreviewOpen(true)}
-            className="flex items-center gap-1 rounded p-1.5 text-text-secondary transition-colors hover:bg-warm-beige hover:text-dark"
+            className={`flex items-center justify-center gap-1 rounded text-text-secondary transition-colors hover:bg-warm-beige hover:text-dark ${touch ? "size-11" : "p-1.5"}`}
             title="미리보기"
+            aria-label={`${att.name} 미리보기`}
           >
             <Eye className="h-4 w-4" />
           </button>
         )}
         <a
           href={fileUrl(att.pathname, att.name, true)}
-          className="rounded p-1.5 text-text-secondary transition-colors hover:bg-warm-beige hover:text-dark"
+          className={`rounded text-text-secondary transition-colors hover:bg-warm-beige hover:text-dark ${touch ? "flex size-11 items-center justify-center" : "p-1.5"}`}
           title="다운로드"
+          aria-label={`${att.name} 다운로드`}
         >
           <Download className="h-4 w-4" />
         </a>
@@ -186,15 +188,18 @@ function AttachmentRow({ attachment }: { attachment: Attachment }) {
 export function AttachmentList({
   attachments,
   className = "",
+  touch = false,
 }: {
   attachments: Attachment[] | null | undefined
   className?: string
+  /** 휴대폰·포털: 미리보기·다운로드 버튼을 44×44px로(계획서 2.4 누름 영역) */
+  touch?: boolean
 }) {
   if (!Array.isArray(attachments) || attachments.length === 0) return null
   return (
     <ul className={`space-y-2 ${className}`}>
       {attachments.map((att) => (
-        <AttachmentRow key={att.pathname} attachment={att} />
+        <AttachmentRow key={att.pathname} attachment={att} touch={touch} />
       ))}
     </ul>
   )

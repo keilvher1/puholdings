@@ -91,7 +91,7 @@ export function NewsForm({ initialData }: NewsFormProps) {
 
     if (popupEnabled) {
       if (!popup.start_at || !popup.end_at) {
-        setError("팝업 시작일과 종료일을 입력해주세요")
+        setError("팝업 시작일과 종료일을 입력해 주세요")
         return
       }
       if (new Date(popup.end_at) <= new Date(popup.start_at)) {
@@ -126,10 +126,10 @@ export function NewsForm({ initialData }: NewsFormProps) {
         router.push("/admin/news")
         router.refresh()
       } else {
-        setError(data.error || "저장에 실패했습니다")
+        setError(data.error || "저장하지 못했어요. 잠시 뒤 다시 눌러 주세요")
       }
     } catch {
-      setError("서버 오류가 발생했습니다")
+      setError("저장하지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요")
     } finally {
       setLoading(false)
     }
@@ -283,7 +283,7 @@ export function NewsForm({ initialData }: NewsFormProps) {
 
       <div className="mt-6 flex items-center gap-3">
         <Button type="submit" disabled={loading}>
-          {loading ? "저장 중..." : "저장"}
+          {loading ? "저장 중…" : "저장"}
         </Button>
         <Button type="button" variant="outline" asChild>
           <Link href="/admin/news">취소</Link>

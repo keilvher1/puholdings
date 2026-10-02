@@ -513,3 +513,63 @@ html.cine-lock {
 .portfolio-grid > * > * {
   height: 100% !important;
 }
+
+/* ============================================================
+   관리자·입주기업 포털(SaaS) 토큰과 포커스 규칙 — 추가만 한다(계획서 2.4).
+   공개 사이트가 쓰는 --ring·기존 토큰 값은 바꾸지 않는다. 관리자·포털 레이아웃 루트에 .app-shell이 있다.
+   ============================================================ */
+:root {
+  /* 링크 글자: 흰 바탕 6.03:1, 아이보리 5.33:1, 베이지 4.78:1. 금색(#c9a84c)은 글자에 쓰지 않는다 */
+  --link: #7a5f1c;
+  /* 베이지 바탕 위 보조 글자 4.90:1 */
+  --text-on-beige: #5f6070;
+  /* 배지·보조 문장용 진한 회색(베이지 바탕 9:1) */
+  --text-muted-strong: #3f3f4e;
+}
+
+@theme inline {
+  --color-link: var(--link);
+  --color-text-on-beige: var(--text-on-beige);
+  --color-text-muted-strong: var(--text-muted-strong);
+}
+
+/* 포커스: 밝은 바탕은 진남색 2px + 2px 간격, 어두운 바탕(사이드바)은 금색 2px(7.46:1).
+   대화상자·시트·메뉴는 body 바로 아래로 그려지므로 .app-shell이 있는 화면 전체(body:has)에 건다. */
+body:has(.app-shell) :focus-visible {
+  outline: 2px solid var(--dark);
+  outline-offset: 2px;
+}
+.app-shell .bg-dark :focus-visible,
+.app-shell [data-surface="dark"] :focus-visible {
+  outline-color: var(--gold);
+}
+/* 본문 바로가기·오류 요약처럼 코드가 포커스를 옮기는 자리(tabindex=-1)는 테두리를 그리지 않는다 */
+body:has(.app-shell) [tabindex="-1"]:focus-visible {
+  outline: none;
+}
+/* 단위 붙은 입력칸(InputGroup: WonInput·UnitInput 등)은 안쪽 칸이 아니라 바깥 틀에 외곽선 하나만 그린다
+   (안쪽 input에도 그리면 틀 안에 테두리가 한 겹 더 보인다) */
+body:has(.app-shell) [data-slot="input-group-control"]:focus-visible {
+  outline: none;
+}
+body:has(.app-shell) [data-slot="input-group"]:has(> [data-slot="input-group-control"]:focus-visible) {
+  outline: 2px solid var(--dark);
+  outline-offset: 2px;
+}
+
+/* 고정·sticky 바가 키보드 초점을 가리지 않게(WCAG 2.2 2.4.11 — 통합 검증 F1).
+   초점이 갈 수 있는 요소에 스크롤 여백(scroll-margin)을 줘서, Tab으로 옮겨 갈 때 브라우저가 바 뒤가 아니라 바 바깥까지 스크롤하게 한다.
+   - 위: 휴대폰 관리자 상단 바(56px)·포털 머리(56/64px) [data-sticky-top]
+   - 아래: 저장 바 StickyActionBar [data-sticky-action-bar](시트 안이든 페이지든 그 스크롤 영역 기준), 포털 하단 탭 [data-portal-bottom-tabs](휴대폰 폭만, 입력 중 숨으면 빼다)
+   바 안의 요소·사이드바는 빼다(늘 보이는 자리라 여백을 주면 오히려 화면이 튄다). */
+body:has(.app-shell) :is(a[href], button, input, select, textarea, summary, [role="checkbox"], [role="radio"], [role="switch"], [role="tab"], [tabindex]:not([tabindex="-1"])):not([data-sticky-top] *, aside *) {
+  scroll-margin-top: 5rem;
+}
+body:has([data-sticky-action-bar]) :is(a[href], button, input, select, textarea, summary, [role="checkbox"], [role="radio"], [role="switch"], [role="tab"], [tabindex]:not([tabindex="-1"])):not([data-sticky-action-bar] *, [data-sticky-top] *, aside *) {
+  scroll-margin-bottom: 7.5rem;
+}
+@media (max-width: 639.98px) {
+  html:not([data-portal-tabs="hidden"]) body:has([data-portal-bottom-tabs]) :is(a[href], button, input, select, textarea, summary, [role="checkbox"], [role="radio"], [role="switch"], [role="tab"], [tabindex]:not([tabindex="-1"])):not([data-portal-bottom-tabs] *, [data-sticky-top] *, [data-sticky-action-bar] *) {
+    scroll-margin-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+  }
+}

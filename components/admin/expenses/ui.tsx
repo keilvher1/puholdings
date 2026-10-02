@@ -110,8 +110,10 @@ export function Chip({
   )
 }
 
+// 업로드 행 상태는 4개(입력 필요·확인 필요·준비 완료·제외) + 진행 표시(인식 중·저장함)이고, 라벨·톤은 lib/status.ts의
+// expenseRow와 같다(계획서 4.2.1). 다른 화면이 쓰는 키(active·closed·duplicate·suspect 등)는 지우지 않는다.
 export type ExpenseStatus =
-  | "ready" // 저장 가능
+  | "ready" // 준비 완료
   | "review" // 확인 필요(저장은 가능)
   | "required" // 입력 필요(저장 불가)
   | "excluded" // 저장 대상에서 제외
@@ -125,7 +127,7 @@ export type ExpenseStatus =
   | "closed" // 종료(프로젝트)
 
 export const STATUS_META: Record<ExpenseStatus, { label: string; tone: ChipTone }> = {
-  ready: { label: "저장 가능", tone: "success" },
+  ready: { label: "준비 완료", tone: "success" },
   review: { label: "확인 필요", tone: "warning" },
   required: { label: "입력 필요", tone: "danger" },
   excluded: { label: "제외", tone: "neutral" },
@@ -134,7 +136,7 @@ export const STATUS_META: Record<ExpenseStatus, { label: string; tone: ChipTone 
   duplicate: { label: "중복", tone: "danger" },
   suspect: { label: "중복 의심", tone: "warning" },
   error: { label: "오류", tone: "danger" },
-  saved: { label: "저장됨", tone: "success" },
+  saved: { label: "저장함", tone: "success" },
   active: { label: "진행 중", tone: "success" },
   closed: { label: "종료", tone: "neutral" },
 }

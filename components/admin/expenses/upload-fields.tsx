@@ -1,5 +1,6 @@
 "use client"
 
+import { dateShort } from "@/lib/format"
 import { useLayoutEffect, useRef, useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -54,7 +55,7 @@ export interface GridProps {
   "data-grid-col"?: string
 }
 
-const LOW_TITLE = "인식 불확실 · 원본과 대조하세요"
+const LOW_TITLE = "자동 인식이 불확실해요 · 원본과 대조해 주세요"
 
 // ── 금액(천 단위 콤마, 오른쪽 정렬) ──────────────────────────────────────────
 // 입력하는 동안에도 콤마를 붙이고, 커서가 튀지 않도록 "커서 앞 숫자 개수"를 기준으로 위치를 되돌린다.
@@ -661,7 +662,13 @@ export function RateInput(props: Omit<Parameters<typeof DecimalInput>[0], "decim
   return <DecimalInput {...props} decimals={4} format={formatRate} placeholder={props.placeholder ?? "환율"} />
 }
 
-// 환율 근거 한 줄: "2026-09-18 기준 · 유럽중앙은행" · 조회 중 · 조회 실패 · 직접 입력.
+// 화면용 환율 근거: "9월 18일(금) 기준 · 유럽중앙은행" / "직접 입력"(날짜는 lib/format, 원문 ISO 날짜를 보이지 않는다)
+function fxSourceLabel(f: Pick<ReceiptFields, "exchange_rate_date" | "exchange_rate_source">): string {
+  const raw = fxSourceText(f)
+  return f.exchange_rate_date ? raw.replace(f.exchange_rate_date, dateShort(f.exchange_rate_date)) : raw
+}
+
+// 환율 근거 한 줄: "9월 18일(금) 기준 · 유럽중앙은행" · 조회 중 · 조회 실패 · 직접 입력.
 // onRefetch: 결제일 환율 다시 받기(직접 입력한 환율을 버림)
 export function FxNote({
   fields,
@@ -697,7 +704,7 @@ export function FxNote({
   } else if (fields.exchange_rate_source === "manual") {
     body = (
       <>
-        <span>{fxSourceText(fields)}</span>
+        <span>{fxSourceLabel(fields)}</span>
         {btn("결제일 환율 적용")}
       </>
     )
@@ -705,23 +712,23 @@ export function FxNote({
     const note = fxDateNote(fields)
     body = (
       <span title={note || undefined}>
-        {fxSourceText(fields)}
+        {fxSourceLabel(fields)}
         {note && " (직전 영업일)"}
       </span>
     )
   } else if (fx?.status === "error") {
     body = (
       <>
-        <span className="text-amber-800" title="환율 칸에 직접 입력할 수 있습니다">
+        <span className="text-amber-800" title="환율 칸에 직접 입력할 수 있어요">
           {fx.message}
         </span>
         {btn("다시 조회")}
       </>
     )
   } else if (!fields.issue_date) {
-    body = <span>거래일자 입력 시 결제일 환율 적용</span>
+    body = <span>거래일자를 넣으면 결제일 환율을 적용해요</span>
   } else {
-    body = <span>환율 없음 · 직접 입력하세요</span>
+    body = <span>환율이 없어요 · 직접 입력해 주세요</span>
   }
   return (
     <p className={cn("flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs leading-4 text-text-secondary", className)} aria-live="polite">

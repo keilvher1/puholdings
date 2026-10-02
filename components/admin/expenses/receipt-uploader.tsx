@@ -2,38 +2,34 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { CheckCircle2, Loader2, Save, Undo2, X } from "lucide-react"
+import { Undo2, X } from "lucide-react"
 import {
   MAX_SCAN_FILE_BYTES,
   SCAN_CONCURRENCY,
-  formatWon,
   type DuplicateReceipt,
   type FxRateResponse,
   type InboxItem,
   type ReceiptDraft,
   type ReceiptFields,
 } from "@/lib/expenses"
+import { dateTime, won } from "@/lib/format"
+import { receiptsHref } from "@/lib/links"
+import { BusyButton, Callout, Notice, StickyActionBar, toastInfo, toastSuccess, useConfirm, useUrlState } from "@/components/saas"
 import { ClientImageError, compressImage, formatBytes, isHeicLike, isImageFile, isPdfFile, sha256File } from "@/lib/client-image"
 import { UploadDropzone } from "./upload-dropzone"
 import { UploadFileList } from "./upload-file-list"
-import { ReceiptTable, type ReceiptTableActions } from "./receipt-table"
-import { UploadReviewDialog } from "./upload-review-dialog"
-import { PayrollEntryButton } from "./payroll-entry"
+import { ReceiptTable, type ReceiptTableActions, type TableCounts } from "./receipt-table"
+import { UploadReviewDialog, type ReviewMode } from "./upload-review-dialog"
 import {
+  AI_OFF_TEXT,
   BACKUP_KEY,
+  acknowledgeAll,
+  acknowledgeReason,
   applyFieldPatch,
   applyFxRate,
+  assessRow,
   isFxFailureWarning,
   fxRequestKey,
   parseFxResponse,
@@ -50,26 +46,33 @@ import {
   rowErrors,
   rowsFromInbox,
   rowsFromScan,
+  saveSummary,
+  screenSafeError,
   serializeBackup,
+  setIncluded,
   uploadItemFromInbox,
   toCreateInput,
   PROJECT_REQUIRED,
   type DraftRow,
+  type ReasonField,
+  type RowAssessment,
   type UploadBackup,
   type UploadItem,
   type UploaderProject,
 } from "./upload-model"
-import { BusyText, HelpDetails, InlineNotice, KeyHint, Panel, PanelHeader } from "./ui"
+import { BusyText, HelpDetails, KeyHint, Panel, PanelHeader } from "./ui"
 
 export type { UploaderProject } from "./upload-model"
 
-// 증빙 올리기(사업비 정산 기본 화면).
+// 증빙 올리기(증빙 처리 기본 화면, 계획서 4.2.1·4.2.2).
 // 흐름: 파일 여러 개 올리기 → 브라우저에서 사진 줄이기 → 파일마다 /scan 호출(동시 3개) → 결과를 하나의 표로 모음
-//       → 관리자가 확인·수정하고 마지막 열에서 프로젝트 선택 → 통과한 선택 행만 한 번에 저장.
-// 인식 결과는 제안일 뿐이며, 저장 버튼을 누르기 전에는 아무것도 DB에 들어가지 않는다.
+//       → 상태 탭으로 확인할 것만 보며 사유를 확인하고 프로젝트를 고름 → 저장 대상(selected) 행을 한 번에 저장.
+// 인식 결과는 제안일 뿐이며, 저장 버튼을 누르기 전에는 아무것도 DB에 들어가지 않는다(CLAUDE.md 9항).
+// 지키는 것(7.2 #8·#9·#23): 3중 중복 검사·의심 건 자동 선택 해제·중복 저장 확인, 다른 창 선저장 건 건너뛰기,
+// 임시 보관(새로고침 복구)·beforeunload·저장 중 표 잠금·행 삭제 20초 되돌리기·Ctrl+S·입력 필요 행 이동. 확인 처리는 selected를 바꾸지 않는다.
 
-type Notice = {
-  tone: "success" | "error" | "info"
+type ScreenNotice = {
+  tone: "success" | "danger" | "info"
   text: string
   link?: { href: string; label: string }
 }
@@ -95,61 +98,54 @@ function fallbackFrom(data: Record<string, unknown> | null): UploadItem["fallbac
 
 const PDF_LIMIT_LABEL = formatBytes(MAX_SCAN_FILE_BYTES)
 
-function NoticeBar({ notice, onClose }: { notice: Notice; onClose: () => void }) {
-  return (
-    <InlineNotice tone={notice.tone === "error" ? "danger" : notice.tone} onClose={onClose} className="mb-3">
-      {notice.text}
-      {notice.link && (
-        <Link href={notice.link.href} className="ml-2 font-semibold underline underline-offset-2">
-          {notice.link.label}
-        </Link>
-      )}
-    </InlineNotice>
-  )
-}
-
-// 표의 행(tr)과 모바일 카드(li)가 같은 data-row-key를 가진다. 지금 화면에 보이는 쪽을 고른다.
+// 표의 행(tr)과 휴대폰 카드(li)가 같은 data-row-key를 가진다. 지금 화면에 보이는 쪽을 고른다.
 function findRowElement(key: string): HTMLElement | null {
   const els = Array.from(document.querySelectorAll<HTMLElement>(`[data-row-key="${key}"]`))
   return els.find((el) => el.getClientRects().length > 0) ?? els[0] ?? null
 }
 
-function formatSavedAt(ts: number): string {
-  const d = new Date(ts)
-  return `${d.getMonth() + 1}월 ${d.getDate()}일 ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`
-}
+type ReviewState = { key: string; mode: ReviewMode; order: string[]; field: ReasonField | null }
 
 export function ReceiptUploader({
   projects,
   aiReady = true,
   defaultProjectId = null,
   inbox = [],
+  supportContact = null,
 }: {
   projects: UploaderProject[]
   aiReady?: boolean
   defaultProjectId?: number | null
   // 데스크톱 앱이 올려 확인 대기함에 있는 증빙(pending). 처음 열 때 완료된 파일 카드 + 표 행으로 채운다.
   inbox?: InboxItem[]
+  // 자동 인식을 켜 달라고 요청할 곳(ADMIN_SUPPORT_CONTACT). 없으면 그 문장을 숨긴다.
+  supportContact?: string | null
 }) {
+  const router = useRouter()
+  const ask = useConfirm()
   const [items, setItems] = useState<UploadItem[]>([])
   const [rows, setRows] = useState<DraftRow[]>([])
   const [aiOff, setAiOff] = useState(!aiReady)
   const [saving, setSaving] = useState(false)
-  const [notice, setNotice] = useState<Notice | null>(null)
+  const [notice, setNotice] = useState<ScreenNotice | null>(null)
   const [undo, setUndo] = useState<{ entries: { row: DraftRow; index: number }[] } | null>(null)
-  const [flash, setFlash] = useState<string | null>(null)
-  const [reviewKey, setReviewKey] = useState<string | null>(null)
+  const [review, setReview] = useState<ReviewState | null>(null)
   const [backup, setBackup] = useState<UploadBackup | null>(null)
   const [backupLoaded, setBackupLoaded] = useState(false)
   const [focusRowKey, setFocusRowKey] = useState<string | null>(null)
-  // 같은 증빙이 두 번 계상될 수 있는 행이 저장 대상에 있으면 한 번 더 묻는다.
-  const [confirmSave, setConfirmSave] = useState<{ lines: string[]; count: number; firstKey: string } | null>(null)
+  const [inboxParam, setInboxParam] = useUrlState("inbox", "")
+  const inboxOnly = inboxParam === "1"
+  const saveButtonRef = useRef<HTMLButtonElement>(null)
 
   const rowsRef = useRef(rows)
   const itemsRef = useRef(items)
   useEffect(() => {
     rowsRef.current = rows
     itemsRef.current = items
+  })
+  const askRef = useRef(ask)
+  useEffect(() => {
+    askRef.current = ask
   })
   const startedRef = useRef(new Set<string>())
   const abortRef = useRef(new Map<string, AbortController>())
@@ -162,6 +158,12 @@ export function ReceiptUploader({
   const inboxKeysRef = useRef(new Map<string, number>())
   // 이번 화면에서 행을 하나라도 저장한 대기함 파일(key). 남은 행을 표에서 지워 행이 없어지면 대기함에서 뺀다.
   const savedInboxKeysRef = useRef(new Set<string>())
+
+  const projectById = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
+  const projectByIdRef = useRef(projectById)
+  useEffect(() => {
+    projectByIdRef.current = projectById
+  })
 
   // ── 확인 대기함(데스크톱 앱) 항목 채우기 — 처음 한 번만 ─────────────────────────
   // 서버 렌더링과 key가 어긋나지 않도록 화면이 뜬 뒤에 넣는다.
@@ -209,7 +211,7 @@ export function ReceiptUploader({
     }
   }, [])
 
-  // ── 외화 행: 결제일 환율 받기 ─────────────────────────────────────────────────
+// ── 외화 행: 결제일 환율 받기 ─────────────────────────────────────────────────
   // 통화·거래일자가 정해졌는데 환율이 없는 외화 행(직접 입력 제외)이면 /fx로 받아 원화 합계를 계산한다.
   // 같은 (통화, 날짜)는 한 번만 요청하고, 실패하면 그 행은 '다시 조회'를 누를 때까지 다시 요청하지 않는다.
   const fxCacheRef = useRef(new Map<string, Promise<FxRateResponse>>())
@@ -229,10 +231,10 @@ export function ReceiptUploader({
             data = null
           }
           const parsed = parseFxResponse(data)
-          if (!parsed.success && !res.ok) return { success: false as const, error: httpErrorMessage(res.status, (data as { error?: string } | null)?.error || "환율 조회 실패") }
+          if (!parsed.success && !res.ok) return { success: false as const, error: httpErrorMessage(res.status, (data as { error?: string } | null)?.error || "환율을 받지 못했어요") }
           return parsed
         })
-        .catch(() => ({ success: false as const, error: "네트워크 오류로 환율을 받지 못했습니다" }))
+        .catch(() => ({ success: false as const, error: "인터넷 연결이 끊겨 환율을 받지 못했어요" }))
       fxCacheRef.current.set(reqKey, p)
     }
     const res = await p
@@ -240,7 +242,7 @@ export function ReceiptUploader({
     setRows((prev) =>
       prev.map((r) => {
         if (!stillWanted(r)) return r.key === rowKey && r.fx?.status === "loading" && !fxRequestKey(r.fields) ? { ...r, fx: null } : r
-        if (!res.success) return { ...r, fx: { status: "error", message: res.error || "환율 조회 실패" } }
+        if (!res.success) return { ...r, fx: { status: "error", message: res.error || "환율을 받지 못했어요" } }
         const fields = applyFxRate(r.fields, res, date)
         const warnings = fields.exchange_rate !== null ? r.warnings.filter((w) => !isFxFailureWarning(w)) : r.warnings
         return { ...r, fields, fx: null, warnings: warnings.length === r.warnings.length ? r.warnings : warnings }
@@ -308,13 +310,13 @@ export function ReceiptUploader({
             try {
               toSend = await compressImage(item.file)
             } catch (e) {
-              throw new ScanError(e instanceof ClientImageError ? e.message : "사진을 처리하지 못했습니다. JPG·PNG로 저장해 다시 올리세요.", false)
+              throw new ScanError(e instanceof ClientImageError ? e.message : "사진을 처리하지 못했어요. JPG·PNG로 저장해 다시 올려 주세요.", false)
             }
           } else {
             toSend = item.file
           }
           if (toSend.size > MAX_SCAN_FILE_BYTES) {
-            throw new ScanError(`파일 용량 초과(${formatBytes(toSend.size)} / 최대 ${PDF_LIMIT_LABEL}). 페이지를 나누어 올리세요.`, false)
+            throw new ScanError(`파일이 너무 커요(${formatBytes(toSend.size)} · 최대 ${PDF_LIMIT_LABEL}). 쪽을 나눠 올려 주세요.`, false)
           }
           // HEIC처럼 원본을 미리 볼 수 없던 사진은 줄인 JPEG로 썸네일을 만든다.
           const thumb = item.kind === "image" && !item.localUrl && !ctrl.signal.aborted ? trackUrl(URL.createObjectURL(toSend)) : null
@@ -332,7 +334,7 @@ export function ReceiptUploader({
         } catch (e) {
           if (ctrl.signal.aborted) return
           void e
-          throw new ScanError("네트워크 오류로 파일을 보내지 못했습니다. 인터넷 연결을 확인하고 다시 시도하세요.", true)
+          throw new ScanError("인터넷 연결이 끊겨 파일을 보내지 못했어요. 연결을 확인하고 다시 시도해 주세요.", true)
         }
         let data: Record<string, unknown> | null = null
         try {
@@ -344,7 +346,7 @@ export function ReceiptUploader({
 
         if (data && data.success === true) {
           const meta = isUploadedFileMeta(data.file) ? normalizeFileMeta(data.file) : null
-          if (!meta) throw new ScanError("서버 응답에 파일 정보가 없습니다. 다시 시도하세요.", true)
+          if (!meta) throw new ScanError("파일을 보관하지 못했어요. 다시 시도해 주세요.", true)
           const drafts = Array.isArray(data.drafts) ? (data.drafts as ReceiptDraft[]) : []
           const dups = Array.isArray(data.duplicates) ? (data.duplicates as DuplicateReceipt[]) : []
           const similar = Array.isArray(data.possible_duplicates) ? (data.possible_duplicates as unknown[]).map(toSimilarList) : []
@@ -352,7 +354,7 @@ export function ReceiptUploader({
           // 표에 이미 있는 행과 같은 파일·같은 거래라 선택을 해제하게 되면 잠깐 알려 준다(행에도 이유가 표시된다).
           const preview = resolveInsertConflicts(rowsRef.current, added)
           if (preview.deselected > 0) {
-            setFlash(`중복 의심 ${preview.deselected}건을 저장 대상에서 제외했습니다.`)
+            toastInfo(`같은 증빙으로 보이는 ${preview.deselected}건을 저장 대상에서 뺐어요`, { description: "‘제외’ 탭에서 확인할 수 있어요" })
           }
           setRows((prev) => insertRows(prev, added, key))
           // 인식한 내용이 없어 빈 초안만 온 경우는 '인식 내용 없음'으로 보여 준다.
@@ -372,21 +374,18 @@ export function ReceiptUploader({
             updateItem(key, { status: "done", aiSkipped: true, uploaded: meta, draftCount: 0, duplicateCount: dups.length, error: "", fallback: null })
             return
           }
-          throw new ScanError(
-            typeof data.error === "string" && data.error ? data.error : "자동 인식이 설정되지 않았습니다(OPENAI_API_KEY). 시스템 관리자에게 문의하세요.",
-            true
-          )
+          throw new ScanError(AI_OFF_TEXT, true)
         }
 
-        const serverMsg = data && typeof data.error === "string" && data.error ? data.error : undefined
+        const serverMsg = data && typeof data.error === "string" && data.error ? screenSafeError(data.error) : undefined
         throw new ScanError(
-          httpErrorMessage(res.status, serverMsg ?? (data ? undefined : "서버 응답을 읽지 못했습니다. 잠시 후 다시 시도하세요.")),
+          httpErrorMessage(res.status, serverMsg ?? (data ? undefined : "응답을 읽지 못했어요. 잠시 뒤 다시 시도해 주세요.")),
           true,
           fallbackFrom(data)
         )
       } catch (e) {
         if (ctrl.signal.aborted) return
-        const err = e instanceof ScanError ? e : new ScanError("처리 중 알 수 없는 오류가 발생했습니다. 다시 시도하세요.", true)
+        const err = e instanceof ScanError ? e : new ScanError("처리하지 못했어요. 다시 시도해 주세요.", true)
         updateItem(key, { status: "error", error: err.message, retryable: err.retryable, fallback: err.fallback })
       } finally {
         abortRef.current.delete(key)
@@ -440,11 +439,11 @@ export function ReceiptUploader({
       fileSeqRef.current.set(key, ++seqRef.current)
       let error = ""
       if (kind === "other") {
-        error = "지원하지 않는 형식입니다. JPG·PNG·HEIC·PDF만 가능합니다(엑셀·한글은 PDF로 변환)."
+        error = "올릴 수 없는 형식이에요. JPG·PNG·HEIC·PDF만 돼요(엑셀·한글은 PDF로 바꿔 주세요)."
       } else if (file.size === 0) {
-        error = "빈 파일입니다. 파일을 확인하세요."
+        error = "빈 파일이에요. 파일을 확인해 주세요."
       } else if (kind === "pdf" && file.size > MAX_SCAN_FILE_BYTES) {
-        error = `PDF 용량 초과(${formatBytes(file.size)} / 최대 ${PDF_LIMIT_LABEL}). 페이지를 나누어 올리세요.`
+        error = `PDF가 너무 커요(${formatBytes(file.size)} · 최대 ${PDF_LIMIT_LABEL}). 쪽을 나눠 올려 주세요.`
       }
       const canPreview = kind === "image" && !isHeicLike(file)
       added.push({
@@ -469,7 +468,7 @@ export function ReceiptUploader({
     }
     if (added.length > 0) setItems((prev) => [...prev, ...added])
     if (skipped > 0) {
-      setNotice({ tone: "info", text: `이미 목록에 있는 파일 ${skipped}개 제외` })
+      toastInfo(`이미 목록에 있는 파일 ${skipped}개는 빼고 올렸어요`)
     }
   }, [])
 
@@ -495,43 +494,104 @@ export function ReceiptUploader({
     [projects, defaultProjectId, insertRows, updateItem]
   )
 
-  const removeItem = useCallback((key: string) => {
-    abortRef.current.get(key)?.abort()
+  const removeItem = useCallback(async (key: string) => {
     const it = itemsRef.current.find((i) => i.key === key)
     const inboxId = inboxKeysRef.current.get(key)
     if (inboxId !== undefined) {
-      // 확인 대기함 파일: 대기함에서 제외하고(원본도 정리) 이 파일의 표 행도 함께 뺀다.
+      // 확인 대기함 파일: 대기함에서 빼고(원본도 정리) 이 파일의 표 행도 함께 뺀다. 되돌릴 수 없으므로 먼저 묻는다.
       const rowCount = rowsRef.current.filter((r) => r.fileKey === key).length
-      const ok = window.confirm(
-        `'${it?.name ?? "파일"}'을(를) 확인 대기함에서 제외합니다.${rowCount > 0 ? `\n표의 행 ${rowCount}건도 함께 빠집니다.` : ""}\n\n제외할까요?`
-      )
-      if (!ok) return
+      const ok = await askRef.current({
+        title: `‘${it?.name ?? "파일"}’을 대기함에서 뺄까요?`,
+        body: rowCount > 0 ? `표의 행 ${rowCount}건과 보관된 원본도 함께 지워져요.` : "보관된 원본도 함께 지워져요.",
+        consequences: ["되돌릴 수 없어요", "같은 원본을 쓰는 저장된 증빙이 있으면 원본은 남겨요"],
+        confirmLabel: "대기함에서 빼기",
+        tone: "danger",
+      })
+      if (ok !== true) return
+      abortRef.current.get(key)?.abort()
       inboxKeysRef.current.delete(key)
       savedInboxKeysRef.current.delete(key)
       setRows((prev) => prev.filter((r) => r.fileKey !== key))
       setItems((prev) => prev.filter((i) => i.key !== key))
-      void fetch("/api/admin/expenses/inbox", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ id: inboxId }),
-      })
-        .then((res) => {
-          if (!res.ok) setNotice({ tone: "error", text: httpErrorMessage(res.status, "대기함에서 제외하지 못했습니다. 새로고침 후 다시 시도하세요.") })
+      try {
+        const res = await fetch("/api/admin/expenses/inbox", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ id: inboxId }),
         })
-        .catch(() => setNotice({ tone: "error", text: "네트워크 오류로 대기함에서 제외하지 못했습니다. 새로고침 후 다시 시도하세요." }))
+        if (!res.ok) setNotice({ tone: "danger", text: httpErrorMessage(res.status, "대기함에서 빼지 못했어요. 새로고침한 뒤 다시 시도해 주세요.") })
+        else {
+          toastSuccess(`‘${it?.name ?? "파일"}’을 대기함에서 뺐어요`)
+          router.refresh()
+        }
+      } catch {
+        setNotice({ tone: "danger", text: "인터넷 연결이 끊겨 대기함에서 빼지 못했어요. 새로고침한 뒤 다시 시도해 주세요." })
+      }
       return
     }
+    abortRef.current.get(key)?.abort()
     releaseUrl(it?.localUrl ?? null)
     setItems((prev) => prev.filter((i) => i.key !== key))
-  }, [])
+  }, [router])
 
-  // 확인 대기함 파일 카드는 남긴다(빼려면 카드의 X — 대기함에서 제외).
+  // 확인 대기함 파일 카드는 남긴다(빼려면 [대기함에서 빼기]).
   const clearFinished = useCallback(() => {
     const clearable = (i: UploadItem) => (i.status === "done" || i.status === "error") && !inboxKeysRef.current.has(i.key)
     for (const i of itemsRef.current) if (clearable(i)) releaseUrl(i.localUrl)
     setItems((prev) => prev.filter((i) => !clearable(i)))
   }, [])
+
+  // ── 행 상태(4개 + 사유) ──────────────────────────────────────────────────────
+  const tableMatches = useMemo(() => findTableMatches(rows), [rows])
+  const assessments = useMemo(() => {
+    const m = new Map<string, RowAssessment>()
+    for (const r of rows) m.set(r.key, assessRow(r, r.project_id ? projectById.get(r.project_id) : undefined, tableMatches.get(r.key)))
+    return m
+  }, [rows, projectById, tableMatches])
+  const assessmentsRef = useRef(assessments)
+  useEffect(() => {
+    assessmentsRef.current = assessments
+  })
+  const counts: TableCounts = useMemo(() => {
+    const c = { all: rows.length, review: 0, input: 0, ready: 0, excluded: 0 }
+    for (const a of assessments.values()) {
+      if (a.status === "needs_review") c.review++
+      else if (a.status === "needs_input") c.input++
+      else if (a.status === "ready") c.ready++
+      else c.excluded++
+    }
+    return c
+  }, [rows.length, assessments])
+
+  const todoKeys = useCallback(
+    () =>
+      rowsRef.current
+        .filter((r) => {
+          const s = assessmentsRef.current.get(r.key)?.status
+          return s === "needs_review" || s === "needs_input"
+        })
+        .map((r) => r.key),
+    []
+  )
+
+  // ── 검토 창 열기: 기본 "확인할 것만", 정상 행을 열면 전체 순회 ─────────────────
+  const openReview = useCallback(
+    (key: string, opts: { field?: ReasonField; mode?: ReviewMode } = {}) => {
+      const todo = todoKeys()
+      let mode: ReviewMode = opts.mode ?? (todo.includes(key) ? "todo" : "all")
+      if (mode === "todo" && !todo.includes(key)) mode = "all"
+      setReview({ key, mode, order: mode === "todo" ? todo : rowsRef.current.map((r) => r.key), field: opts.field ?? null })
+    },
+    [todoKeys]
+  )
+  const changeReviewMode = (mode: ReviewMode) =>
+    setReview((prev) => {
+      if (!prev) return prev
+      if (mode === "all") return { ...prev, mode, order: rowsRef.current.map((r) => r.key), field: null }
+      const todo = new Set([...todoKeys(), prev.key])
+      return { ...prev, mode, order: rowsRef.current.map((r) => r.key).filter((k) => todo.has(k)), field: null }
+    })
 
   // ── 표 조작 ──────────────────────────────────────────────────────────────────
   const actions: ReceiptTableActions = useMemo(
@@ -572,26 +632,24 @@ export function ReceiptUploader({
           if (!hit) return prev
           return prev.map((r) => (r.key === key ? { ...r, checkedFields: [...r.checkedFields, field] } : r))
         }),
-      // 검토 창에서 '확인'을 누르면 그 행의 노란(인식 불확실) 표시를 모두 끈다.
+      // 검토 창 "확인했어요 · 다음": 그 행의 남은 사유를 모두 접는다. 저장 대상(selected)은 바꾸지 않는다.
       checkAll: (key: string) =>
         setRows((prev) => {
-          const hit = prev.some((r) => r.key === key && r.lowFields.some((f) => !r.checkedFields.includes(f)))
-          if (!hit) return prev
-          return prev.map((r) => (r.key === key ? { ...r, checkedFields: Array.from(new Set([...r.checkedFields, ...r.lowFields])) } : r))
+          const matches = findTableMatches(prev)
+          return prev.map((r) => (r.key === key ? acknowledgeAll(r, r.project_id ? projectByIdRef.current.get(r.project_id) : undefined, matches.get(r.key)) : r))
         }),
-      setSelected: (key: string, selected: boolean) =>
-        setRows((prev) => prev.map((r) => (r.key === key ? { ...r, selected } : r))),
+      acknowledge: (key: string, reasonId: string) => setRows((prev) => prev.map((r) => (r.key === key ? acknowledgeReason(r, reasonId) : r))),
+      // 저장 대상 포함 스위치 — 중복 의심 행을 다시 넣는 유일한 길(가드 7.2 #23)
+      setSelected: (key: string, selected: boolean) => setRows((prev) => prev.map((r) => (r.key === key ? setIncluded(r, selected) : r))),
       setSelectedMany: (keys: string[], selected: boolean) => {
         const set = new Set(keys)
-        setRows((prev) => prev.map((r) => (set.has(r.key) && r.selected !== selected ? { ...r, selected } : r)))
+        setRows((prev) => prev.map((r) => (set.has(r.key) ? setIncluded(r, selected) : r)))
       },
       bulkProject: (keys: string[], projectId: number) => {
         const set = new Set(keys)
-        setRows((prev) =>
-          prev.map((r) => (set.has(r.key) ? { ...r, project_id: projectId, projectSource: "bulk", serverErrors: [] } : r))
-        )
+        setRows((prev) => prev.map((r) => (set.has(r.key) ? { ...r, project_id: projectId, projectSource: "bulk", serverErrors: [] } : r)))
         const name = projects.find((p) => p.id === projectId)?.name ?? "선택한 프로젝트"
-        setFlash(`${keys.length}건을 '${name}' 프로젝트로 지정했습니다.`)
+        toastSuccess(`${keys.length}건을 ‘${name}’ 프로젝트로 지정했어요`)
       },
       removeRows: (keys: string[]) => {
         const set = new Set(keys)
@@ -600,7 +658,7 @@ export function ReceiptUploader({
         setRows((prev) => prev.filter((r) => !set.has(r.key)))
         setUndo({ entries })
         // 확인 대기함 파일의 마지막 행을 지운 경우: 이번에 일부를 저장한 파일이면 대기함에서 빼고(done),
-        // 저장한 적이 없으면 카드를 남겨 두고 X로 빼도록 안내한다.
+        // 저장한 적이 없으면 파일을 남겨 두고 [대기함에서 빼기]로 빼도록 안내한다.
         const left = new Set(rowsRef.current.filter((r) => !set.has(r.key)).map((r) => r.fileKey))
         const emptied = [...new Set(entries.map((e) => e.row.fileKey))].filter(
           (fk): fk is string => !!fk && inboxKeysRef.current.has(fk) && !left.has(fk)
@@ -611,7 +669,7 @@ export function ReceiptUploader({
           void markInboxDone([...doneKeys].map((fk) => inboxKeysRef.current.get(fk) as number))
           setItems((prev) => prev.filter((i) => !doneKeys.has(i.key)))
         }
-        if (unsaved > 0) setFlash("표에 남은 행이 없는 대기함 파일은 파일 카드의 X로 대기함에서 제외하세요.")
+        if (unsaved > 0) toastInfo("표에 남은 행이 없는 대기함 파일은 파일 목록의 [대기함에서 빼기]로 빼 주세요")
       },
       addRowForFile: (rowKey: string) => {
         const src = rowsRef.current.find((r) => r.key === rowKey)
@@ -623,11 +681,12 @@ export function ReceiptUploader({
           const last = prev.map((r) => r.file.pathname).lastIndexOf(src.file.pathname)
           return last === -1 ? [...prev, nr] : [...prev.slice(0, last + 1), nr, ...prev.slice(last + 1)]
         })
+        setReview(null)
         setFocusRowKey(nr.key)
       },
-      openReview: (key: string) => setReviewKey(key),
+      openReview,
     }),
-    [projects, defaultProjectId, markInboxDone]
+    [projects, defaultProjectId, markInboxDone, openReview]
   )
 
   const undoRemove = () => {
@@ -641,19 +700,14 @@ export function ReceiptUploader({
     setUndo(null)
   }
 
-  // 되돌리기 안내·일괄 지정 안내는 잠시 뒤 사라진다.
+  // 행 삭제 되돌리기는 20초 동안 보인다.
   useEffect(() => {
     if (!undo) return
     const t = window.setTimeout(() => setUndo(null), 20000)
     return () => window.clearTimeout(t)
   }, [undo])
-  useEffect(() => {
-    if (!flash) return
-    const t = window.setTimeout(() => setFlash(null), flash.length > 40 ? 8000 : 3500)
-    return () => window.clearTimeout(t)
-  }, [flash])
 
-  // "이 파일로 행 추가" 뒤에 새 행의 첫 칸으로 이동
+  // "이 파일로 한 건 더" 뒤에 새 행의 첫 칸으로 이동
   useEffect(() => {
     if (!focusRowKey) return
     const tr = findRowElement(focusRowKey)
@@ -675,13 +729,13 @@ export function ReceiptUploader({
     }, 60)
   }
 
-  // confirmed: 같은 증빙이 두 번 계상될 수 있다는 확인 창에서 '그래도 저장'을 누른 경우
+  // confirmed: 같은 증빙이 두 번 계상될 수 있다는 확인 창에서 '그대로 저장'을 누른 경우
   const save = useCallback(async (opts: { confirmed?: boolean } = {}) => {
     if (savingRef.current) return
     const current = rowsRef.current
     const selected = current.filter((r) => r.selected)
     if (selected.length === 0) {
-      setNotice({ tone: "info", text: "저장할 행을 선택하세요." })
+      setNotice({ tone: "info", text: "저장할 증빙이 없어요. 원본을 열어 ‘저장 대상에 포함’을 켜 주세요." })
       return
     }
     const invalid = selected.filter((r) => rowErrors(r).length > 0)
@@ -693,16 +747,16 @@ export function ReceiptUploader({
     if (valid.length === 0) {
       const onlyProject = invalid.every((r) => rowErrors(r).every((e) => e === PROJECT_REQUIRED))
       setNotice({
-        tone: "error",
+        tone: "danger",
         text: onlyProject
-          ? `선택한 ${selected.length}건 모두 프로젝트가 없습니다. 프로젝트 칸에서 고르거나 '프로젝트 일괄 지정'을 쓰세요.`
-          : `선택한 ${selected.length}건 모두 미입력 항목이 있습니다. 빨간 칸을 채운 뒤 저장하세요.`,
+          ? `저장할 ${selected.length}건 모두 프로젝트가 없어요. 프로젝트 칸에서 고르거나 [일괄 작업]에서 한 번에 지정해 주세요.`
+          : `저장할 ${selected.length}건 모두 채울 칸이 있어요. 빨간 칸을 채운 뒤 저장해 주세요.`,
       })
       focusRow(invalid[0].key)
       return
     }
 
-    // 이미 저장된 증빙과 같은 파일·같은 거래로 보이는 행, 표 안에서 같은 거래로 보이는 행이 함께 선택돼 있으면 한 번 더 묻는다.
+    // 이미 저장된 증빙과 같은 파일·같은 거래로 보이는 행, 표 안에서 같은 거래로 보이는 행이 함께 저장 대상이면 한 번 더 묻는다.
     if (!opts.confirmed) {
       const numberOf = new Map(current.map((r, i) => [r.key, i + 1]))
       const matches = findTableMatches(current)
@@ -711,8 +765,8 @@ export function ReceiptUploader({
       let count = 0
       for (const r of valid) {
         const why: string[] = []
-        if (r.duplicates.length > 0) why.push("중복(이미 저장된 파일)")
-        if (r.similar.length > 0) why.push("중복 의심(저장된 증빙과 같은 거래로 보임)")
+        if (r.duplicates.length > 0) why.push("이미 저장한 파일")
+        if (r.similar.length > 0) why.push("이미 저장한 증빙과 같은 거래로 보임")
         for (const m of matches.get(r.key) ?? []) {
           if (m.otherSelected) why.push(`${m.otherNumber}번 행과 ${m.kind === "same_file" ? "같은 파일" : "같은 거래로 보임"}`)
         }
@@ -723,8 +777,23 @@ export function ReceiptUploader({
       }
       if (count > 0) {
         if (count > lines.length) lines.push(`외 ${count - lines.length}건`)
-        setConfirmSave({ lines, count, firstKey })
-        return
+        const ok = await askRef.current({
+          title: `같은 증빙으로 보이는 ${count}건이 저장 대상에 있어요`,
+          body: "같은 거래의 다른 서류(세금계산서와 이체확인증 등)면 한 건만 저장해요. 그대로 저장하면 두 번 계상될 수 있어요.",
+          details: (
+            <ul className="list-disc space-y-0.5 pl-5">
+              {lines.map((l) => (
+                <li key={l}>{l}</li>
+              ))}
+            </ul>
+          ),
+          confirmLabel: "그대로 저장",
+          cancelLabel: "돌아가기",
+        })
+        if (ok !== true) {
+          focusRow(firstKey)
+          return
+        }
       }
     }
 
@@ -747,7 +816,7 @@ export function ReceiptUploader({
             body: JSON.stringify({ receipts: chunk.map(toCreateInput) }),
           })
         } catch {
-          failure = "네트워크 오류로 저장하지 못했습니다. 인터넷 연결을 확인하고 다시 저장하세요."
+          failure = "저장하지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요."
           break
         }
         let data: Record<string, unknown> | null = null
@@ -775,10 +844,10 @@ export function ReceiptUploader({
             focusRow(first.key)
             focusedError = true
           }
-          failure = `서버 확인에서 ${map.size}건에 문제가 있어 이 묶음(${chunk.length}건)을 저장하지 않았습니다. 빨간 안내를 확인해 고친 뒤 다시 저장하세요.`
+          failure = `서버 확인에서 ${map.size}건에 문제가 있어 이 묶음(${chunk.length}건)을 저장하지 않았어요. 행 아래 빨간 안내를 보고 고친 뒤 다시 저장해 주세요.`
           break
         }
-        failure = httpErrorMessage(res.status, typeof data?.error === "string" && data.error ? data.error : "저장하지 못했습니다. 잠시 후 다시 시도하세요.")
+        failure = httpErrorMessage(res.status, typeof data?.error === "string" && data.error ? data.error : "저장하지 못했어요. 잠시 뒤 다시 눌러 주세요.")
         break
       }
     } finally {
@@ -806,39 +875,39 @@ export function ReceiptUploader({
         savedInboxKeysRef.current.add(r.fileKey)
         if (!remainingFileKeys.has(r.fileKey)) doneInbox.add(inboxId)
       }
-      void markInboxDone([...doneInbox])
+      void markInboxDone([...doneInbox]).then(() => router.refresh())
       setRows((prev) => prev.filter((r) => !saved.has(r.key)))
       setUndo(null)
       const projectIds = Array.from(new Set(savedRows.map((r) => r.project_id)))
       const sum = savedRows.reduce((acc, r) => acc + (r.fields.total_amount ?? 0), 0)
-      const parts = [`${savedKeys.length}건(${formatWon(sum)})을 저장했습니다.`]
-      if (skippedCount > 0) parts.push(`그중 ${skippedCount}건은 다른 창에서 먼저 저장되어 있어 한 번만 기록했습니다.`)
+      const parts = [`${savedKeys.length}건 ${won(sum)}을 저장했어요.`]
+      if (skippedCount > 0) parts.push(`그중 ${skippedCount}건은 다른 창에서 먼저 저장돼 있어서 한 번만 기록했어요.`)
       if (editedDuring.length > 0) {
-        parts.push(`저장 중에 고친 ${editedDuring.length}건은 고치기 전 값으로 저장되었습니다. 증빙 내역에서 다시 수정하세요.`)
+        parts.push(`저장하는 동안 고친 ${editedDuring.length}건은 고치기 전 값으로 저장됐어요. 증빙 내역에서 다시 고쳐 주세요.`)
       }
-      if (invalid.length > 0) parts.push(`입력 필요 ${invalid.length}건은 표에 남아 있습니다.`)
-      if (failure) parts.push(`나머지는 저장하지 못했습니다. ${failure}`)
+      if (invalid.length > 0) parts.push(`입력 필요 ${invalid.length}건은 표에 남아 있어요.`)
+      if (failure) parts.push(`나머지는 저장하지 못했어요. ${failure}`)
       setNotice({
-        tone: failure || editedDuring.length > 0 ? "error" : "success",
+        tone: failure || editedDuring.length > 0 ? "danger" : "success",
         text: parts.join(" "),
         link: {
-          href: projectIds.length === 1 ? `/admin/expenses/receipts?project_id=${projectIds[0]}` : "/admin/expenses/receipts",
+          href: projectIds.length === 1 && projectIds[0] ? receiptsHref({ project_id: projectIds[0] }) : receiptsHref(),
           label: "증빙 내역 보기",
         },
       })
     } else if (failure) {
-      setNotice({ tone: "error", text: failure })
+      setNotice({ tone: "danger", text: failure })
     }
     // 결과 안내가 화면 위쪽에 뜨므로 그쪽으로 올려 준다(고칠 행으로 이동한 경우는 제외).
     if (!focusedError) window.scrollTo({ top: 0, behavior: "smooth" })
-  }, [markInboxDone])
+  }, [markInboxDone, router])
 
   // 저장이 끝나면, 표에 더 남은 행이 없는 완료 파일 카드는 치운다.
   useEffect(() => {
     if (!cleanupAfterSaveRef.current) return
     cleanupAfterSaveRef.current = false
     const inUse = new Set(rows.map((r) => r.fileKey))
-    // 확인 대기함 카드(아직 done 처리 전)는 남긴다 — 치우면 X(대기함에서 제외)를 누를 수 없고 다음에 열면 다시 나타난다.
+    // 확인 대기함 파일(아직 done 처리 전)은 남긴다 — 치우면 [대기함에서 빼기]를 누를 수 없고 다음에 열면 다시 나타난다.
     const gone = items.filter((i) => i.status === "done" && !inUse.has(i.key) && !inboxKeysRef.current.has(i.key))
     if (gone.length === 0) return
     for (const g of gone) releaseUrl(g.localUrl)
@@ -883,16 +952,20 @@ export function ReceiptUploader({
       const { prev, added } = resolveInsertConflicts(prevRows, backup.rows)
       return [...added, ...prev]
     })
+    toastSuccess(`임시 보관한 증빙 ${backup.rows.length}건을 불러왔어요`)
     setBackup(null)
-    setNotice({ tone: "info", text: `임시 보관된 증빙 ${backup.rows.length}건을 불러왔습니다.` })
   }
 
   // ── 떠나기 전 경고 ────────────────────────────────────────────────────────────
+  // 탭 닫기·새로고침은 브라우저 기본 창(beforeunload). 화면 안 링크는 클릭을 먼저 막고(preventDefault) 확인 대화상자로 묻는다.
+  // 같은 경로에서 쿼리만 바뀌는 링크(?inbox=1 · ?view=)는 화면을 떠나지 않으므로 묻지 않는다.
   const processing = items.filter((i) => i.status === "queued" || i.status === "compressing" || i.status === "scanning").length
   const dirty = rows.length > 0 || processing > 0
-  const dirtyInfoRef = useRef({ rows: 0, processing: 0 })
+  const dirtyInfoRef = useRef({ rows: 0, inboxRows: 0, processing: 0 })
   useEffect(() => {
-    dirtyInfoRef.current = { rows: rows.length, processing }
+    // 데스크톱 앱 대기함 행은 임시 보관하지 않는다(서버 대기함에 남아 다음에 다시 채워진다) — 이동 경고 문구를 나눠 쓴다.
+    const inboxRows = rows.filter((r) => !!r.fileKey && inboxKeysRef.current.has(r.fileKey)).length
+    dirtyInfoRef.current = { rows: rows.length, inboxRows, processing }
   })
 
   useEffect(() => {
@@ -901,7 +974,6 @@ export function ReceiptUploader({
       e.preventDefault()
       e.returnValue = ""
     }
-    // 관리자 메뉴 등 화면 안 링크로 이동할 때도 한 번 묻는다(beforeunload는 앱 내부 이동에서 울리지 않는다).
     const onClickCapture = (e: MouseEvent) => {
       if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
       const a = (e.target as Element | null)?.closest?.("a[href]") as HTMLAnchorElement | null
@@ -914,18 +986,31 @@ export function ReceiptUploader({
       }
       if (url.origin !== window.location.origin) return
       if (url.pathname.startsWith("/api/")) return
-      if (url.pathname === window.location.pathname && url.search === window.location.search) return
+      if (url.pathname === window.location.pathname) return
+      e.preventDefault()
+      e.stopPropagation()
       const info = dirtyInfoRef.current
-      const what = [info.rows > 0 ? `저장하지 않은 증빙 ${info.rows}건` : "", info.processing > 0 ? `인식 중인 파일 ${info.processing}개` : ""]
-        .filter(Boolean)
-        .join(", ")
-      const ok = window.confirm(
-        `${what}이(가) 있습니다.\n다른 화면으로 가면 인식 중인 파일은 중단됩니다.\n(표에 있는 내용은 이 브라우저에 임시 보관되어, 다시 오면 불러올 수 있습니다)\n\n그래도 이동할까요?`
-      )
-      if (!ok) {
-        e.preventDefault()
-        e.stopPropagation()
-      }
+      const href = `${url.pathname}${url.search}${url.hash}`
+      void askRef
+        .current({
+          title: info.rows > 0 ? `저장하지 않은 증빙 ${info.rows}건이 있어요` : `인식 중인 파일 ${info.processing}개가 있어요`,
+          body: [
+            info.rows - info.inboxRows > 0
+              ? `${info.inboxRows > 0 ? `직접 올린 ${info.rows - info.inboxRows}건은 ` : ""}이 브라우저에 임시 보관돼서 돌아오면 불러올 수 있어요.`
+              : "",
+            info.inboxRows > 0
+              ? `데스크톱 앱에서 온 ${info.inboxRows}건은 대기함에 남지만, 여기서 고친 내용(프로젝트·확인 처리 등)은 사라져요.`
+              : "",
+            info.processing > 0 ? `인식 중인 파일 ${info.processing}개는 멈춰요.` : "",
+          ]
+            .filter(Boolean)
+            .join(" "),
+          confirmLabel: "그냥 이동",
+          cancelLabel: "이 화면에 있기",
+        })
+        .then((ok) => {
+          if (ok === true) router.push(href)
+        })
     }
     window.addEventListener("beforeunload", onBeforeUnload)
     document.addEventListener("click", onClickCapture, true)
@@ -933,7 +1018,7 @@ export function ReceiptUploader({
       window.removeEventListener("beforeunload", onBeforeUnload)
       document.removeEventListener("click", onClickCapture, true)
     }
-  }, [dirty])
+  }, [dirty, router])
 
   // Ctrl+S(⌘+S)로 저장
   useEffect(() => {
@@ -949,20 +1034,25 @@ export function ReceiptUploader({
   }, [rows.length, save])
 
   // ── 화면 ─────────────────────────────────────────────────────────────────────
-  const selected = rows.filter((r) => r.selected)
-  const errorsByKey = new Map(rows.map((r) => [r.key, rowErrors(r)]))
-  const readyRows = selected.filter((r) => (errorsByKey.get(r.key) ?? []).length === 0)
-  const needCount = selected.length - readyRows.length
-  const readySum = readyRows.reduce((acc, r) => acc + (r.fields.total_amount ?? 0), 0)
-  const projectNames = projects.map((p) => p.name)
-  const tableMatches = useMemo(() => findTableMatches(rows), [rows])
-  const inboxCount = items.filter((i) => i.inboxId != null).length
+  const summary = useMemo(() => saveSummary(rows, (r) => assessments.get(r.key) as RowAssessment), [rows, assessments])
+  const inboxFileKeys = useMemo(() => new Set(items.filter((i) => i.inboxId != null).map((i) => i.key)), [items])
+  const inboxCount = inboxFileKeys.size
   // 처리 중 표시: 파일 목록과 같은 기준(인식 중 = 압축·인식, 대기 = 차례 기다림)
   const runningCount = items.filter((i) => i.status === "compressing" || i.status === "scanning").length
   const waitingCount = processing - runningCount
   const busyLabel = runningCount > 0 ? `인식 중 ${runningCount}개${waitingCount > 0 ? ` · 대기 ${waitingCount}개` : ""}` : `대기 ${waitingCount}개`
+  const todoCount = summary.review + summary.input
 
-  // 저장 바의 '입력 필요 N건': 해당 행들의 빨간 칸을 켜고 첫 행으로 이동한다(저장·검증 로직은 그대로).
+  // 저장 바 [확인할 것 보기]: 확인 필요·입력 필요 행을 "확인할 것만" 검토 창으로 순회한다.
+  const openTodo = () => {
+    const todo = todoKeys()
+    if (todo.length === 0) return
+    const bad = rowsRef.current.filter((r) => r.selected && rowErrors(r).length > 0).map((r) => r.key)
+    if (bad.length > 0) setRows((prev) => prev.map((r) => (bad.includes(r.key) && !r.showErrors ? { ...r, showErrors: true } : r)))
+    openReview(todo[0], { mode: "todo" })
+  }
+
+  // 저장 바의 "입력 필요 n건": 그 행들의 빨간 칸을 켜고 첫 행으로 이동한다(저장·검증 로직은 그대로).
   const jumpToNeeded = () => {
     const bad = rowsRef.current.filter((r) => r.selected && rowErrors(r).length > 0)
     if (bad.length === 0) return
@@ -971,238 +1061,220 @@ export function ReceiptUploader({
     focusRow(bad[0].key)
   }
 
+  const finishReview = () => {
+    setReview(null)
+    window.setTimeout(() => saveButtonRef.current?.focus(), 80)
+  }
+
   return (
-    <div>
-      {aiOff && (
-        <InlineNotice tone="warning" className="mb-3">
-          <b className="font-semibold">자동 인식 미설정</b> · 올린 파일은 보관되며 표에서 직접 입력합니다. (설정: 시스템 관리자에게
-          OPENAI_API_KEY 요청)
-        </InlineNotice>
+    <div className="space-y-3">
+      {/* 순서 안내: 넓은 화면은 한 줄(순서 · 한 거래 한 건), 좁으면 두 줄, 휴대폰은 순서만. 1280×600 첫 화면에 표 첫 행이 보이도록 낮게 둔다. */}
+      <Callout storageKey="puh:expenses:upload-steps:v1" className="py-2">
+        <p className="font-medium text-dark">
+          <span className="hidden sm:inline">① 파일 올리기 → ② 확인할 것만 보기 → ③ 저장</span>
+          <span className="sm:hidden">① 올리기 ② 확인 ③ 저장</span>
+          <span className="hidden text-[15px] font-normal sm:inline">
+            <span className="hidden xl:inline"> · </span>
+            <br className="xl:hidden" />한 거래에 서류가 여럿(세금계산서+이체확인증)이면 한 건만 저장해요.
+          </span>
+        </p>
+      </Callout>
+
+      {/* 자동 인식 꺼짐 · 데스크톱 앱 대기함 알림은 한 상자에 모은다(첫 화면 높이 절약). ?inbox=1일 때는 표 머리에 "모두 보기"가 있어 여기서는 숨긴다. */}
+      {(aiOff || (inboxCount > 0 && !inboxOnly)) && (
+        <Notice tone="info" className="py-2 text-[15px]">
+          <span className="flex flex-wrap items-center gap-x-4 gap-y-0.5">
+            {aiOff && (
+              <span>
+                <span className="hidden sm:inline">자동 인식이 꺼져 있어요. 표에 직접 입력하면 돼요.</span>
+                <span className="sm:hidden">자동 인식이 꺼져 있어 직접 입력해요.</span>
+                {supportContact && <> 켜려면 {supportContact}에게 ‘사진 자동 인식 설정’을 요청해 주세요.</>}
+              </span>
+            )}
+            {inboxCount > 0 && !inboxOnly && (
+              <span className="inline-flex flex-wrap items-center gap-x-1">
+                <span className="hidden sm:inline">데스크톱 앱에서 온 증빙 {inboxCount}건이 확인을 기다려요</span>
+                <span className="sm:hidden">앱에서 온 증빙 {inboxCount}건</span>
+                <button
+                  type="button"
+                  className="inline-flex h-8 items-center rounded-sm px-1 font-medium text-link underline underline-offset-2 hover:bg-warm-beige"
+                  onClick={() => setInboxParam("1")}
+                >
+                  이 {inboxCount}건만 보기
+                </button>
+              </span>
+            )}
+          </span>
+        </Notice>
       )}
 
       {backup && (
-        <InlineNotice
+        <Notice
           tone="info"
-          className="mb-3 items-center"
+          title={`저장하지 않은 증빙 ${backup.rows.length}건이 임시 보관돼 있어요`}
           action={
             <>
               <Button type="button" size="sm" onClick={restoreBackup}>
                 불러오기
               </Button>
-              <Button type="button" size="sm" variant="ghost" onClick={() => setBackup(null)}>
+              <Button type="button" size="sm" variant="outline" className="hover:bg-warm-beige" onClick={() => setBackup(null)}>
                 버리기
               </Button>
             </>
           }
         >
-          저장하지 않은 증빙 <b className="font-semibold">{backup.rows.length}건</b>이 임시 보관되어 있습니다({formatSavedAt(backup.savedAt)}).
-        </InlineNotice>
+          {dateTime(backup.savedAt ? new Date(backup.savedAt) : null)}에 이 브라우저에 보관했어요.
+        </Notice>
       )}
 
-      {notice && <NoticeBar notice={notice} onClose={() => setNotice(null)} />}
-
-      <div className="mb-3 flex flex-wrap items-center gap-x-2 gap-y-2 text-sm text-text-secondary">
-        <span>진행 중 프로젝트 {projects.length}개:</span>
-        <span className="min-w-0 truncate text-dark">
-          {projectNames.slice(0, 3).join(" · ")}
-          {projectNames.length > 3 && ` 외 ${projectNames.length - 3}개`}
-        </span>
-        <Link href="/admin/expenses/projects" className="ml-1 font-medium text-dark underline underline-offset-2 hover:text-dark/80">
-          프로젝트 관리
-        </Link>
-        {/* 인건비는 증빙 파일 없이 지급 내역을 직접 입력한다(이체확인증·급여명세서는 선택 첨부). */}
-        <div className="ml-auto">
-          <PayrollEntryButton
-            projects={projects}
-            defaultProjectId={defaultProjectId}
-            size="sm"
-            onSaved={(count) =>
-              setNotice({
-                tone: "success",
-                text: `인건비 ${count}건을 등록했습니다.`,
-                link: { href: "/admin/expenses/receipts", label: "증빙 내역 보기" },
-              })
-            }
-          />
-        </div>
-      </div>
-
-      <UploadDropzone onFiles={addFiles} compact={items.length > 0 || rows.length > 0} />
-
-      {inboxCount > 0 && (
-        <p className="mt-3 text-sm text-dark" role="status">
-          데스크톱 앱에서 받은 증빙 <b className="font-semibold tabular-nums">{inboxCount}건</b>
-          <span className="text-text-secondary"> · 확인 후 프로젝트를 골라 저장</span>
-        </p>
+      {notice && (
+        <Notice tone={notice.tone} onClose={() => setNotice(null)}>
+          {notice.text}
+          {notice.link && (
+            <Link href={notice.link.href} className="ml-2 font-semibold text-link underline underline-offset-2">
+              {notice.link.label}
+            </Link>
+          )}
+        </Notice>
       )}
 
-      {items.length > 0 && (
-        <div className={inboxCount > 0 ? "mt-2" : "mt-3"}>
+      {/* 넓은 화면: 접힌 파일 요약을 드롭존 옆 같은 줄에 둔다. 파일 목록을 펼치면(data-expanded) 아래 줄 전체 폭으로 내려간다. */}
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-stretch lg:has-[>[data-expanded=true]]:grid-cols-1">
+        <UploadDropzone onFiles={addFiles} compact={items.length > 0 || rows.length > 0} />
+
+        {items.length > 0 && (
           <UploadFileList
             items={items}
             onRetry={retryItem}
             onManual={manualItem}
-            onRemove={removeItem}
+            onRemove={(k) => void removeItem(k)}
             onRetryAllFailed={retryAllFailed}
             onClearFinished={clearFinished}
+            className="lg:flex lg:flex-col lg:justify-center"
           />
-        </div>
-      )}
+        )}
+      </div>
 
       {rows.length === 0 && processing > 0 && (
-        <Panel className="mt-3">
-          <PanelHeader title="인식 결과" actions={<BusyText>{busyLabel}</BusyText>} />
-          <p className="px-4 py-6 text-sm text-text-secondary">파일당 10~30초 · 완료된 건부터 표에 추가됩니다.</p>
+        <Panel>
+          <PanelHeader title="인식 결과" actions={<BusyText className="text-sm">{busyLabel}</BusyText>} />
+          <p className="px-4 py-6 text-[15px] text-text-secondary">파일 하나에 10~30초 걸려요 · 끝난 것부터 표에 들어와요.</p>
         </Panel>
       )}
 
       {rows.length > 0 && (
-        <Panel className="mt-3">
-          <PanelHeader
-            title={aiOff && rows.every((r) => r.manual) ? "직접 입력할 증빙" : "인식 결과"}
-            count={`${rows.length}건`}
-            meta="저장 전에는 기록되지 않습니다."
-            actions={processing > 0 ? <BusyText>{busyLabel}</BusyText> : undefined}
+        <Panel>
+          <ReceiptTable
+            rows={rows}
+            projects={projects}
+            actions={actions}
+            matches={tableMatches}
+            assessments={assessments}
+            counts={counts}
+            saving={saving}
+            inboxFileKeys={inboxFileKeys}
+            inboxOnly={inboxOnly}
+            onShowAll={() => setInboxParam(null)}
+            undoBar={
+              undo && (
+                <div className="flex items-center gap-3 border-b border-warm-tan bg-warm-ivory px-4 py-1.5 text-[15px]" role="status">
+                  <p className="flex-1 text-dark">{undo.entries.length}건을 표에서 지웠어요</p>
+                  <Button type="button" size="sm" variant="outline" className="h-8 hover:bg-warm-beige" onClick={undoRemove}>
+                    <Undo2 className="h-3.5 w-3.5" />
+                    되돌리기
+                  </Button>
+                  <button
+                    type="button"
+                    onClick={() => setUndo(null)}
+                    aria-label="되돌리기 안내 닫기"
+                    className="inline-flex size-8 items-center justify-center rounded-md text-text-secondary hover:bg-warm-beige hover:text-dark"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )
+            }
           />
-          {undo && (
-            <div className="flex items-center gap-3 border-b border-warm-tan bg-warm-ivory px-4 py-2 text-sm" role="status">
-              <p className="flex-1 text-dark">{undo.entries.length}건 삭제됨</p>
-              <Button type="button" size="sm" variant="outline" className="h-7" onClick={undoRemove}>
-                <Undo2 className="h-3.5 w-3.5" />
-                되돌리기
-              </Button>
-              <button type="button" onClick={() => setUndo(null)} aria-label="닫기" className="rounded p-0.5 text-text-secondary hover:text-dark">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          )}
-          {flash && (
-            <div className="flex items-center gap-2 border-b border-green-200 bg-green-50 px-4 py-2 text-sm text-green-800 [word-break:keep-all]" role="status">
-              <CheckCircle2 className="h-4 w-4 shrink-0" />
-              {flash}
-            </div>
-          )}
-          <ReceiptTable rows={rows} projects={projects} actions={actions} matches={tableMatches} saving={saving} />
         </Panel>
       )}
 
       <HelpDetails
         title="업로드 안내"
+        className="mt-0"
         items={[
-          "대상: 카드 매출전표 · 간이영수증 · 세금계산서 · 거래명세서 · 계좌이체 확인증(JPG·PNG·HEIC·PDF) · 여러 파일 동시 가능(3개씩 순차 인식)",
-          "한 파일에 증빙이 여러 건이면 건별 행으로 분리",
-          "해외 결제(외화) 증빙: 결제일 환율로 원화 환산(주말·공휴일은 직전 영업일 환율). 환율이나 원화 합계를 고치면 '직접 입력'으로 유지",
-          "인건비: 파일 없이 '인건비 직접 등록'으로 지급 내역 입력(이체확인증·급여명세서 첨부는 선택)",
-          "촬영: 정면에서, 그림자·반사 없이, 글자가 화면을 채우도록",
-          "인식 값은 저장 전 원본과 대조(노란 칸 = 인식 불확실, 썸네일 클릭 시 원본)",
-          <>
-            <b className="font-semibold text-dark">한 거래에 서류가 여럿이면 한 건만 저장</b>(예: 세금계산서+이체확인증). 이미 저장된 파일·같은
-            거래로 보이는 행은 자동으로 선택 해제
-          </>,
+          "올릴 수 있는 것: 카드 매출전표 · 간이영수증 · 세금계산서 · 거래명세서 · 계좌이체 확인증(JPG·PNG·HEIC·PDF). 여러 파일을 한 번에 올리면 3개씩 차례로 인식해요",
+          "한 파일에 증빙이 여러 건이면 건마다 행으로 나눠요(썸네일에 1/2, 2/2)",
+          "해외 결제(외화): 결제일 환율로 원화를 계산해요(주말·공휴일은 직전 영업일 환율). 카드 명세서의 원화 금액이 있으면 원화 합계에 넣어 주세요",
+          "인건비는 파일 없이 위의 [인건비 등록]으로 입력해요(이체확인증·급여명세서 첨부는 선택)",
+          "촬영: 정면에서, 그림자·반사 없이, 글자가 화면을 채우도록 찍어 주세요",
+          "노란 칸은 자동 인식이 불확실한 칸이에요. 썸네일을 누르면 원본을 보며 고칠 수 있어요",
+          "이미 저장한 파일이나 같은 거래로 보이는 행은 저장 대상에서 자동으로 빠져요(‘제외’ 탭)",
         ]}
       />
 
       {rows.length > 0 && (
-        <div className="sticky bottom-0 z-30 -mx-5 mt-4 border-t border-warm-tan bg-card px-5 py-3 md:-mx-8 md:px-8">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="min-w-0 flex-1">
-              <p className="text-sm text-dark [word-break:keep-all] sm:text-base" aria-live="polite">
-                {readyRows.length > 0 ? (
-                  <>
-                    저장 가능 <b className="font-semibold">{readyRows.length}건</b> ·{" "}
-                    <b className="whitespace-nowrap font-bold tabular-nums">{formatWon(readySum)}</b>
-                  </>
-                ) : selected.length > 0 ? (
-                  "선택한 행에 미입력 항목 있음"
-                ) : (
-                  "저장할 행을 선택하세요"
-                )}
-                {needCount > 0 && (
-                  <>
-                    {" · "}
-                    <button
-                      type="button"
-                      onClick={jumpToNeeded}
-                      title="해당 행으로 이동"
-                      className="whitespace-nowrap font-semibold text-destructive underline-offset-2 hover:underline"
-                    >
-                      입력 필요 {needCount}건
-                    </button>
-                  </>
-                )}
-              </p>
-              <p className="text-xs text-text-secondary">
-                선택 {selected.length}/{rows.length}건
-                {processing > 0 && ` · ${busyLabel}`}
-                <span className="hidden md:inline">
-                  {" · "}
-                  <KeyHint>Ctrl+S</KeyHint>
-                </span>
-              </p>
-            </div>
-            <Button type="button" size="lg" onClick={() => void save()} disabled={saving || selected.length === 0} className="min-w-[112px] sm:min-w-[140px]" aria-busy={saving}>
-              {saving ? (
+        <StickyActionBar
+          className="-mx-5 px-5 sm:-mx-5 sm:rounded-none md:-mx-8 md:px-8"
+          summary={
+            <span aria-live="polite">
+              {summary.count > 0 ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  저장 중…
+                  <span className="hidden sm:inline">저장할 증빙 </span>
+                  <b className="font-semibold text-dark">{summary.count}건</b> ·{" "}
+                  <b className="whitespace-nowrap font-bold tabular-nums text-dark">{won(summary.sum)}</b>
+                  {summary.review > 0 && (
+                    <span className="block whitespace-nowrap text-sm sm:inline sm:text-[15px]"> (확인 필요 {summary.review}건 포함)</span>
+                  )}
+                  {summary.input > 0 && (
+                    <>
+                      {" · "}
+                      <button type="button" onClick={jumpToNeeded} className="inline-flex min-h-8 items-center whitespace-nowrap font-medium text-red-800 underline underline-offset-2">
+                        입력 필요 {summary.input}건은 채워야 저장돼요
+                      </button>
+                    </>
+                  )}
                 </>
               ) : (
-                <>
-                  <Save className="h-4 w-4" />
-                  {readyRows.length > 0 ? `${readyRows.length}건 저장` : "저장"}
-                </>
+                "저장할 증빙이 없어요"
               )}
-            </Button>
-          </div>
-        </div>
+              {processing > 0 && <span className="whitespace-nowrap text-text-secondary"> · {busyLabel}</span>}
+              <span className="hidden text-text-secondary lg:inline">
+                {" · "}
+                <KeyHint>Ctrl+S</KeyHint>
+              </span>
+            </span>
+          }
+          secondary={
+            todoCount > 0 ? (
+              <Button type="button" variant="outline" className="hidden h-10 hover:bg-warm-beige sm:inline-flex" onClick={openTodo} disabled={saving}>
+                확인할 것 보기
+              </Button>
+            ) : undefined
+          }
+          primary={
+            <BusyButton ref={saveButtonRef} type="button" className="h-10 min-w-[112px]" busy={saving} busyLabel="저장 중…" onClick={() => void save()}>
+              {summary.count > 0 ? `${summary.count}건 저장` : "저장"}
+            </BusyButton>
+          }
+        />
       )}
 
       <UploadReviewDialog
         rows={rows}
-        openKey={reviewKey}
+        openKey={review?.key ?? null}
+        order={review?.order ?? []}
+        mode={review?.mode ?? "todo"}
+        focusField={review?.field ?? null}
         projects={projects}
         actions={actions}
         matches={tableMatches}
+        assessments={assessments}
         saving={saving}
-        onClose={() => setReviewKey(null)}
-        onNavigate={setReviewKey}
+        onClose={() => setReview(null)}
+        onNavigate={(key) => setReview((prev) => (prev ? { ...prev, key, field: null } : prev))}
+        onModeChange={changeReviewMode}
+        onFinish={finishReview}
       />
-
-      <AlertDialog open={!!confirmSave} onOpenChange={(o) => !o && setConfirmSave(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>중복 저장 확인</AlertDialogTitle>
-            <AlertDialogDescription className="[word-break:keep-all]">
-              아래 {confirmSave?.count ?? 0}건은 기존 증빙 또는 표의 다른 행과 같은 파일·같은 거래로 보입니다. 같은 거래의 다른 서류면 한
-              건만 선택하세요.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <ul className="max-h-48 list-disc space-y-0.5 overflow-y-auto pl-5 text-sm text-dark marker:text-text-secondary [word-break:keep-all]">
-            {confirmSave?.lines.map((l) => (
-              <li key={l}>{l}</li>
-            ))}
-          </ul>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              onClick={() => {
-                const k = confirmSave?.firstKey
-                setConfirmSave(null)
-                if (k) focusRow(k)
-              }}
-            >
-              돌아가기
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                setConfirmSave(null)
-                void save({ confirmed: true })
-              }}
-            >
-              그대로 저장
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }

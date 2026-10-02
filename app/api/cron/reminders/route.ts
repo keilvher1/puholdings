@@ -28,7 +28,9 @@ export async function GET(request: Request) {
     return NextResponse.json({ success: false, error: "데이터베이스 연결 실패" }, { status: 500 })
   }
 
-  const portalUrl = `${process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin}/portal/login`
+  const siteOrigin = process.env.NEXT_PUBLIC_SITE_URL || new URL(request.url).origin
+  // 제출 독촉은 포털 로그인으로, 납부 안내는 그 청구서로 바로(로그인이 필요하면 미들웨어가 ?next=로 돌려보낸다)
+  const portalUrl = `${siteOrigin}/portal/login`
   const today = todayKST()
   const in3days = addDaysKST(3)
   const in1day = addDaysKST(1)
@@ -111,7 +113,7 @@ export async function GET(request: Request) {
           bill_month: bill.period,
           amount: formatWon(bill.total_amount),
           due_date: bill.due_date ?? "-",
-          portal_url: portalUrl,
+          portal_url: `${siteOrigin}/portal/bills/${bill.id}`,
         },
       })
     }

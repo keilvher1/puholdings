@@ -47,8 +47,8 @@ import {
 } from "./room-dialogs"
 
 const HEIGHT_CLASS: Record<"admin" | "portal", string> = {
-  // 관리자: 모바일 상단 바(h-14) 아래 전체, md 이상은 화면 전체
-  admin: "h-[calc(100dvh-3.5rem)] md:h-dvh",
+  // 관리자: 1024px 미만은 모바일 상단 바(h-14) 아래 전체, lg 이상(고정 사이드바)은 화면 전체
+  admin: "h-[calc(100dvh-3.5rem)] lg:h-dvh",
   // 포털: 상단 내비(h-16) + main 위아래 여백(py-8) 제외
   portal: "h-[calc(100dvh-8rem)] min-h-[480px] rounded-md border border-warm-tan",
 }

@@ -136,7 +136,7 @@ export function UploadDropzone({
   const overlay = dragging && (
     <div className="pointer-events-none fixed inset-0 z-[60] flex items-center justify-center bg-dark/30">
       <div className="rounded-md border border-dashed border-dark/60 bg-card px-10 py-8 text-center">
-        <p className="text-base font-semibold text-dark">놓으면 인식을 시작합니다</p>
+        <p className="text-base font-semibold text-dark">놓으면 인식을 시작해요</p>
       </div>
     </div>
   )
@@ -145,7 +145,7 @@ export function UploadDropzone({
     return (
       <div
         className={cn(
-          "flex flex-wrap items-center gap-2 rounded-md border border-dashed border-dark/50 bg-card px-3 py-2 transition-colors",
+          "flex items-center gap-2 rounded-md border border-dashed border-dark/50 bg-card px-2 py-1.5 transition-colors sm:px-3 sm:py-2",
           over && "border-dark bg-warm-ivory"
         )}
         onDragEnter={() => setOver(true)}
@@ -153,14 +153,18 @@ export function UploadDropzone({
       >
         {inputs}
         {overlay}
-        <p className="mr-auto text-sm text-text-secondary [word-break:keep-all]">
-          증빙 추가 · 끌어다 놓기<span className="hidden md:inline"> · Ctrl+V 붙여넣기</span>
+        {/* 넓은 화면에서는 파일 요약과 한 줄에 서므로 좁아지면 말줄임(전체 문장은 title) */}
+        <p
+          className="mr-auto hidden min-w-0 flex-1 truncate text-[15px] text-text-secondary sm:block"
+          title="증빙 파일을 끌어다 놓거나 버튼을 눌러 주세요 · 붙여넣기(Ctrl+V)도 돼요"
+        >
+          증빙 파일을 끌어다 놓거나 버튼을 눌러 주세요<span className="hidden min-[1400px]:inline"> · 붙여넣기(Ctrl+V)도 돼요</span>
         </p>
-        <Button type="button" size="sm" variant="outline" onClick={openPicker} disabled={disabled}>
+        <Button type="button" size="sm" variant="outline" className="h-9 shrink-0 hover:bg-warm-beige" onClick={openPicker} disabled={disabled}>
           <FileUp className="h-4 w-4" />
           파일 추가
         </Button>
-        <Button type="button" size="sm" variant="outline" onClick={() => cameraRef.current?.click()} disabled={disabled} className="md:hidden">
+        <Button type="button" size="sm" variant="outline" onClick={() => cameraRef.current?.click()} disabled={disabled} className="h-9 hover:bg-warm-beige md:hidden">
           <Camera className="h-4 w-4" />
           촬영
         </Button>
@@ -194,9 +198,9 @@ export function UploadDropzone({
           disabled && "pointer-events-none opacity-60"
         )}
       >
-        <p className="text-base font-semibold text-dark [word-break:keep-all]">증빙 파일을 끌어다 놓거나 선택하세요</p>
-        <p className="mt-1 text-sm text-text-secondary [word-break:keep-all]">
-          영수증 · 카드전표 · 세금계산서 · 거래명세서 · 이체확인증<span className="hidden md:inline"> · Ctrl+V 붙여넣기</span>
+        <p className="text-lg font-semibold text-dark [word-break:keep-all]">아직 올린 증빙이 없어요</p>
+        <p className="mt-1 text-base text-text-secondary [word-break:keep-all]">
+          파일을 끌어다 놓거나 [파일 추가]를 눌러 주세요<span className="hidden md:inline"> · 붙여넣기(Ctrl+V)도 돼요</span>
         </p>
         <div className="mt-4 flex flex-wrap justify-center gap-2">
           <Button
@@ -208,12 +212,12 @@ export function UploadDropzone({
             disabled={disabled}
           >
             <ImagePlus className="h-4 w-4" />
-            파일 선택
+            파일 추가
           </Button>
           <Button
             type="button"
             variant="outline"
-            className="md:hidden"
+            className="hover:bg-warm-beige md:hidden"
             onClick={(e) => {
               e.stopPropagation()
               cameraRef.current?.click()
@@ -224,7 +228,7 @@ export function UploadDropzone({
             촬영
           </Button>
         </div>
-        <p className="mt-3 text-xs text-text-secondary [word-break:keep-all]">JPG·PNG·HEIC·PDF · PDF 파일당 4MB 이하 · 여러 파일 가능</p>
+        <p className="mt-3 text-sm text-text-secondary [word-break:keep-all]">영수증·카드전표·세금계산서·거래명세서·이체확인증 · JPG·PNG·HEIC·PDF(PDF는 4MB 이하) · 여러 파일 가능</p>
       </div>
     </div>
   )

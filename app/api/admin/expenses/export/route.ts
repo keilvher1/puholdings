@@ -1,15 +1,29 @@
 import { NextResponse } from "next/server"
 import ExcelJS from "exceljs"
-import { DOC_TYPE_LABELS, PAYMENT_LABELS, isValidDate, type ExpenseProject, type ExpenseReceipt } from "@/lib/expenses"
-import { dbErrorMessage, fail, getProject, kstToday, listProjects, listReceipts, parseId, requireAdminDb } from "@/lib/expense-db"
+import { DOC_TYPE_LABELS, PAYMENT_LABELS, type ExpenseProject, type ExpenseReceipt } from "@/lib/expenses"
+import {
+  dbErrorMessage,
+  fail,
+  getProject,
+  kstToday,
+  listProjects,
+  listReceipts,
+  parseId,
+  parseReceiptQuery,
+  receiptQueryFileTag,
+  receiptQueryLabels,
+  requireAdminDb,
+} from "@/lib/expense-db"
 import { FX_SOURCE_LABELS } from "@/lib/fx"
 
-// GET /api/admin/expenses/export?project_id=[&from=&to=&q=]
+// GET /api/admin/expenses/export?project_id=[&from=&to=&q=&doc_type=&budget_item=]
 // 증빙 목록 xlsx. 시트 1 "증빙 목록"(번호·거래일자·문서종류·거래처·사업자번호·비목·적요·공급가액·부가세·합계(원화)·
 //   통화·외화금액·적용환율·환율기준일(출처)·결제수단·승인번호·귀속월·증빙(파일명 또는 '수기'))
 //   외화 증빙의 합계는 결제일 기준 환율로 환산한 원화다.
 // 시트 2: 프로젝트를 고르면 "비목별 소계"(예산 대비 집행률), 고르지 않으면 "프로젝트별 집계".
 // 파일명: 사업비_증빙_{프로젝트명}_{YYYYMMDD}.xlsx (프로젝트 미지정 시 '전체')
+// 조건(기간·검색어·문서 종류·비목)이 걸리면 파일명에 "_조건_{조건}"을 넣고, "증빙 목록" 시트 첫 행에 조건을 적는다
+// (일부만 담긴 파일이 전체 정산 자료로 잘못 제출되지 않게). 조건이 없으면 파일 모양은 예전과 같다.
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -49,7 +63,7 @@ function fxNote(r: ExpenseReceipt): string {
   return r.exchange_rate_date || label
 }
 
-function addReceiptSheet(wb: ExcelJS.Workbook, receipts: ExpenseReceipt[], withProject: boolean) {
+function addReceiptSheet(wb: ExcelJS.Workbook, receipts: ExpenseReceipt[], withProject: boolean, conditionRow = "") {
   const ws = wb.addWorksheet("증빙 목록")
   ws.columns = [
     { header: "번호", key: "no", width: 6 },
@@ -114,7 +128,15 @@ function addReceiptSheet(wb: ExcelJS.Workbook, receipts: ExpenseReceipt[], withP
   ws.getColumn("foreign").numFmt = "#,##0.00"
   ws.getColumn("rate").numFmt = "#,##0.00##"
   ws.getColumn("purpose").alignment = { wrapText: true, vertical: "top" }
-  if (sorted.length > 0) ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: ws.columns.length } }
+  const headerRow = conditionRow ? 2 : 1
+  if (conditionRow) {
+    // 머리 행 위에 조건 한 줄(머리 행·서식은 그대로 한 줄 아래로 내려간다)
+    ws.insertRow(1, [conditionRow])
+    const r = ws.getRow(1)
+    r.font = { bold: true, color: { argb: "FFC0392B" } }
+    ws.views = [{ state: "frozen", ySplit: 2 }]
+  }
+  if (sorted.length > 0) ws.autoFilter = { from: { row: headerRow, column: 1 }, to: { row: headerRow, column: ws.columns.length } }
 }
 
 function addBudgetSheet(wb: ExcelJS.Workbook, project: ExpenseProject, receipts: ExpenseReceipt[], filterNote: string) {
@@ -238,35 +260,36 @@ export async function GET(request: Request) {
   const rawProjectId = params.get("project_id")
   const projectId = parseId(rawProjectId)
   if (rawProjectId && !projectId) return fail("프로젝트를 다시 선택하세요", 400)
-  const from = params.get("from")
-  const to = params.get("to")
+  const query = parseReceiptQuery(params)
 
   try {
     const project = projectId ? await getProject(sql, projectId) : null
     if (projectId && !project) return fail("없는 프로젝트입니다. 새로고침하세요.", 404)
     const receipts = await listReceipts(sql, {
       projectId,
-      from: isValidDate(from) ? from : null,
-      to: isValidDate(to) ? to : null,
-      q: params.get("q"),
+      from: query.from,
+      to: query.to,
+      q: query.q,
+      docType: query.docType,
+      budgetItem: query.budgetItem,
     })
+
+    const conditions = receiptQueryLabels(query)
+    const filterNote = conditions.length > 0 ? `${conditions.join(", ")} (조건에 맞는 증빙만 집계)` : ""
+    const conditionRow =
+      conditions.length > 0 ? `조회 조건: ${conditions.join(" · ")} — 조건에 맞는 증빙만 담았어요(전체 정산 자료가 아니에요)` : ""
 
     const wb = new ExcelJS.Workbook()
     wb.creator = "포항연합기술지주 사업비 정산"
     wb.created = new Date()
-    addReceiptSheet(wb, receipts, !project)
-    const q = (params.get("q") ?? "").trim()
-    const conditions = [
-      isValidDate(from) || isValidDate(to) ? `기간 ${isValidDate(from) ? from : "처음"} ~ ${isValidDate(to) ? to : "현재"}` : "",
-      q ? `검색어 '${q}'` : "",
-    ].filter(Boolean)
-    const filterNote = conditions.length > 0 ? `${conditions.join(", ")} (조건에 맞는 증빙만 집계)` : ""
+    addReceiptSheet(wb, receipts, !project, conditionRow)
     if (project) addBudgetSheet(wb, project, receipts, filterNote)
     else addProjectSummarySheet(wb, await listProjects(sql), receipts)
 
     const buffer = await wb.xlsx.writeBuffer()
     const stamp = kstToday().replace(/-/g, "")
-    const filename = `사업비_증빙_${project ? fileSafe(project.name) : "전체"}_${stamp}.xlsx`
+    const tag = receiptQueryFileTag(query)
+    const filename = `사업비_증빙_${project ? fileSafe(project.name) : "전체"}${tag ? `_조건_${tag}` : ""}_${stamp}.xlsx`
     const encoded = encodeURIComponent(filename)
     return new NextResponse(new Uint8Array(buffer), {
       headers: {

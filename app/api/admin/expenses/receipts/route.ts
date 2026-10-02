@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { BlobNotFoundError, del, head } from "@vercel/blob"
-import { isValidDate, type ExpenseReceipt, type ReceiptFields, type UploadedFileMeta } from "@/lib/expenses"
+import { isValidDate, type ExpenseDocType, type ExpenseReceipt, type ReceiptFields, type UploadedFileMeta } from "@/lib/expenses"
 import {
   aiRawJson,
   dbErrorMessage,
@@ -16,8 +16,9 @@ import {
 } from "@/lib/expense-db"
 
 // 사업비 정산 — 증빙
-// GET    /api/admin/expenses/receipts?project_id=&from=&to=&q=&month=  → { success, receipts: ExpenseReceipt[] } (거래일 최신순)
+// GET    /api/admin/expenses/receipts?project_id=&from=&to=&q=&month=&doc_type=&budget_item=  → { success, receipts: ExpenseReceipt[] } (거래일 최신순)
 //        month=YYYY-MM을 주면 그 달 1일~말일로 from/to를 채운다(from/to가 따로 오면 그것이 우선).
+//        doc_type(문서 종류)·budget_item(비목, item도 같은 뜻 — 앞뒤·연속 공백은 무시)은 선택 조건이다(없으면 전체).
 // POST   { receipts: ReceiptCreateInput[] } (1~100건) → 전부 검증 후 한 트랜잭션으로 저장 → { success, ids, skipped }
 //        검증 실패 시 400 { success:false, error, row_errors: { index, errors[] }[] } — 한 건도 저장하지 않는다.
 //        file은 필수다. 단 인건비 지급(doc_type 'payroll')은 수기 등록이라 file: null을 허용한다.
@@ -106,6 +107,8 @@ export async function GET(request: Request) {
       from: isValidDate(from) ? from : (range?.from ?? null),
       to: isValidDate(to) ? to : (range?.to ?? null),
       q: params.get("q"),
+      docType: (params.get("doc_type") as ExpenseDocType | null) || null,
+      budgetItem: params.get("budget_item") ?? params.get("item"),
     })
     return NextResponse.json({ success: true, receipts })
   } catch (error) {

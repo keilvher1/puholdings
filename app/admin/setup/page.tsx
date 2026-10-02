@@ -14,7 +14,7 @@ export default function AdminSetupPage() {
     setError("")
 
     if (form.password !== form.confirmPassword) {
-      setError("비밀번호가 일치하지 않습니다")
+      setError("비밀번호가 서로 달라요. 같은 비밀번호를 두 번 입력해 주세요")
       return
     }
 
@@ -37,10 +37,10 @@ export default function AdminSetupPage() {
       if (data.success) {
         router.push("/admin/login")
       } else {
-        setError(data.error || "관리자 생성에 실패했습니다")
+        setError(data.error || "관리자 계정을 만들지 못했어요")
       }
     } catch {
-      setError("서버 오류가 발생했습니다")
+      setError("관리자 계정을 만들지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요")
     } finally {
       setLoading(false)
     }
@@ -55,7 +55,7 @@ export default function AdminSetupPage() {
           </div>
           <h1 className="text-2xl font-bold text-dark">관리자 계정 생성</h1>
           <p className="mt-2 text-sm text-text-secondary">
-            CMS 초기 관리자 계정을 생성하세요
+            처음 쓸 관리자 계정을 만들어 주세요
           </p>
         </div>
 
@@ -131,7 +131,7 @@ export default function AdminSetupPage() {
             disabled={loading}
             className="w-full rounded-md bg-dark py-2.5 text-sm font-medium text-primary-foreground hover:bg-dark-muted transition-colors disabled:opacity-50"
           >
-            {loading ? "생성 중..." : "관리자 계정 생성"}
+            {loading ? "만드는 중…" : "관리자 계정 생성"}
           </button>
 
           <p className="mt-4 text-center text-xs text-text-secondary">

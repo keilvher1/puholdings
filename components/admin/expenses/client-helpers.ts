@@ -8,15 +8,15 @@ export type RequestResult<T> =
   | { ok: false; error: string; status: number; needsSetup: boolean; aborted: boolean; data: Record<string, unknown> | null }
 
 export function statusMessage(status: number): string {
-  if (status === 401) return "로그인이 만료되었습니다. 새로고침한 뒤 다시 로그인하세요."
-  if (status === 403) return "이 작업을 할 권한이 없습니다."
-  if (status === 404) return "요청한 항목을 찾을 수 없습니다. 이미 삭제되었을 수 있으니 새로고침하세요."
-  if (status === 409) return "지금 상태에서는 처리할 수 없습니다."
-  if (status === 413) return "파일이 너무 커서 보낼 수 없습니다. 파일 수를 줄이거나 더 작은 파일로 다시 시도하세요."
-  if (status === 503) return "자동 인식이 설정되지 않았습니다(OPENAI_API_KEY). 직접 입력은 가능합니다."
-  if (status === 504 || status === 524) return "처리 시간이 너무 오래 걸려 중단되었습니다. 파일 수를 줄여 다시 시도하세요."
-  if (status >= 500) return "서버에서 오류가 발생했습니다. 잠시 후 다시 시도하세요."
-  return "요청을 처리하지 못했습니다. 잠시 후 다시 시도하세요."
+  if (status === 401) return "로그인이 끝났어요. 새로고침한 뒤 다시 로그인해 주세요."
+  if (status === 403) return "이 작업을 할 권한이 없어요."
+  if (status === 404) return "찾는 항목이 없어요. 이미 지워졌을 수 있으니 새로고침해 주세요."
+  if (status === 409) return "지금 상태에서는 처리할 수 없어요."
+  if (status === 413) return "파일이 너무 커서 보낼 수 없어요. 파일 수를 줄이거나 더 작은 파일로 다시 시도해 주세요."
+  if (status === 503) return "자동 인식을 쓸 수 없어요. 직접 입력은 그대로 할 수 있어요."
+  if (status === 504 || status === 524) return "처리 시간이 너무 길어 멈췄어요. 파일 수를 줄여 다시 시도해 주세요."
+  if (status >= 500) return "처리하지 못했어요. 잠시 뒤 다시 시도해 주세요."
+  return "요청을 처리하지 못했어요. 잠시 뒤 다시 시도해 주세요."
 }
 
 export async function requestJson<T>(url: string, init?: RequestInit): Promise<RequestResult<T>> {
@@ -27,7 +27,7 @@ export async function requestJson<T>(url: string, init?: RequestInit): Promise<R
     const aborted = e instanceof DOMException && e.name === "AbortError"
     return {
       ok: false,
-      error: aborted ? "취소했습니다." : "서버에 연결하지 못했습니다. 인터넷 연결을 확인한 뒤 다시 시도하세요.",
+      error: aborted ? "취소했어요." : "서버에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.",
       status: 0,
       needsSetup: false,
       aborted,
@@ -91,7 +91,7 @@ export async function downloadFromApi(url: string, fallbackName: string): Promis
   try {
     res = await fetch(url, { credentials: "include" })
   } catch {
-    return "서버에 연결하지 못했습니다. 인터넷 연결을 확인한 뒤 다시 시도하세요."
+    return "서버에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요."
   }
   if (!res.ok) {
     const d = (await res.json().catch(() => null)) as { error?: string } | null
@@ -109,7 +109,7 @@ export async function downloadFromApi(url: string, fallbackName: string): Promis
     setTimeout(() => URL.revokeObjectURL(href), 60_000)
     return null
   } catch {
-    return "파일을 저장하지 못했습니다. 다시 시도하세요."
+    return "파일을 저장하지 못했어요. 다시 시도해 주세요."
   }
 }
 

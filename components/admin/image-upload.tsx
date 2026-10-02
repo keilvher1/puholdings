@@ -40,10 +40,10 @@ export function ImageUpload({ value, onChange, folder = "uploads", label = "이�
         // For private blobs, store the pathname
         onChange(data.pathname)
       } else {
-        setError(data.error || "업로드에 실패했습니다")
+        setError(data.error || "이미지를 올리지 못했어요. 다시 올려 주세요")
       }
     } catch {
-      setError("서버 오류가 발생했습니다")
+      setError("이미지를 올리지 못했어요. 인터넷 연결을 확인하고 다시 올려 주세요")
     } finally {
       setUploading(false)
       if (fileInputRef.current) {

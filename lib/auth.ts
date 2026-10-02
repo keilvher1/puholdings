@@ -63,7 +63,11 @@ export const getSession = cache(async function getSession(): Promise<AdminUser |
   return verifyToken(token)
 })
 
-export async function login(email: string, password: string): Promise<{ success: boolean; error?: string; user?: AdminUser }> {
+// unavailable = DB 없음·조회 오류(자격 증명 문제가 아님 — 로그인 라우트가 401이 아니라 500으로 돌려준다)
+export async function login(
+  email: string,
+  password: string,
+): Promise<{ success: boolean; error?: string; user?: AdminUser; unavailable?: boolean }> {
   // Demo mode - use hardcoded credentials
   if (isDemoMode()) {
     if (email === DEMO_ADMIN.email && password === DEMO_ADMIN.password) {
@@ -74,7 +78,7 @@ export async function login(email: string, password: string): Promise<{ success:
   }
 
   const sql = getDb()
-  if (!sql) return { success: false, error: "데이터베이스 연결 실패" }
+  if (!sql) return { success: false, error: "데이터베이스 연결 실패", unavailable: true }
 
   try {
     const rows = await sql`SELECT id, email, name, password_hash FROM admins WHERE email = ${email}`
@@ -95,7 +99,7 @@ export async function login(email: string, password: string): Promise<{ success:
     return { success: true, user }
   } catch (error) {
     console.error("Login error:", error)
-    return { success: false, error: "로그인 중 오류가 발생했습니다" }
+    return { success: false, error: "로그인 중 오류가 발생했습니다", unavailable: true }
   }
 }
 

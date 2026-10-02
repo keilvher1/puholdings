@@ -5,7 +5,7 @@ import { sendMail } from "@/lib/mail"
 import { notifyBillsIssued } from "@/lib/messenger-notify"
 import { generateAndStoreInvoice } from "@/lib/invoice-gen"
 import { computeElecContext, factoryChargeByRoom } from "@/lib/billing-db"
-import { isValidPeriod, prevPeriod, formatWon } from "@/lib/billing"
+import { isValidPeriod, isValidDateString, prevPeriod, formatWon } from "@/lib/billing"
 
 function esc(v: string): string {
   return v.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
@@ -63,13 +63,21 @@ async function findStaleElecBills(sql: Sql, period: unknown, billIds: unknown): 
 }
 
 // POST /api/admin/billing/bills/issue — { period } 또는 { bill_ids }, force로 전기료 0원 경고 무시
+// due_date(선택, 'YYYY-MM-DD'): 발행 대상 중 납부 기한이 비어 있는 청구서에만 채운다(정정 재발행은 기존 값 유지).
+//   발행 UPDATE 한 문장 안에서 COALESCE로 채우고 그 RETURNING 값으로 메일 변수를 만든다(따로 UPDATE하면 메일에 "-"가 들어간다).
+//   보내지 않으면 COALESCE(due_date, NULL) = 지금 값 그대로라 대상·금액·상태·메일이 예전과 같다.
+// 응답: 예전 필드 + failed_list(메일을 보내지 못한 기업과 사유).
 export async function POST(request: Request) {
   const session = await getSession()
   if (!session) return NextResponse.json({ success: false, error: "인증이 필요합니다" }, { status: 401 })
   const sql = getDb()
   if (!sql) return NextResponse.json({ success: false, error: "데이터베이스 연결 실패" }, { status: 500 })
   try {
-    const { period, bill_ids, force } = await request.json()
+    const { period, bill_ids, force, due_date } = await request.json()
+    if (due_date !== undefined && due_date !== null && due_date !== "" && !isValidDateString(due_date)) {
+      return NextResponse.json({ success: false, error: "납부 기한 날짜를 다시 골라 주세요" }, { status: 400 })
+    }
+    const dueDate: string | null = isValidDateString(due_date) ? due_date : null
 
     // 전기료가 반영되지 않은 초안을 그대로 발행하는 사고 방지.
     // 전기 파라미터를 청구서 생성 뒤에 입력하면 초안에는 전기료 0원 라인이 남는데,
@@ -90,13 +98,13 @@ export async function POST(request: Request) {
     if (Array.isArray(bill_ids) && bill_ids.length > 0) {
       const ids = bill_ids.map(Number).filter((n: number) => Number.isInteger(n) && n > 0)
       issued = await sql`
-        UPDATE bills SET status = 'issued', issued_at = NOW(), updated_at = NOW()
+        UPDATE bills SET status = 'issued', issued_at = NOW(), updated_at = NOW(), due_date = COALESCE(due_date, ${dueDate}::date)
         WHERE id = ANY(${ids}::int[]) AND status = 'draft'
         RETURNING id, tenant_id, period, total_amount, due_date::text AS due_date
       `
     } else if (isValidPeriod(period)) {
       issued = await sql`
-        UPDATE bills SET status = 'issued', issued_at = NOW(), updated_at = NOW()
+        UPDATE bills SET status = 'issued', issued_at = NOW(), updated_at = NOW(), due_date = COALESCE(due_date, ${dueDate}::date)
         WHERE period = ${period} AND status = 'draft'
         RETURNING id, tenant_id, period, total_amount, due_date::text AS due_date
       `
@@ -105,7 +113,7 @@ export async function POST(request: Request) {
     }
 
     if (issued.length === 0) {
-      return NextResponse.json({ success: true, issued: 0, mail: { sent: 0, failed: 0 }, no_email: [] })
+      return NextResponse.json({ success: true, issued: 0, mail: { sent: 0, failed: 0 }, no_email: [], failed_list: [] })
     }
 
     const billIds = issued.map((b) => b.id)
@@ -129,8 +137,10 @@ export async function POST(request: Request) {
       linesByBill.set(l.bill_id, arr)
     }
     const tenantById = new Map(tenants.map((t) => [t.id, t]))
-    const portalUrl = `${new URL(request.url).origin}/portal/login`
+    // 메일의 "청구서 보기"는 그 청구서로 바로(로그인이 필요하면 미들웨어가 ?next=로 돌려보낸다)
+    const origin = new URL(request.url).origin
     const noEmail: string[] = []
+    const failedList: { bill_id: number; tenant_id: number; tenant_name: string; error: string | null; not_configured: boolean }[] = []
     let sent = 0
     let failed = 0
     let corrected = 0
@@ -160,19 +170,29 @@ export async function POST(request: Request) {
           bill_month: bill.period,
           amount: formatWon(bill.total_amount),
           due_date: bill.due_date || "-",
-          portal_url: portalUrl,
+          portal_url: `${origin}/portal/bills/${bill.id}`,
           lines_html: linesHtml(linesByBill.get(bill.id) ?? []),
         },
         rawHtmlVars: ["lines_html"],
         attachments: pdf ? [{ filename: `청구서_${bill.period}_${tenant.name}.pdf`, content: pdf.buffer }] : undefined,
       })
       if (result.success) sent++
-      else failed++
+      else {
+        failed++
+        const err = result.error ?? null
+        failedList.push({
+          bill_id: bill.id,
+          tenant_id: tenant.id,
+          tenant_name: tenant.name,
+          error: err,
+          not_configured: err === "RESEND_API_KEY not set" || err === "MAIL_FROM not set",
+        })
+      }
     }
 
     // 메신저 시스템 알림(응답 후 실행): 발행 N건 요약
     notifyBillsIssued({ bills: issued.map((b) => ({ period: b.period, total_amount: b.total_amount })), corrected, sent, failed, no_email: noEmail })
-    return NextResponse.json({ success: true, issued: issued.length, corrected, mail: { sent, failed }, no_email: noEmail, elec_month: prevPeriod(issued[0].period) })
+    return NextResponse.json({ success: true, issued: issued.length, corrected, mail: { sent, failed }, no_email: noEmail, failed_list: failedList, elec_month: prevPeriod(issued[0].period) })
   } catch (error) {
     console.error("Issue bills error:", error)
     return NextResponse.json({ success: false, error: "발행에 실패했습니다" }, { status: 500 })

@@ -2,19 +2,23 @@
 
 import { Fragment, memo, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
-import { ChevronDown, Download, FileText, Filter, Maximize2, Plus, Trash2, TriangleAlert } from "lucide-react"
-import {
-  CONFIDENCE_LABELS,
-  DOC_TYPE_LABELS,
-  PAYMENT_LABELS,
-  amountMismatch,
-  formatWon,
-  type ReceiptFields,
-} from "@/lib/expenses"
+import { ChevronDown, FileText, Info, Maximize2, Trash2, TriangleAlert } from "lucide-react"
+import { DOC_TYPE_LABELS, type ReceiptFields } from "@/lib/expenses"
+import { dateShort, won } from "@/lib/format"
+import { FilterTabs, StatusBadge, useUrlState } from "@/components/saas"
 import {
   BizNoInput,
   CurrencySelect,
@@ -35,49 +39,51 @@ import {
 import {
   DEFAULT_BUDGET_ITEM_SUGGESTIONS,
   TABLE_MATCH_TEXT,
+  VIEW_STATUS,
+  fieldLabels,
   fileUrl,
-  formatForeign,
   hasTableConflict,
   invalidFields,
   isImageMeta,
+  isUploadView,
   rowErrors,
   rowNotices,
   similarReasonLabel,
   type DraftRow,
+  type ReasonField,
+  type RowAssessment,
+  type RowReason,
   type TableMatch,
   type UploaderProject,
+  type UploadView,
 } from "./upload-model"
-import {
-  CELL_TONE_CLASS,
-  CellSwatch,
-  Chip,
-  DotList,
-  KeyHint,
-  Money,
-  RecordCard,
-  RowNote,
-  StatusChip,
-  TABLE_CLASS,
-  type ExpenseStatus,
-} from "./ui"
+import { CELL_TONE_CLASS, DotList, KeyHint, RowNote, TABLE_CLASS } from "./ui"
 
-// 증빙 초안 표: 행 = 증빙 1건. 첫 열(선택·미리보기·상태)과 마지막 열(프로젝트 선택)은 가로 스크롤해도 고정된다(데스크톱).
-// 열 순서: 날짜 → 거래처 → 합계 → 비목 → 적요 → (문서 종류·결제·사업자번호·공급가액·부가세) → 프로젝트.
-// 키보드: Tab 다음 칸 · Enter 아래 행 같은 칸 · Shift+Enter 위 행. md 미만에서는 표 대신 카드 목록을 보여 준다.
+// 증빙 초안 표(계획서 4.2.1·4.2.2): 행 = 증빙 1건, 상태는 4개(입력 필요·확인 필요·준비 완료·제외) + 사유.
+// - 위: 상태 탭(?view=, 탭을 바꿀 때의 목록을 고정해 입력 중인 행이 사라지지 않게) · [모든 칸 보기] · [일괄 작업 ▾]
+// - 기본 "간단히": 상태·원본·거래일자·거래처·합계·비목·프로젝트. 나머지 칸은 "모든 칸"이나 검토 창에서 본다(선택은 이 브라우저에 기억).
+// - 행 아래: 확인 필요 행에만 사유와 글자 버튼([확인했어요]·[원본 보며 확인]). 제외·안내는 회색 글자.
+// - md 미만: 표 대신 카드(상태 배지 + "확인할 것 n가지"), 누르면 검토 창.
+// 키보드: Tab 다음 칸 · Enter 아래 행 같은 칸 · Shift+Enter 위 행.
 
 export interface ReceiptTableActions {
   patchFields: (key: string, patch: Partial<ReceiptFields>) => void
   setProject: (key: string, projectId: number) => void
   checkField: (key: string, field: keyof ReceiptFields) => void
-  checkAll: (key: string) => void // 그 행의 인식 불확실(노란) 표시를 모두 확인 처리
-  setSelected: (key: string, selected: boolean) => void
+  checkAll: (key: string) => void // 그 행의 남은 사유를 모두 확인 처리(selected는 바꾸지 않음)
+  acknowledge?: (key: string, reasonId: string) => void // 사유 하나 확인 처리
+  setSelected: (key: string, selected: boolean) => void // 저장 대상 포함 스위치
   setSelectedMany: (keys: string[], selected: boolean) => void
   bulkProject: (keys: string[], projectId: number) => void
   removeRows: (keys: string[]) => void
   addRowForFile: (rowKey: string) => void
-  openReview: (key: string) => void
+  // field: 열자마자 포커스할 칸(사유를 눌러 연 경우) · mode: "todo"(확인할 것만 순회) · "all"
+  openReview: (key: string, opts?: { field?: ReasonField; mode?: "todo" | "all" }) => void
   refetchFx: (key: string) => void // 외화 행: 결제일 환율 다시 받기(직접 입력한 환율을 버림)
 }
+
+export type ColumnMode = "simple" | "all"
+const COLUMN_KEY = "puh:expenses:upload-columns"
 
 export function budgetListId(projectId: number | null): string {
   return projectId ? `expense-budget-items-${projectId}` : "expense-budget-items-all"
@@ -109,6 +115,7 @@ export function BudgetItemDatalists({ projects }: { projects: UploaderProject[] 
   )
 }
 
+// (예전 '안내 있는 행' 기준 — 다른 화면 호환용으로 남긴다)
 export function rowNeedsAttention(row: DraftRow, project: UploaderProject | undefined, matches?: TableMatch[]): boolean {
   return (
     rowErrors(row).length > 0 ||
@@ -122,104 +129,12 @@ export function rowNeedsAttention(row: DraftRow, project: UploaderProject | unde
   )
 }
 
-// ── 행 상태(표·모바일 카드 공용) ──────────────────────────────────────────────
-// 입력 필요(저장 불가) > 확인 필요 > 저장 가능. 선택 해제된 행은 제외. showErrors와 무관하게 처음부터 보여 준다.
+// ── 행 아래 안내(표·검토 창 공용) ────────────────────────────────────────────
+// 중복 의심은 상태가 아니라 "제외"의 사유다. 저장 대상에 남아 있을 때만 빨강, 빠져 있으면 회색.
 
-const FIELD_LABEL: Partial<Record<keyof ReceiptFields, string>> = {
-  doc_type: "문서 종류",
-  issue_date: "거래일자",
-  vendor_name: "거래처",
-  vendor_biz_no: "사업자번호",
-  supply_amount: "공급가액",
-  vat_amount: "부가세",
-  total_amount: "합계",
-  payment_method: "결제 수단",
-  budget_item: "비목",
-  purpose: "적요",
-  approval_no: "승인번호",
-  memo: "메모",
-  currency: "통화",
-  foreign_amount: "외화 금액",
-  exchange_rate: "환율",
-  payroll_month: "귀속월",
+function savedLabel(d: { issue_date: string; vendor_name: string; total_amount: number }): string {
+  return [dateShort(d.issue_date), d.vendor_name, won(d.total_amount)].filter(Boolean).join(" · ")
 }
-
-// 1440폭 표에서 가로 스크롤 없이 보이는 칸. 나머지 칸의 노란 표시는 화면 밖(가로 스크롤 뒤·접힌 상세)에 있으므로
-// 행 아래 안내 줄에 칸 이름을 적어 어디를 봐야 하는지 알린다.
-const UPFRONT_FIELDS = new Set<keyof ReceiptFields>([
-  "issue_date",
-  "vendor_name",
-  "total_amount",
-  "currency",
-  "foreign_amount",
-  "exchange_rate",
-  "budget_item",
-  "purpose",
-])
-// '상세'(펼침) 안에 있는 칸
-const DETAIL_FIELDS = new Set<keyof ReceiptFields>(["approval_no", "memo", "payroll_month"])
-
-function fieldNames(fields: (keyof ReceiptFields)[]): string[] {
-  return fields.map((f) => FIELD_LABEL[f]).filter((x): x is string => !!x)
-}
-
-function rowStatus(row: DraftRow, attention: boolean, errors: string[]): ExpenseStatus {
-  return !row.selected ? "excluded" : errors.length ? "required" : attention ? "review" : "ready"
-}
-
-function rowState(row: DraftRow, project: UploaderProject | undefined, matches: TableMatch[] | undefined) {
-  const errors = rowErrors(row)
-  const notices = rowNotices(row, project)
-  const conflict = hasTableConflict(row, matches)
-  const pendingLow = row.lowFields.filter((f) => !row.checkedFields.includes(f))
-  const attention =
-    row.duplicates.length > 0 ||
-    row.similar.length > 0 ||
-    conflict ||
-    row.warnings.length > 0 ||
-    notices.length > 0 ||
-    row.serverErrors.length > 0 ||
-    pendingLow.length > 0
-  // 인식한 내용이 전혀 없는 빈 초안에는 "전체를 잘 읽지 못했다"는 안내가 중복이므로 생략한다.
-  const readSomething = !!row.aiRaw && !!(row.aiRaw.vendor_name || row.aiRaw.issue_date || row.aiRaw.total_amount !== null)
-  const lowOverall = row.confidence === "low" && readSomething
-  const matchInfo = !!matches && matches.length > 0 && (conflict || (!row.selected && matches.some((m) => m.otherSelected)))
-  return { errors, notices, conflict, pendingLow, attention, lowOverall, matchInfo, status: rowStatus(row, attention, errors) }
-}
-
-function StatusCell({ status, errors, pendingLow }: { status: ExpenseStatus; errors: string[]; pendingLow: (keyof ReceiptFields)[] }) {
-  const lowNames = fieldNames(pendingLow)
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span tabIndex={-1} className="inline-flex cursor-help">
-          <StatusChip status={status} />
-        </span>
-      </TooltipTrigger>
-      <TooltipContent side="right" className="max-w-xs">
-        {status === "required" ? (
-          <div>
-            <p className="font-semibold">입력 필요</p>
-            <ul className="mt-1 list-disc pl-4">
-              {errors.map((e) => (
-                <li key={e}>{e}</li>
-              ))}
-            </ul>
-          </div>
-        ) : status === "review" ? (
-          lowNames.length > 0 ? `확인 필요: ${lowNames.join(" · ")}` : "행 아래 안내 확인"
-        ) : status === "ready" ? (
-          "저장 가능"
-        ) : (
-          "저장 대상 아님"
-        )}
-      </TooltipContent>
-    </Tooltip>
-  )
-}
-
-// ── 행 아래 안내 줄(표·검토 창 공용) ──────────────────────────────────────────
-// 빨강은 저장 대상에 남아 이중 계상될 수 있는 것에만 쓴다. 이미 선택 해제된 중복은 회색으로 둔다.
 
 // 이미 저장된 증빙과 같은 파일
 export function DuplicateNote({ row }: { row: DraftRow }) {
@@ -227,98 +142,157 @@ export function DuplicateNote({ row }: { row: DraftRow }) {
   return (
     <>
       {row.duplicates.slice(0, 3).map((d) => (
-        <RowNote
-          key={d.id}
-          label={row.selected ? "중복" : "중복 · 제외"}
-          tone={row.selected ? "danger" : "neutral"}
-          title="같은 증빙이면 저장하지 마세요. 다른 증빙이면 체크해서 저장하세요."
-        >
-          <DotList items={["이미 저장된 파일", d.project_name, d.issue_date, d.vendor_name, formatWon(d.total_amount)]} />
+        <RowNote key={d.id} label="중복 의심" tone={row.selected ? "danger" : "neutral"}>
+          이미 저장한 파일이에요 · <DotList items={[d.project_name, savedLabel(d)]} />
         </RowNote>
       ))}
-      {row.duplicates.length > 3 && <p className="text-xs text-text-secondary">중복 외 {row.duplicates.length - 3}건</p>}
+      {row.duplicates.length > 3 && <p className="text-xs text-text-secondary">외 {row.duplicates.length - 3}건</p>}
     </>
   )
 }
 
-// 이미 저장된 증빙 중 같은 거래로 보이는 것(파일은 다름) — 표와 검토 창이 함께 쓴다.
+// "세금계산서와" · "간이영수증과": 마지막 글자 받침에 따라 와/과를 고른다(한글이 아니면 "와").
+function withGwa(word: string): string {
+  const last = word.trim().slice(-1)
+  const code = last.charCodeAt(0) - 0xac00
+  const hasFinal = code >= 0 && code <= 11171 && code % 28 !== 0
+  return `${word}${hasFinal ? "과" : "와"}`
+}
+
+// 이미 저장된 증빙 중 같은 거래로 보이는 것(파일은 다름)
 export function SimilarNote({ row }: { row: DraftRow }) {
   if (row.similar.length === 0) return null
   return (
     <>
       {row.similar.slice(0, 3).map((d) => (
-        <RowNote
-          key={d.id}
-          label={row.selected ? "중복 의심" : "중복 의심 · 제외"}
-          tone={row.selected ? "danger" : "neutral"}
-          title="같은 거래의 다른 서류(세금계산서·이체확인증 등)면 한 건만 저장하세요."
-        >
-          <DotList items={[d.project_name, d.issue_date, d.vendor_name, formatWon(d.total_amount), similarReasonLabel(d.reason)]} />
+        <RowNote key={d.id} label="중복 의심" tone={row.selected ? "danger" : "neutral"}>
+          이미 저장한 {withGwa(DOC_TYPE_LABELS[d.doc_type] ?? "증빙")} 같은 거래로 보여요({similarReasonLabel(d.reason)}) ·{" "}
+          <DotList items={[d.project_name, savedLabel(d)]} />
         </RowNote>
       ))}
-      {row.similar.length > 3 && <p className="text-xs text-text-secondary">중복 의심 외 {row.similar.length - 3}건</p>}
+      {row.similar.length > 3 && <p className="text-xs text-text-secondary">외 {row.similar.length - 3}건</p>}
     </>
   )
 }
 
-// 표 안의 다른 행과 같은 파일·같은 거래로 보일 때. 둘 다 선택돼 있으면 경고, 이 행만 빠져 있으면 이유를 조용히 알려 준다.
+// 표 안의 다른 행과 같은 파일·같은 거래로 보일 때
 export function TableMatchNote({ row, matches }: { row: DraftRow; matches: TableMatch[] | undefined }) {
   if (!matches || matches.length === 0) return null
-  const conflict = row.selected ? matches.filter((m) => m.otherSelected) : []
-  if (conflict.length > 0) {
+  const other = matches.filter((m) => m.otherSelected)
+  if (other.length === 0) return null
+  if (row.selected) {
     return (
       <>
-        {conflict.map((m) => (
-          <RowNote key={m.otherKey} label="중복 의심" tone="danger" title="같은 거래라면 한쪽의 체크를 해제하세요.">
-            <b className="font-semibold">{m.otherNumber}번 행</b>({m.otherLabel})과 {TABLE_MATCH_TEXT[m.kind]} · 둘 다 저장 시 중복 계상
+        {other.map((m) => (
+          <RowNote key={m.otherKey} label="중복 의심" tone="danger">
+            {m.otherNumber}번 행({m.otherLabel})과 {TABLE_MATCH_TEXT[m.kind]} · 둘 다 저장하면 두 번 계상돼요
           </RowNote>
         ))}
       </>
     )
   }
-  const informative = !row.selected ? matches.filter((m) => m.otherSelected) : []
-  if (informative.length === 0) return null
-  const m = informative[0]
+  const m = other[0]
   return (
-    <RowNote label="제외" tone="neutral" title="다른 거래가 맞으면 체크해서 함께 저장하세요.">
-      {m.otherNumber}번 행({m.otherLabel})과 {m.kind === "same_file" ? "같은 파일" : "같은 거래로 보임"}
+    <RowNote label="중복 의심" tone="neutral">
+      {m.otherNumber}번 행({m.otherLabel})과 {m.kind === "same_file" ? "같은 파일" : "같은 거래로 보여요"}
     </RowNote>
   )
 }
 
-// 저장은 막지 않는 확인 사항(금액 불일치·기간 밖·예산 외·인식 경고). 3개 이상이면 앞 2개만 보이고 나머지는 접는다.
-// muted: 이미 저장 대상에서 빠진 행 — 경고색 대신 회색으로 낮춘다.
+// (호환용) 확인 문장 목록
 export function CheckNotes({ items, muted = false }: { items: string[]; muted?: boolean }) {
   if (items.length === 0) return null
-  const head = items.length >= 3 ? items.slice(0, 2) : items
-  const rest = items.length >= 3 ? items.slice(2) : []
-  const tone = muted ? "neutral" : "warning"
   return (
     <>
-      {head.map((w, i) => (
-        <RowNote key={`w${i}`} label="확인" tone={tone}>
+      {items.map((w, i) => (
+        <RowNote key={i} label="확인" tone={muted ? "neutral" : "warning"}>
           {w}
         </RowNote>
       ))}
-      {rest.length > 0 && (
-        <details className="text-xs">
-          <summary className="cursor-pointer text-xs font-medium text-dark">확인 {rest.length}건 더</summary>
-          <div className="mt-1 space-y-1">
-            {rest.map((w, i) => (
-              <RowNote key={`r${i}`} label="확인" tone={tone}>
-                {w}
-              </RowNote>
-            ))}
-          </div>
-        </details>
-      )}
     </>
   )
 }
 
-const TH = cn(TABLE_CLASS.th, "px-1.5 md:sticky md:top-0 md:z-[4]")
+// 회색 안내 한 줄(상태에 영향 없음)
+export function InfoLine({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <p className={cn("flex items-start gap-1.5 text-sm text-text-secondary [word-break:keep-all]", className)}>
+      <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
+      <span className="min-w-0">{children}</span>
+    </p>
+  )
+}
+
+// 제외 사유 한 줄(표·카드·검토 창 공용)
+export function excludedText(row: DraftRow, matches: TableMatch[] | undefined): string {
+  if (row.duplicates.length > 0) return `이미 저장한 파일이에요(${savedLabel(row.duplicates[0])}) · 같은 증빙이면 그대로 두세요`
+  if (row.similar.length > 0) {
+    const d = row.similar[0]
+    return `이미 저장한 ${withGwa(DOC_TYPE_LABELS[d.doc_type] ?? "증빙")} 같은 거래로 보여요(${savedLabel(d)}) · 한 거래는 한 건만 저장해요`
+  }
+  const m = matches?.find((x) => x.otherSelected)
+  if (m) return `${m.otherNumber}번 행과 ${m.kind === "same_file" ? "같은 파일이에요" : "같은 거래로 보여요"} · 한 거래는 한 건만 저장해요`
+  return "저장 대상에서 뺐어요"
+}
+
+// 사유 목록 + 글자 버튼. 표에서는 [원본 보며 확인](인식 불확실) 또는 [확인했어요].
+function ReasonLine({
+  row,
+  number,
+  st,
+  actions,
+}: {
+  row: DraftRow
+  number: number
+  st: RowAssessment
+  actions: ReceiptTableActions
+}) {
+  const n = st.reasons.length
+  return (
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm text-dark [word-break:keep-all]">
+      <span className="font-semibold text-amber-900">확인할 것 {n}가지:</span>
+      {st.reasons.map((r, i) => (
+        <span key={r.id} className="inline-flex flex-wrap items-center gap-x-1">
+          {i > 0 && (
+            <span aria-hidden className="text-text-secondary">
+              ·
+            </span>
+          )}
+          <span>{r.text}</span>
+          {r.needsOriginal ? (
+            <ReasonButton onClick={() => actions.openReview(row.key, { field: r.fields[0], mode: "todo" })} label={`${number}번 행 원본 보며 확인`}>
+              원본 보며 확인
+            </ReasonButton>
+          ) : (
+            <ReasonButton onClick={() => (actions.acknowledge ? actions.acknowledge(row.key, r.id) : actions.checkAll(row.key))} label={`${number}번 행 ‘${shortText(r)}’ 확인했어요`}>
+              확인했어요
+            </ReasonButton>
+          )}
+        </span>
+      ))}
+    </div>
+  )
+}
+
+function shortText(r: RowReason): string {
+  return r.text.length > 24 ? `${r.text.slice(0, 24)}…` : r.text
+}
+
+export function ReasonButton({ onClick, label, children }: { onClick: () => void; label?: string; children: ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className="inline-flex h-8 items-center rounded-sm px-1 text-sm font-medium text-link underline underline-offset-2 hover:bg-warm-beige disabled:opacity-60"
+    >
+      {children}
+    </button>
+  )
+}
+
+const TH = cn(TABLE_CLASS.th, "px-1.5 text-[13px] md:sticky md:top-0 md:z-[4]")
 const TD = "border-b border-warm-tan/60 px-1.5 py-1.5 align-middle"
-// 고정 열은 불투명 배경이 있어야 뒤로 지나가는 칸이 비치지 않는다.
 const STICKY_LEFT = "md:sticky md:left-0 md:z-[3] md:shadow-[inset_-1px_0_0_var(--color-warm-tan)]"
 const STICKY_RIGHT = "md:sticky md:right-0 md:z-[3] md:shadow-[inset_1px_0_0_var(--color-warm-tan)]"
 
@@ -329,19 +303,13 @@ function Thumbnail({ row, filePos, fileCount, onOpen }: { row: DraftRow; filePos
     <button
       type="button"
       onClick={onOpen}
-      title="원본 보기"
+      title="원본 보며 확인"
       aria-label={`${row.file.name} 원본 보기`}
-      className="group/thumb relative block h-8 w-8 shrink-0 overflow-hidden rounded-md border border-warm-tan bg-warm-beige/50 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+      className="group/thumb relative block h-9 w-9 shrink-0 overflow-hidden rounded-md border border-warm-tan bg-warm-beige/50 outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
     >
       {image && !broken ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={fileUrl(row.file.pathname)}
-          alt=""
-          loading="lazy"
-          onError={() => setBroken(true)}
-          className="h-full w-full object-cover"
-        />
+        <img src={fileUrl(row.file.pathname)} alt="" loading="lazy" onError={() => setBroken(true)} className="h-full w-full object-cover" />
       ) : (
         <span className="flex h-full w-full items-center justify-center text-text-secondary">
           <FileText className="h-4 w-4" />
@@ -359,8 +327,7 @@ function Thumbnail({ row, filePos, fileCount, onOpen }: { row: DraftRow; filePos
   )
 }
 
-// 합계 칸. 원화: [KRW][합계]. 외화: [USD][외화 금액] / × [환율] = [원화 합계]원 / 환율 기준일·출처.
-// 외화 행에서도 원화 합계를 고칠 수 있다(그러면 환율은 '직접 입력').
+// 합계 칸. 원화: [합계](모든 칸이면 [KRW] 선택도). 외화: [USD][외화 금액] / × [환율] = [원화 합계]원 / 환율 근거.
 function AmountCell({
   row,
   st,
@@ -368,6 +335,7 @@ function AmountCell({
   seen,
   grid,
   mismatch,
+  showCurrency,
   onRefetch,
 }: {
   row: DraftRow
@@ -376,6 +344,7 @@ function AmountCell({
   seen: (field: keyof ReceiptFields) => () => void
   grid: (col: string) => GridProps
   mismatch: boolean
+  showCurrency: boolean
   onRefetch: () => void
 }) {
   const f = row.fields
@@ -384,11 +353,11 @@ function AmountCell({
       {mismatch && (
         <Tooltip>
           <TooltipTrigger asChild>
-            <span className="inline-flex cursor-help text-amber-700" aria-label="금액 불일치: 공급가액+부가세 ≠ 합계">
+            <span className="inline-flex cursor-help text-amber-700" aria-label="금액이 맞지 않아요: 공급가액+부가세 ≠ 합계">
               <TriangleAlert className="h-3.5 w-3.5" />
             </span>
           </TooltipTrigger>
-          <TooltipContent>금액 불일치: 공급가액+부가세 ≠ 합계</TooltipContent>
+          <TooltipContent>금액이 맞지 않아요: 공급가액+부가세 ≠ 합계</TooltipContent>
         </Tooltip>
       )}
     </span>
@@ -406,15 +375,15 @@ function AmountCell({
   )
   if (f.currency === "KRW") {
     return (
-      <div className="flex items-center gap-1">
+      <div className="flex items-center justify-end gap-1">
         {warn}
-        {currency}
+        {showCurrency && currency}
         <MoneyInput value={f.total_amount} onChange={(v) => patch({ total_amount: v })} onBlur={seen("total_amount")} state={st("total_amount")} className="w-[112px] font-semibold" grid={grid("total_amount")} aria-label="합계" />
       </div>
     )
   }
   return (
-    <div className="w-[276px] space-y-1">
+    <div className="w-[248px] space-y-1">
       <div className="flex items-center gap-1">
         {warn}
         {currency}
@@ -436,7 +405,7 @@ function AmountCell({
           onChange={(v) => patch({ exchange_rate: v })}
           onBlur={seen("exchange_rate")}
           state={st("exchange_rate")}
-          className="w-[84px] shrink-0 px-1.5"
+          className="w-[76px] shrink-0 px-1.5"
           grid={grid("exchange_rate")}
           aria-label={`적용 환율(1 ${f.currency}당 원)`}
         />
@@ -449,33 +418,28 @@ function AmountCell({
   )
 }
 
-const SOURCE_LABEL: Record<string, string> = {
-  default: "기본 프로젝트",
-  single: "유일한 프로젝트",
-  bulk: "일괄 지정",
-}
-
-const COLUMN_COUNT = 12
-
 interface RowProps {
   row: DraftRow
+  st: RowAssessment
   index: number // 보이는 행 기준(키보드 이동용)
   number: number // 전체 표 기준 번호(1부터)
-  project: UploaderProject | undefined
   projects: UploaderProject[]
   actions: ReceiptTableActions
   expanded: boolean
   onToggleExpand: (key: string) => void
   filePos: number
   fileCount: number
-  matches: TableMatch[] | undefined // 표 안의 다른 행과 같은 파일·같은 거래로 보임
+  matches: TableMatch[] | undefined
+  mode: ColumnMode
+  fromApp: boolean
+  columnCount: number
 }
 
 const ReceiptRow = memo(function ReceiptRow({
   row,
+  st,
   index,
   number,
-  project,
   projects,
   actions,
   expanded,
@@ -483,238 +447,211 @@ const ReceiptRow = memo(function ReceiptRow({
   filePos,
   fileCount,
   matches,
+  mode,
+  fromApp,
+  columnCount,
 }: RowProps) {
-  const { errors, notices, pendingLow, attention, lowOverall, matchInfo, status } = rowState(row, project, matches)
   const invalid = invalidFields(row)
   const f = row.fields
   const key = row.key
+  const all = mode === "all"
 
-  const st = (field: keyof ReceiptFields): CellState => ({
-    low: row.lowFields.includes(field) && !row.checkedFields.includes(field),
+  const excluded = st.status === "excluded"
+  // 저장 대상에서 뺀 행(제외)은 칸을 확인 필요 색으로 칠하지 않는다(저장하지 않는 행에 눈이 가지 않게). 다시 넣으면 색이 돌아온다.
+  const cellState = (field: keyof ReceiptFields): CellState => ({
+    low: !excluded && row.lowFields.includes(field) && !row.checkedFields.includes(field),
     invalid: row.showErrors && !!invalid[field],
   })
   const grid = (col: string) => ({ "data-grid-row": index, "data-grid-col": col })
   const patch = (p: Partial<ReceiptFields>) => actions.patchFields(key, p)
   const seen = (field: keyof ReceiptFields) => () => actions.checkField(key, field)
-  const mismatch = amountMismatch(f)
-  // 화면 밖(가로 스크롤 뒤·접힌 상세)에 있는 노란 칸
-  const hiddenLow = pendingLow.filter((field) => !UPFRONT_FIELDS.has(field))
-  const detailLow = pendingLow.some((field) => DETAIL_FIELDS.has(field))
+  const mismatch = st.reasons.some((r) => r.kind === "amount")
+  const detailLow = ["approval_no", "memo", "payroll_month"].some((x) => cellState(x as keyof ReceiptFields).low)
 
-  const bg = row.selected ? "bg-card" : "bg-warm-ivory"
-  // 왼쪽 4px 띠: 입력 필요(빨강) · 확인 필요(amber-600). 저장 가능·제외는 없음.
-  const stripe = !row.selected
-    ? "before:bg-transparent"
-    : errors.length > 0
-      ? "before:bg-destructive"
-      : attention
-        ? "before:bg-amber-600"
-        : "before:bg-transparent"
+  const bg = excluded ? "bg-warm-ivory" : "bg-card"
+  // 왼쪽 4px 띠: 입력 필요(빨강) · 확인 필요(amber-600). 준비 완료·제외는 없음.
+  const stripe =
+    st.status === "needs_input" ? "before:bg-destructive" : st.status === "needs_review" ? "before:bg-amber-600" : "before:bg-transparent"
+  const aiSuggested = row.projectSource === "ai" && !!row.project_id
+  const missing = fieldLabels(
+    (Object.keys(invalid) as ReasonField[]).filter((k) => invalid[k as keyof typeof invalid])
+  )
 
   const showNotes =
-    row.serverErrors.length > 0 ||
-    (row.showErrors && errors.length > 0) ||
-    row.duplicates.length > 0 ||
-    row.similar.length > 0 ||
-    matchInfo ||
-    row.warnings.length > 0 ||
-    notices.length > 0 ||
-    lowOverall ||
-    hiddenLow.length > 0
-
-  const aiSuggested = row.projectSource === "ai" && !!row.project_id
+    st.status === "needs_review" ||
+    (st.status === "needs_input" && (missing.length > 0 || row.serverErrors.length > 0)) ||
+    excluded ||
+    st.infos.length > 0 ||
+    (!excluded && st.acknowledged.length > 0)
 
   return (
     <>
-      <tr data-row-key={key} className={cn(bg, !row.selected && "text-text-secondary")}>
-        {/* 번호 · 선택 · 미리보기 · 상태 (왼쪽 고정) */}
+      <tr data-row-key={key} className={cn(bg, excluded && "text-text-secondary")}>
         <td
           className={cn(
             TD,
             bg,
-            STICKY_LEFT,
+            all && STICKY_LEFT,
             "relative pl-3 before:absolute before:inset-y-0 before:left-0 before:w-1 before:content-['']",
             stripe
           )}
         >
-          <div className="flex items-center gap-2">
-            <span className="w-5 shrink-0 text-right text-xs font-medium tabular-nums text-text-secondary">{number}</span>
-            <Checkbox
-              checked={row.selected}
-              onCheckedChange={(v) => actions.setSelected(key, v === true)}
-              aria-label={`${number}번 행 저장 대상으로 선택`}
-            />
-            <Thumbnail row={row} filePos={filePos} fileCount={fileCount} onOpen={() => actions.openReview(key)} />
-            <StatusCell status={status} errors={errors} pendingLow={pendingLow} />
+          <div className="flex items-center gap-1.5">
+            <span className="w-4 shrink-0 text-right text-xs font-medium tabular-nums text-text-secondary">{number}</span>
+            <StatusBadge domain="expenseRow" status={st.status} detail={undefined} />
+          </div>
+        </td>
+        <td className={cn(TD, all && "md:sticky md:left-[132px] md:z-[3]", bg)}>
+          <div className="flex items-center gap-1">
+            <Thumbnail row={row} filePos={filePos} fileCount={fileCount} onOpen={() => actions.openReview(key, { mode: st.status === "needs_review" || st.status === "needs_input" ? "todo" : "all" })} />
+            {fromApp && <span className="text-xs text-text-secondary" title="데스크톱 앱에서 온 증빙">앱</span>}
           </div>
         </td>
         <td className={TD}>
-          <DateCell value={f.issue_date} onChange={(v) => patch({ issue_date: v })} onBlur={seen("issue_date")} state={st("issue_date")} className="w-[128px]" grid={grid("issue_date")} aria-label="거래일자" />
+          <DateCell value={f.issue_date} onChange={(v) => patch({ issue_date: v })} onBlur={seen("issue_date")} state={cellState("issue_date")} className="w-[132px]" grid={grid("issue_date")} aria-label="거래일자" />
         </td>
         <td className={TD}>
-          <TextCell value={f.vendor_name} onChange={(v) => patch({ vendor_name: v })} onBlur={seen("vendor_name")} state={st("vendor_name")} maxLength={200} placeholder="거래처명" className="w-[168px]" grid={grid("vendor_name")} aria-label="거래처" />
+          <TextCell value={f.vendor_name} onChange={(v) => patch({ vendor_name: v })} onBlur={seen("vendor_name")} state={cellState("vendor_name")} maxLength={200} className={all ? "w-[168px]" : "w-[150px]"} grid={grid("vendor_name")} aria-label="거래처" />
         </td>
         <td className={TD}>
-          <AmountCell row={row} st={st} patch={patch} seen={seen} grid={grid} mismatch={mismatch} onRefetch={() => actions.refetchFx(key)} />
+          <AmountCell row={row} st={cellState} patch={patch} seen={seen} grid={grid} mismatch={mismatch} showCurrency={all} onRefetch={() => actions.refetchFx(key)} />
         </td>
         <td className={TD}>
-          <TextCell value={f.budget_item} onChange={(v) => patch({ budget_item: v })} onBlur={seen("budget_item")} state={st("budget_item")} maxLength={100} list={budgetListId(row.project_id)} placeholder="비목" className="w-[120px]" grid={grid("budget_item")} aria-label="비목" />
+          <TextCell value={f.budget_item} onChange={(v) => patch({ budget_item: v })} onBlur={seen("budget_item")} state={cellState("budget_item")} maxLength={100} list={budgetListId(row.project_id)} className="w-[116px]" grid={grid("budget_item")} aria-label="비목" />
         </td>
-        <td className={TD}>
+        {all && (
+          <>
+            <td className={TD}>
+              <div className="flex items-center gap-1">
+                <TextCell value={f.purpose} onChange={(v) => patch({ purpose: v })} onBlur={seen("purpose")} state={cellState("purpose")} className="w-[200px]" grid={grid("purpose")} aria-label="적요" />
+                <button
+                  type="button"
+                  onClick={() => onToggleExpand(key)}
+                  aria-expanded={expanded}
+                  aria-label={`${number}번 행 승인번호·메모·품목 ${expanded ? "접기" : "펼치기"}`}
+                  className={cn(
+                    "flex h-8 shrink-0 items-center gap-0.5 rounded-md border px-1.5 text-xs transition-colors",
+                    expanded
+                      ? "border-dark/40 bg-warm-beige text-dark"
+                      : detailLow
+                        ? cn(CELL_TONE_CLASS.review, "font-medium text-amber-800 hover:bg-amber-100")
+                        : "border-warm-tan text-text-secondary hover:bg-warm-beige hover:text-dark"
+                  )}
+                >
+                  {f.items.length > 0 ? `품목 ${f.items.length}` : "상세"}
+                  <ChevronDown className={cn("h-3 w-3", expanded && "rotate-180")} />
+                </button>
+              </div>
+            </td>
+            <td className={TD}>
+              <DocTypeSelect value={f.doc_type} onChange={(v) => patch({ doc_type: v })} onSeen={seen("doc_type")} state={cellState("doc_type")} className="w-[112px]" aria-label="문서 종류" />
+            </td>
+            <td className={TD}>
+              <PaymentSelect value={f.payment_method} onChange={(v) => patch({ payment_method: v })} onSeen={seen("payment_method")} state={cellState("payment_method")} className="w-[96px]" aria-label="결제 수단" />
+            </td>
+            <td className={TD}>
+              <BizNoInput value={f.vendor_biz_no} onChange={(v) => patch({ vendor_biz_no: v })} onBlur={seen("vendor_biz_no")} state={cellState("vendor_biz_no")} className="w-[128px]" grid={grid("vendor_biz_no")} aria-label="사업자등록번호" />
+            </td>
+            <td className={TD}>
+              <MoneyInput value={f.supply_amount} onChange={(v) => patch({ supply_amount: v })} onBlur={seen("supply_amount")} state={cellState("supply_amount")} className="w-[112px]" grid={grid("supply_amount")} aria-label="공급가액" />
+            </td>
+            <td className={TD}>
+              <MoneyInput value={f.vat_amount} onChange={(v) => patch({ vat_amount: v })} onBlur={seen("vat_amount")} state={cellState("vat_amount")} className="w-[100px]" grid={grid("vat_amount")} aria-label="부가세" />
+            </td>
+          </>
+        )}
+        <td className={cn(TD, bg, all && STICKY_RIGHT, "pr-2")}>
           <div className="flex items-center gap-1">
-            <TextCell value={f.purpose} onChange={(v) => patch({ purpose: v })} onBlur={seen("purpose")} state={st("purpose")} placeholder="적요" className="w-[200px]" grid={grid("purpose")} aria-label="적요" />
-            <button
-              type="button"
-              onClick={() => onToggleExpand(key)}
-              aria-expanded={expanded}
-              title={detailLow ? "승인번호 · 메모 · 품목 (확인 필요 칸 있음)" : "승인번호 · 메모 · 품목"}
-              className={cn(
-                "flex h-8 shrink-0 items-center gap-0.5 rounded-md border px-1.5 text-xs transition-colors",
-                expanded
-                  ? "border-dark/40 bg-warm-beige text-dark"
-                  : detailLow
-                    ? cn(CELL_TONE_CLASS.review, "font-medium text-amber-800 hover:bg-amber-100")
-                    : "border-warm-tan text-text-secondary hover:bg-warm-beige hover:text-dark"
-              )}
-            >
-              {f.items.length > 0 ? `품목 ${f.items.length}` : "상세"}
-              <ChevronDown className={cn("h-3 w-3", expanded && "rotate-180")} />
-            </button>
-          </div>
-        </td>
-        <td className={TD}>
-          <DocTypeSelect value={f.doc_type} onChange={(v) => patch({ doc_type: v })} onSeen={seen("doc_type")} state={st("doc_type")} className="w-[112px]" aria-label="문서 종류" />
-        </td>
-        <td className={TD}>
-          <PaymentSelect value={f.payment_method} onChange={(v) => patch({ payment_method: v })} onSeen={seen("payment_method")} state={st("payment_method")} className="w-[96px]" aria-label="결제 수단" />
-        </td>
-        <td className={TD}>
-          <BizNoInput value={f.vendor_biz_no} onChange={(v) => patch({ vendor_biz_no: v })} onBlur={seen("vendor_biz_no")} state={st("vendor_biz_no")} className="w-[128px]" grid={grid("vendor_biz_no")} aria-label="사업자등록번호" />
-        </td>
-        <td className={TD}>
-          <MoneyInput value={f.supply_amount} onChange={(v) => patch({ supply_amount: v })} onBlur={seen("supply_amount")} state={st("supply_amount")} className="w-[112px]" grid={grid("supply_amount")} aria-label="공급가액" />
-        </td>
-        <td className={TD}>
-          <MoneyInput value={f.vat_amount} onChange={(v) => patch({ vat_amount: v })} onBlur={seen("vat_amount")} state={st("vat_amount")} className="w-[100px]" grid={grid("vat_amount")} aria-label="부가세" />
-        </td>
-        {/* 프로젝트 선택 · 삭제 (오른쪽 고정) */}
-        <td className={cn(TD, bg, STICKY_RIGHT, "pr-2")}>
-          <div className="flex items-center gap-1">
-            {row.projectSource && row.projectSource !== "ai" && SOURCE_LABEL[row.projectSource] && row.project_id ? (
-              <span className="sr-only">{SOURCE_LABEL[row.projectSource]}</span>
-            ) : null}
             <ProjectSelect
               value={row.project_id}
               onChange={(id) => actions.setProject(key, id)}
               projects={projects}
               aiSuggestedId={row.aiRaw?.suggested_project_id ?? null}
               suggested={aiSuggested}
-              title={aiSuggested ? (row.projectReason ? `추천 근거: ${row.projectReason}` : "증빙 내용 기준 추천 · 확인 필요") : undefined}
+              title={aiSuggested ? (row.projectReason ? `추천 근거: ${row.projectReason}` : "증빙 내용으로 추천했어요 · 확인해 주세요") : undefined}
               state={{ invalid: row.showErrors && !row.project_id }}
-              placeholder="프로젝트 선택 필요"
-              className="w-[208px]"
-              aria-label="프로젝트 선택"
+              placeholder="프로젝트 고르기"
+              className={all ? "w-[208px]" : "w-[196px]"}
+              aria-label="프로젝트"
             />
-            <button
-              type="button"
-              onClick={() => actions.removeRows([key])}
-              title="행 삭제"
-              aria-label={`${number}번 행 삭제`}
-              className="rounded-md p-1.5 text-text-secondary transition-colors hover:bg-destructive/10 hover:text-destructive"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
+            {all && (
+              <button
+                type="button"
+                onClick={() => actions.removeRows([key])}
+                title="행 지우기"
+                aria-label={`${number}번 행 지우기`}
+                className="inline-flex size-8 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-destructive/10 hover:text-destructive"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </td>
       </tr>
 
       {showNotes && (
         <tr className={bg}>
-          <td colSpan={COLUMN_COUNT} className="border-b border-warm-tan/60 p-0">
-            <div className="sticky left-0 w-[var(--table-view-w,100%)] space-y-1 px-3 pb-2 pt-1">
+          <td colSpan={columnCount} className="border-b border-warm-tan/60 p-0">
+            <div className={cn("space-y-1 px-3 pb-2 pt-0.5", all && "sticky left-0 w-[var(--table-view-w,100%)]")}>
               {row.serverErrors.map((e, i) => (
-                <RowNote key={`s${i}`} label="서버 확인" tone="danger">
+                <RowNote key={`s${i}`} label="저장 안 됨" tone="danger">
                   {e}
                 </RowNote>
               ))}
-              {row.showErrors && errors.length > 0 && (
-                <RowNote label="입력 필요" tone="danger">
-                  {errors.join(" · ")}
-                </RowNote>
+              {st.status === "needs_input" && missing.length > 0 && (
+                <p className="text-sm text-red-800 [word-break:keep-all]">
+                  <span className="font-semibold">채울 칸:</span> {missing.join(" · ")}
+                </p>
               )}
-              <DuplicateNote row={row} />
-              <SimilarNote row={row} />
-              <TableMatchNote row={row} matches={matches} />
-              {hiddenLow.length > 0 && (
-                <RowNote
-                  label="확인 필요"
-                  tone={row.selected ? "warning" : "neutral"}
-                  title={detailLow ? "승인번호·메모는 적요 옆 '상세'를 펼치면 보입니다." : "표를 오른쪽으로 넘기면 보입니다."}
-                >
-                  {fieldNames(hiddenLow).join(" · ")} 칸 원본 대조
-                </RowNote>
+              {st.status === "needs_review" && <ReasonLine row={row} number={number} st={st} actions={actions} />}
+              {excluded && <InfoLine>{st.duplicateSuspect ? `중복 의심 · ${excludedText(row, matches)}` : "저장 대상에서 뺐어요 · 원본을 열어 다시 넣을 수 있어요"}</InfoLine>}
+              {st.infos.map((t) => (
+                <InfoLine key={t}>{t}</InfoLine>
+              ))}
+              {!excluded && st.acknowledged.length > 0 && (
+                <p className="text-sm text-text-secondary" title={st.acknowledged.map((r) => r.text).join("\n")}>
+                  확인함 {st.acknowledged.length}가지 · {st.acknowledged.map((r) => r.text).join(" · ")}
+                </p>
               )}
-              {lowOverall && (
-                <RowNote label="신뢰도 낮음" tone={row.selected ? "warning" : "neutral"}>
-                  원본과 전체 대조 필요
-                </RowNote>
-              )}
-              <CheckNotes items={[...notices, ...row.warnings]} muted={!row.selected} />
             </div>
           </td>
         </tr>
       )}
 
-      {expanded && (
+      {all && expanded && (
         <tr className={bg}>
-          <td colSpan={COLUMN_COUNT} className="border-b border-warm-tan/60 p-0">
+          <td colSpan={columnCount} className="border-b border-warm-tan/60 p-0">
             <div className="sticky left-0 w-[var(--table-view-w,100%)] px-3 pb-3 pt-1">
               <div className="grid gap-4 rounded-md border border-warm-tan p-3 md:grid-cols-[minmax(0,260px)_minmax(0,1fr)]">
                 <div className="space-y-2.5">
                   <label className="block">
-                    <span className="mb-1 block text-xs font-medium text-text-secondary">승인번호</span>
-                    <TextCell value={f.approval_no} onChange={(v) => patch({ approval_no: v })} onBlur={seen("approval_no")} state={st("approval_no")} maxLength={50} placeholder="카드 승인번호" />
+                    <span className="mb-1 block text-sm font-medium text-dark">승인번호</span>
+                    <TextCell value={f.approval_no} onChange={(v) => patch({ approval_no: v })} onBlur={seen("approval_no")} state={cellState("approval_no")} maxLength={50} />
                   </label>
                   <label className="block">
-                    <span className="mb-1 block text-xs font-medium text-text-secondary">메모</span>
-                    <TextCell value={f.memo} onChange={(v) => patch({ memo: v })} onBlur={seen("memo")} state={st("memo")} placeholder="내부 메모" />
+                    <span className="mb-1 block text-sm font-medium text-dark">메모</span>
+                    <TextCell value={f.memo} onChange={(v) => patch({ memo: v })} onBlur={seen("memo")} state={cellState("memo")} />
                   </label>
                   {f.doc_type === "payroll" && (
                     <label className="block">
-                      <span className="mb-1 block text-xs font-medium text-text-secondary">귀속월</span>
-                      <MonthCell value={f.payroll_month} onChange={(v) => patch({ payroll_month: v })} onBlur={seen("payroll_month")} state={st("payroll_month")} aria-label="귀속월" />
+                      <span className="mb-1 block text-sm font-medium text-dark">귀속월</span>
+                      <MonthCell value={f.payroll_month} onChange={(v) => patch({ payroll_month: v })} onBlur={seen("payroll_month")} state={cellState("payroll_month")} aria-label="귀속월" />
                     </label>
                   )}
-                  <div className="space-y-1 text-xs text-text-secondary">
-                    {row.confidence && (
-                      <p>
-                        인식 신뢰도: <b className="text-dark">{CONFIDENCE_LABELS[row.confidence]}</b>
-                      </p>
-                    )}
-                    {row.manual && <p>직접 입력 행</p>}
-                    <p className="truncate" title={row.file.name}>
-                      원본: {row.file.name}
-                    </p>
-                  </div>
+                  <p className="truncate text-sm text-text-secondary" title={row.file.name}>
+                    원본: {row.file.name}
+                  </p>
                   <div className="flex flex-wrap gap-1.5">
-                    <Button type="button" size="sm" variant="outline" className="h-7 text-xs" onClick={() => actions.openReview(key)}>
-                      <Maximize2 className="h-3.5 w-3.5" />
-                      원본 대조
+                    <Button type="button" size="sm" variant="outline" className="h-8 hover:bg-warm-beige" asChild>
+                      <a href={fileUrl(row.file.pathname, { name: row.file.name })}>원본 받기</a>
                     </Button>
-                    <Button type="button" size="sm" variant="outline" className="h-7 text-xs" asChild>
-                      <a href={fileUrl(row.file.pathname, { name: row.file.name })}>
-                        <Download className="h-3.5 w-3.5" />
-                        원본 받기
-                      </a>
-                    </Button>
-                    <Button type="button" size="sm" variant="outline" className="h-7 text-xs" onClick={() => actions.addRowForFile(key)}>
-                      <Plus className="h-3.5 w-3.5" />
-                      이 파일로 행 추가
+                    <Button type="button" size="sm" variant="outline" className="h-8 hover:bg-warm-beige" onClick={() => actions.addRowForFile(key)}>
+                      이 파일로 한 건 더
                     </Button>
                   </div>
                 </div>
                 <div>
-                  <p className="mb-1 text-xs font-medium text-text-secondary">품목</p>
+                  <p className="mb-1 text-sm font-medium text-dark">품목</p>
                   <ItemsEditor items={f.items} onChange={(items) => patch({ items })} total={f.total_amount} supply={f.supply_amount} />
                 </div>
               </div>
@@ -726,107 +663,73 @@ const ReceiptRow = memo(function ReceiptRow({
   )
 })
 
-// 모바일 카드의 안내 칩: 가장 구체적인 것 하나만 칩으로 보이고 나머지는 개수로만 알린다(자세한 내용은 검토 창).
-// 순서는 심각도 순. 이미 저장 대상에서 빠진 행은 모두 회색으로 낮춘다.
-function mobileCues(
-  row: DraftRow,
-  st: ReturnType<typeof rowState>,
-  matches: TableMatch[] | undefined
-): { tone: "danger" | "warning" | "neutral"; text: string; title?: string }[] {
-  const sel = row.selected
-  const cues: { tone: "danger" | "warning" | "neutral"; text: string; title?: string }[] = []
-  if (row.serverErrors.length > 0) cues.push({ tone: "danger", text: "서버 확인", title: row.serverErrors.join(" · ") })
-  // 제외된 행은 상태 칩이 이미 '제외'이므로 사유만 적는다.
-  if (row.duplicates.length > 0) cues.push({ tone: sel ? "danger" : "neutral", text: "중복", title: "이미 저장된 파일" })
-  if (row.similar.length > 0 || st.conflict) cues.push({ tone: sel ? "danger" : "neutral", text: "중복 의심" })
-  else if (st.matchInfo && !sel) {
-    const m = matches?.find((x) => x.otherSelected)
-    if (m) cues.push({ tone: "neutral", text: `${m.otherNumber}번과 ${m.kind === "same_file" ? "같은 파일" : "같은 거래"}` })
-  }
-  if (st.pendingLow.length > 0) {
-    const names = fieldNames(st.pendingLow)
-    const shown = names.slice(0, 2).join(" · ") + (names.length > 2 ? ` 외 ${names.length - 2}` : "")
-    cues.push({ tone: sel ? "warning" : "neutral", text: `확인: ${shown}`, title: `확인 필요: ${names.join(" · ")}` })
-  }
-  if (st.lowOverall) cues.push({ tone: sel ? "warning" : "neutral", text: "신뢰도 낮음" })
-  const checks = st.notices.length + row.warnings.length
-  if (checks > 0)
-    cues.push({ tone: sel ? "warning" : "neutral", text: `확인 ${checks}건`, title: [...st.notices, ...row.warnings].join(" · ") })
-  return cues
-}
-
-// md 미만: 표 대신 행 카드. 누르면 검토 창(원본 + 입력칸)이 열린다.
+// md 미만: 표 대신 행 카드. 상태 배지와 "확인할 것 n가지"만 보이고, 누르면 검토 창(전체 화면)이 열린다.
 function MobileRowCard({
   row,
+  st,
   number,
   project,
-  matches,
   actions,
+  fromApp,
 }: {
   row: DraftRow
+  st: RowAssessment
   number: number
   project: UploaderProject | undefined
-  matches: TableMatch[] | undefined
   actions: ReceiptTableActions
+  fromApp: boolean
 }) {
-  const st = rowState(row, project, matches)
-  const { status } = st
   const f = row.fields
-  const cues = mobileCues(row, st, matches)
-  const cue: ReactNode = cues.length > 0 && (
-    <>
-      <Chip tone={cues[0].tone} title={cues[0].title}>
-        {cues[0].text}
-      </Chip>
-      {cues.length > 1 && (
-        <span className="text-text-secondary" title={cues.slice(1).map((c) => c.text).join(" · ")}>
-          외 {cues.length - 1}건
-        </span>
-      )}
-    </>
-  )
-  const suggested = row.projectSource === "ai" && !!row.project_id
+  const todo = st.status === "needs_review" || st.status === "needs_input"
+  const cue =
+    st.status === "needs_review"
+      ? `확인할 것 ${st.reasons.length}가지`
+      : st.status === "needs_input"
+        ? `채울 칸 ${Math.max(1, st.errors.length)}개`
+        : st.status === "excluded" && st.duplicateSuspect
+          ? "중복 의심"
+          : null
   return (
-    <RecordCard
-      tone={status === "required" ? "danger" : status === "review" ? "warning" : status === "excluded" ? "muted" : "default"}
-      leading={
-        <Checkbox
-          checked={row.selected}
-          onCheckedChange={(v) => actions.setSelected(row.key, v === true)}
-          aria-label={`${number}번 행 저장 대상으로 선택`}
-        />
-      }
-      title={f.vendor_name || "거래처 미입력"}
-      amount={<Money value={f.total_amount} unit />}
-      meta={
+    <button
+      type="button"
+      onClick={() => actions.openReview(row.key, { mode: todo ? "todo" : "all" })}
+      aria-label={`${number}번 ${f.vendor_name || "거래처 미입력"} 증빙 원본 보며 확인`}
+      className={cn(
+        "relative block w-full overflow-hidden rounded-md border border-warm-tan bg-card py-2.5 pl-4 pr-3 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
+        "before:absolute before:inset-y-0 before:left-0 before:w-1 before:content-['']",
+        st.status === "needs_input" ? "before:bg-destructive" : st.status === "needs_review" ? "before:bg-amber-600" : "before:bg-transparent",
+        st.status === "excluded" && "bg-warm-ivory"
+      )}
+    >
+      <span className="flex items-start justify-between gap-3">
+        <span className="min-w-0 truncate text-base font-semibold text-dark">{f.vendor_name || "거래처 미입력"}</span>
+        <span className="shrink-0 text-base font-bold tabular-nums text-dark">{won(f.total_amount)}</span>
+      </span>
+      <span className="mt-0.5 block truncate text-sm text-text-secondary">
         <DotList
           items={[
             `${number}번`,
-            f.issue_date || "날짜 미입력",
-            f.currency !== "KRW" ? `${f.currency} ${formatForeign(f.foreign_amount, f.currency) || "금액 미입력"}` : null,
-            DOC_TYPE_LABELS[f.doc_type],
-            PAYMENT_LABELS[f.payment_method],
+            f.issue_date ? dateShort(f.issue_date) : "날짜 미입력",
+            f.currency !== "KRW" ? f.currency : null,
+            project ? project.name : "프로젝트 미선택",
+            fromApp ? "앱" : null,
           ]}
         />
-      }
-      footer={
-        <>
-          <StatusChip status={status} />
-          {cue}
-          {project ? (
-            <span className="min-w-0 truncate font-medium">
-              {project.name}
-              {suggested && <span className="font-normal text-text-secondary"> (추천)</span>}
-            </span>
-          ) : (
-            <Chip tone={row.selected ? "danger" : "neutral"}>프로젝트 선택 필요</Chip>
-          )}
-        </>
-      }
-      onOpen={() => actions.openReview(row.key)}
-      openLabel={`${number}번 행 원본 보며 확인`}
-    />
+      </span>
+      <span className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+        <StatusBadge domain="expenseRow" status={st.status} />
+        {cue && <span className="text-sm text-dark">{cue}</span>}
+      </span>
+    </button>
   )
+}
+
+export interface TableCounts {
+  all: number
+  review: number
+  input: number
+  ready: number
+  excluded: number
 }
 
 export function ReceiptTable({
@@ -834,24 +737,54 @@ export function ReceiptTable({
   projects,
   actions,
   matches,
+  assessments,
+  counts,
   saving = false,
+  inboxFileKeys,
+  inboxOnly = false,
+  onShowAll,
+  undoBar,
+  flashBar,
 }: {
   rows: DraftRow[]
   projects: UploaderProject[]
   actions: ReceiptTableActions
   matches?: Map<string, TableMatch[]> // 표 안의 같은 파일·같은 거래 표시(findTableMatches)
+  assessments: Map<string, RowAssessment>
+  counts: TableCounts
   saving?: boolean // 저장 요청 중에는 표를 잠근다(그사이 고친 값이 버려지지 않도록)
+  inboxFileKeys?: Set<string> // 데스크톱 앱에서 온 파일(표의 "앱" 표시 · ?inbox=1 거르기)
+  inboxOnly?: boolean
+  onShowAll?: () => void
+  undoBar?: ReactNode
+  flashBar?: ReactNode
 }) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [viewW, setViewW] = useState<number | null>(null)
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set())
-  // '확인 필요만 보기': 켤 때의 목록을 고정한다. 입력하는 도중 확인이 끝났다고 행이 사라지면
-  // 포커스와 나머지 입력이 날아가고(합계 '15000'이 '1'로 잘림) 키보드 위치도 잃기 때문이다.
-  // known: 켤 때 표에 있던 행 · keep: 그중 보여 줄 행. 켠 뒤에 새로 들어온 행은 확인이 필요하면 보여 준다.
-  const [attentionFilter, setAttentionFilter] = useState<{ known: Set<string>; keep: Set<string> } | null>(null)
-  const onlyAttention = attentionFilter !== null
+  const [mode, setMode] = useState<ColumnMode>("simple")
+  const [rawView, setView] = useUrlState("view", "all")
+  const view: UploadView = isUploadView(rawView) ? rawView : "all"
 
-  // 설명 줄(경고·상세)을 화면 폭에 맞춰 고정하기 위해 스크롤 영역 폭을 잰다.
+  // 보기 선택(간단히/모든 칸)은 이 브라우저에 기억한다(없거나 막혀도 간단히로 동작).
+  useEffect(() => {
+    try {
+      if (window.localStorage.getItem(COLUMN_KEY) === "all") setMode("all")
+    } catch {
+      // 저장소를 못 쓰면 기본값
+    }
+  }, [])
+  const toggleMode = () => {
+    const next: ColumnMode = mode === "all" ? "simple" : "all"
+    setMode(next)
+    try {
+      window.localStorage.setItem(COLUMN_KEY, next)
+    } catch {
+      // 무시
+    }
+  }
+
+  // 설명 줄(사유·상세)을 화면 폭에 맞춰 고정하기 위해 스크롤 영역 폭을 잰다.
   useEffect(() => {
     const el = scrollRef.current
     if (!el || typeof ResizeObserver === "undefined") return
@@ -862,7 +795,6 @@ export function ReceiptTable({
   }, [])
 
   const projectById = useMemo(() => new Map(projects.map((p) => [p.id, p])), [projects])
-
   const toggleExpand = useMemo(
     () => (key: string) =>
       setExpanded((prev) => {
@@ -888,50 +820,43 @@ export function ReceiptTable({
     return pos
   }, [rows])
 
-  const attentionKeys = useMemo(
-    () =>
-      new Set(
-        rows
-          .filter((r) => rowNeedsAttention(r, r.project_id ? projectById.get(r.project_id) : undefined, matches?.get(r.key)))
-          .map((r) => r.key)
-      ),
-    [rows, projectById, matches]
-  )
+  // ── 상태 탭: 탭을 고를 때의 목록을 고정한다 ─────────────────────────────────
+  // 입력하는 도중 상태가 바뀌었다고 행이 사라지면 포커스와 입력이 날아가므로, 탭을 고른 순간 맞는 행을 기억해 둔다.
+  // 그 뒤 새로 들어온 행(인식 완료·한 건 더)은 지금 상태가 맞으면 보여 준다.
+  const matchesView = (key: string, v: UploadView) => v === "all" || assessments.get(key)?.status === VIEW_STATUS[v]
+  const [pinned, setPinned] = useState<{ view: UploadView; known: Set<string>; keep: Set<string> } | null>(null)
+  const pin = (v: UploadView) =>
+    setPinned({ view: v, known: new Set(rows.map((r) => r.key)), keep: new Set(rows.filter((r) => matchesView(r.key, v)).map((r) => r.key)) })
+  if (pinned === null || pinned.view !== view) {
+    // 처음 그릴 때·주소로 들어온 탭(렌더 중 상태 맞추기 — 효과보다 먼저 맞춰 깜빡임이 없다)
+    setPinned({ view, known: new Set(rows.map((r) => r.key)), keep: new Set(rows.filter((r) => matchesView(r.key, view)).map((r) => r.key)) })
+  }
+  const keep = pinned && pinned.view === view ? pinned : null
+  const byView = (r: DraftRow) =>
+    view === "all" || !keep ? matchesView(r.key, view) : keep.keep.has(r.key) || (!keep.known.has(r.key) && matchesView(r.key, view))
+  const visible = rows.filter((r) => byView(r) && (!inboxOnly || (!!r.fileKey && !!inboxFileKeys?.has(r.fileKey))))
+  const stale = view === "all" ? 0 : visible.filter((r) => !matchesView(r.key, view)).length
 
-  // 필터를 켠 뒤 새로 들어온 행(인식 완료·"행 추가")을 고정 목록에 합친다.
-  useEffect(() => {
-    if (!attentionFilter) return
-    const fresh = rows.filter((r) => !attentionFilter.known.has(r.key))
-    if (fresh.length === 0) return
-    setAttentionFilter((prev) => {
-      if (!prev) return prev
-      const known = new Set(prev.known)
-      const keep = new Set(prev.keep)
-      for (const r of fresh) {
-        known.add(r.key)
-        if (attentionKeys.has(r.key)) keep.add(r.key)
-      }
-      return { known, keep }
-    })
-  }, [rows, attentionFilter, attentionKeys])
-
-  const toggleAttention = () =>
-    setAttentionFilter((prev) => (prev ? null : { known: new Set(rows.map((r) => r.key)), keep: new Set(attentionKeys) }))
-  const refreshAttention = () => setAttentionFilter({ known: new Set(rows.map((r) => r.key)), keep: new Set(attentionKeys) })
-
-  const visible = attentionFilter
-    ? rows.filter((r) => attentionFilter.keep.has(r.key) || (!attentionFilter.known.has(r.key) && attentionKeys.has(r.key)))
-    : rows
-  // 필터 중에 확인을 마친 행(목록에는 그대로 둔다)
-  const resolvedVisible = attentionFilter ? visible.filter((r) => !attentionKeys.has(r.key)).length : 0
   const numberOf = new Map(rows.map((r, i) => [r.key, i + 1]))
-  const visibleKeys = visible.map((r) => r.key)
-  const selectedVisible = visible.filter((r) => r.selected)
-  const allChecked = visible.length > 0 && selectedVisible.length === visible.length
-  const someChecked = selectedVisible.length > 0 && !allChecked
   const selectedAll = rows.filter((r) => r.selected)
-  const selectedSum = selectedAll.reduce((acc, r) => acc + (typeof r.fields.total_amount === "number" ? r.fields.total_amount : 0), 0)
-  const selectedWithoutProject = selectedAll.some((r) => !r.project_id)
+  const excludedKeys = rows.filter((r) => !r.selected).map((r) => r.key)
+  // 프로젝트 한 번에 지정의 범위(검토 S11): 행 체크박스가 없으므로 범위를 메뉴에서 고른다.
+  //   프로젝트 없는 행만 · 지금 보이는 행(탭·앱 거르기 적용) · 저장 대상 전부. 저장 대상(selected)만 바꾼다.
+  const bulkScopes = [
+    { id: "empty", label: "프로젝트 없는 행", keys: selectedAll.filter((r) => !r.project_id).map((r) => r.key) },
+    ...(view !== "all" || inboxOnly ? [{ id: "visible", label: "지금 보이는 행", keys: visible.filter((r) => r.selected).map((r) => r.key) }] : []),
+    { id: "all", label: "저장 대상 전부", keys: selectedAll.map((r) => r.key) },
+  ]
+  const all = mode === "all"
+  const columnCount = all ? 13 : 7
+
+  const options = [
+    { value: "all", label: "전체", count: counts.all },
+    { value: "review", label: "확인 필요", count: counts.review },
+    { value: "input", label: "입력 필요", count: counts.input },
+    { value: "ready", label: "준비 완료", count: counts.ready },
+    { value: "excluded", label: "제외", count: counts.excluded },
+  ].filter((o) => o.value === "all" || o.value === view || o.count > 0 || o.value === "review")
 
   // 스프레드시트처럼 Enter로 아래 행 같은 칸, Shift+Enter로 위 행으로 이동
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -954,112 +879,101 @@ export function ReceiptTable({
     // 저장 요청 중에는 모든 입력·선택·버튼을 잠근다(fieldset disabled). 링크(원본 받기)는 그대로 쓸 수 있다.
     <fieldset disabled={saving} aria-busy={saving} className={cn("m-0 min-w-0 border-0 p-0", saving && "opacity-70")}>
       {saving && (
-        <p role="status" className="border-b border-warm-tan bg-warm-beige px-4 py-1.5 text-xs text-dark">
-          저장 중… (편집 잠금)
+        <p role="status" className="border-b border-warm-tan bg-warm-beige px-4 py-1.5 text-sm text-dark">
+          저장 중… 끝날 때까지 표를 잠가요
         </p>
       )}
       <BudgetItemDatalists projects={projects} />
 
-      {/* 툴바: 선택 · 일괄 지정 · 합계 */}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-warm-tan px-4 py-2.5">
-        <label className="flex cursor-pointer items-center gap-2 text-sm text-dark">
-          <Checkbox
-            checked={allChecked ? true : someChecked ? "indeterminate" : false}
-            onCheckedChange={(v) => actions.setSelectedMany(visibleKeys, v === true)}
-            aria-label="보이는 행 전체 선택"
-          />
-          전체 선택
-        </label>
-        <span className="text-sm tabular-nums text-text-secondary">
-          {selectedAll.length}/{rows.length}건 선택
-        </span>
-
-        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-          <Select
-            value=""
-            onValueChange={(v) => actions.bulkProject(selectedAll.map((r) => r.key), Number(v))}
-            disabled={selectedAll.length === 0}
-          >
-            <SelectTrigger
-              className={cn("h-8 w-full bg-card text-sm sm:w-[240px]", selectedWithoutProject && "border-destructive/60")}
-              aria-label="선택한 행의 프로젝트를 한 번에 지정"
-            >
-              <SelectValue placeholder={selectedAll.length > 0 ? `프로젝트 일괄 지정(${selectedAll.length}건)` : "프로젝트 일괄 지정"} />
-            </SelectTrigger>
-            <SelectContent>
-              {projects.map((p) => (
-                <SelectItem key={p.id} value={String(p.id)}>
-                  {p.name}
-                </SelectItem>
+      {/* 상태 탭 · 보기 · 일괄 작업 */}
+      <div className="flex items-center gap-x-3 border-b border-warm-tan px-3 py-2 sm:px-4 sm:py-2.5">
+        <FilterTabs
+          label="행 상태"
+          options={options}
+          value={view}
+          onValueChange={(v) => {
+            setView(v === "all" ? null : v)
+            pin(isUploadView(v) ? v : "all")
+          }}
+          className="min-w-0 flex-1"
+        />
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          <Button type="button" size="sm" variant="outline" className="hidden h-9 hover:bg-warm-beige md:inline-flex" aria-pressed={all} onClick={toggleMode}>
+            {all ? "간단히 보기" : "모든 칸 보기"}
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button type="button" size="sm" variant="outline" className="h-9 hover:bg-warm-beige" disabled={rows.length === 0}>
+                일괄 작업
+                <ChevronDown className="h-3.5 w-3.5" aria-hidden />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64">
+              <DropdownMenuLabel className="pb-0 text-sm font-semibold text-dark">프로젝트 한 번에 지정</DropdownMenuLabel>
+              {bulkScopes.map((scope) => (
+                <DropdownMenuSub key={scope.id}>
+                  <DropdownMenuSubTrigger disabled={scope.keys.length === 0} className="min-h-9 text-[15px]">
+                    {scope.label} {scope.keys.length}건
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="max-w-[min(90vw,360px)]">
+                    <DropdownMenuLabel className="text-sm font-normal text-text-secondary">
+                      {scope.label} {scope.keys.length}건을 이 프로젝트로
+                    </DropdownMenuLabel>
+                    {projects.map((p) => (
+                      <DropdownMenuItem key={p.id} className="min-h-9 text-[15px]" onSelect={() => actions.bulkProject(scope.keys, p.id)}>
+                        <span className="truncate">{p.name}</span>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
               ))}
-            </SelectContent>
-          </Select>
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            className="h-8 text-sm text-text-secondary hover:text-destructive"
-            disabled={selectedAll.length === 0}
-            onClick={() => actions.removeRows(selectedAll.map((r) => r.key))}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-            선택 행 삭제
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant={onlyAttention ? "secondary" : "ghost"}
-            className={cn("h-8 text-sm", onlyAttention && "border border-dark/30")}
-            onClick={toggleAttention}
-            aria-pressed={onlyAttention}
-          >
-            <Filter className="h-3.5 w-3.5" />
-            {onlyAttention ? `안내 있는 행만 보는 중 · 남은 ${attentionKeys.size}건` : `안내 있는 행 ${attentionKeys.size}건만 보기`}
-          </Button>
-          {onlyAttention && resolvedVisible > 0 && (
-            <Button type="button" size="sm" variant="ghost" className="h-8 text-sm text-dark" onClick={refreshAttention}>
-              처리한 {resolvedVisible}건 숨기기
-            </Button>
-          )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                disabled={excludedKeys.length === 0}
+                className="min-h-9 text-[15px]"
+                onSelect={() => actions.removeRows(excludedKeys)}
+              >
+                제외한 {excludedKeys.length}건 표에서 지우기
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={selectedAll.length === 0}
+                className="min-h-9 text-[15px] text-red-800 focus:bg-red-50 focus:text-red-800"
+                onSelect={() => actions.removeRows(selectedAll.map((r) => r.key))}
+              >
+                저장 대상 {selectedAll.length}건 표에서 지우기
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-
-        <p className="ml-auto text-sm text-text-secondary">
-          선택 {selectedAll.length}건 · <b className="whitespace-nowrap font-semibold tabular-nums text-dark">{formatWon(selectedSum)}</b>
-        </p>
       </div>
 
-      {/* 범례(데스크톱) */}
-      <div className="hidden flex-wrap items-center gap-x-3 gap-y-1 border-b border-warm-tan px-4 py-2 text-xs text-text-secondary md:flex">
-        <span className="inline-flex items-center gap-1">
-          <CellSwatch kind="review" />
-          확인 필요
-        </span>
-        <span className="inline-flex items-center gap-1">
-          <CellSwatch kind="invalid" />
-          입력 오류
-        </span>
-        <span>
-          <KeyHint>Tab</KeyHint> 다음 칸
-        </span>
-        <span>
-          <KeyHint>Enter</KeyHint> 아래 행
-        </span>
-        <span>썸네일 클릭: 원본 대조</span>
-      </div>
+      {inboxOnly && (
+        <div className="flex flex-wrap items-center gap-x-2 border-b border-warm-tan bg-warm-ivory px-4 py-1.5 text-sm text-dark">
+          <span>데스크톱 앱에서 온 증빙만 보고 있어요</span>
+          <ReasonButton onClick={() => onShowAll?.()}>모두 보기</ReasonButton>
+        </div>
+      )}
+      {stale > 0 && (
+        <div className="flex flex-wrap items-center gap-x-2 border-b border-warm-tan bg-warm-ivory px-4 py-1.5 text-sm text-dark" role="status">
+          <span>처리한 {stale}건은 다른 탭으로 옮겨 갔어요</span>
+          <ReasonButton onClick={() => pin(view)}>목록 새로 고치기</ReasonButton>
+        </div>
+      )}
+      {undoBar}
+      {flashBar}
 
+      {/* 데스크톱 표 */}
       <div
         ref={scrollRef}
         onKeyDown={onKeyDown}
-        className={cn("relative hidden overflow-x-auto md:block md:max-h-[70vh] md:overflow-y-auto", visible.length === 0 && "md:hidden")}
+        className={cn("relative hidden md:block", all && "overflow-x-auto md:max-h-[70vh] md:overflow-y-auto", visible.length === 0 && "md:hidden")}
         style={viewW ? ({ "--table-view-w": `${viewW}px` } as React.CSSProperties) : undefined}
       >
-        <table className="w-max min-w-full border-separate border-spacing-0 text-sm">
+        <table className={cn("border-separate border-spacing-0 text-[15px]", all ? "w-max min-w-full" : "w-full")}>
           <thead>
             <tr>
-              <th className={cn(TH, "pl-3 md:left-0 md:z-[5] md:shadow-[inset_-1px_0_0_var(--color-warm-tan)]")}>
-                <span className="sr-only">번호·선택·미리보기·상태</span>
-                <span aria-hidden>증빙</span>
-              </th>
+              <th className={cn(TH, "w-[128px] pl-3", all && "md:left-0 md:z-[5]")}>상태</th>
+              <th className={cn(TH, "w-[52px]", all && "md:left-[132px] md:z-[5]")}>원본</th>
               <th className={TH}>
                 거래일자 <span className="text-destructive">*</span>
               </th>
@@ -1067,16 +981,20 @@ export function ReceiptTable({
                 거래처 <span className="text-destructive">*</span>
               </th>
               <th className={cn(TH, "text-right")}>
-                합계 <span className="text-destructive">*</span>
+                합계(원) <span className="text-destructive">*</span>
               </th>
               <th className={TH}>비목</th>
-              <th className={TH}>적요</th>
-              <th className={TH}>문서 종류</th>
-              <th className={TH}>결제 수단</th>
-              <th className={TH}>사업자번호</th>
-              <th className={cn(TH, "text-right")}>공급가액</th>
-              <th className={cn(TH, "text-right")}>부가세</th>
-              <th className={cn(TH, "md:right-0 md:z-[5] md:shadow-[inset_1px_0_0_var(--color-warm-tan)]")}>
+              {all && (
+                <>
+                  <th className={TH}>적요</th>
+                  <th className={TH}>문서 종류</th>
+                  <th className={TH}>결제 수단</th>
+                  <th className={TH}>사업자번호</th>
+                  <th className={cn(TH, "text-right")}>공급가액</th>
+                  <th className={cn(TH, "text-right")}>부가세</th>
+                </>
+              )}
+              <th className={cn(TH, all && "md:right-0 md:z-[5] md:shadow-[inset_1px_0_0_var(--color-warm-tan)]")}>
                 프로젝트 <span className="text-destructive">*</span>
               </th>
             </tr>
@@ -1084,13 +1002,15 @@ export function ReceiptTable({
           <tbody>
             {visible.map((row, i) => {
               const fp = filePosition.get(row.key)
+              const st = assessments.get(row.key)
+              if (!st) return null
               return (
                 <Fragment key={row.key}>
                   <ReceiptRow
                     row={row}
+                    st={st}
                     index={i}
                     number={numberOf.get(row.key) ?? i + 1}
-                    project={row.project_id ? projectById.get(row.project_id) : undefined}
                     projects={projects}
                     actions={actions}
                     expanded={expanded.has(row.key)}
@@ -1098,43 +1018,74 @@ export function ReceiptTable({
                     filePos={fp?.pos ?? 1}
                     fileCount={fp?.count ?? 1}
                     matches={matches?.get(row.key)}
+                    mode={mode}
+                    fromApp={!!row.fileKey && !!inboxFileKeys?.has(row.fileKey)}
+                    columnCount={columnCount}
                   />
                 </Fragment>
               )
             })}
           </tbody>
         </table>
+        {all && (
+          <p className="hidden gap-3 px-4 py-2 text-sm text-text-secondary md:flex">
+            <span>
+              <KeyHint>Tab</KeyHint> 다음 칸
+            </span>
+            <span>
+              <KeyHint>Enter</KeyHint> 아래 행
+            </span>
+          </p>
+        )}
       </div>
 
+      {/* 휴대폰 카드 */}
       {visible.length > 0 && (
         <ul className="space-y-2 p-3 md:hidden">
-          {visible.map((row, i) => (
-            <li key={row.key} data-row-key={row.key}>
-              <MobileRowCard
-                row={row}
-                number={numberOf.get(row.key) ?? i + 1}
-                project={row.project_id ? projectById.get(row.project_id) : undefined}
-                matches={matches?.get(row.key)}
-                actions={actions}
-              />
-            </li>
-          ))}
+          {visible.map((row, i) => {
+            const st = assessments.get(row.key)
+            if (!st) return null
+            return (
+              <li key={row.key} data-row-key={row.key}>
+                <MobileRowCard
+                  row={row}
+                  st={st}
+                  number={numberOf.get(row.key) ?? i + 1}
+                  project={row.project_id ? projectById.get(row.project_id) : undefined}
+                  actions={actions}
+                  fromApp={!!row.fileKey && !!inboxFileKeys?.has(row.fileKey)}
+                />
+              </li>
+            )
+          })}
         </ul>
       )}
 
       {visible.length === 0 && (
-        <p className="px-4 py-8 text-center text-sm text-text-secondary">
-          {onlyAttention ? (
-            <>
-              안내 있는 행 없음 ·{" "}
-              <button type="button" className="font-medium text-dark underline underline-offset-2" onClick={() => setAttentionFilter(null)}>
-                전체 보기
-              </button>
-            </>
+        <div className="px-4 py-8 text-center text-[15px] text-text-secondary">
+          {view === "all" && !inboxOnly ? (
+            "표에 행이 없어요."
           ) : (
-            "표에 행이 없습니다."
+            <>
+              <p>조건에 맞는 증빙이 없어요.</p>
+              <div className="mt-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="hover:bg-warm-beige"
+                  onClick={() => {
+                    setView(null)
+                    pin("all")
+                    if (inboxOnly) onShowAll?.()
+                  }}
+                >
+                  전체 보기
+                </Button>
+              </div>
+            </>
           )}
-        </p>
+        </div>
       )}
     </fieldset>
   )

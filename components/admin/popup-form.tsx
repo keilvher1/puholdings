@@ -45,7 +45,7 @@ export function PopupForm({ initialData }: { initialData?: Popup | null }) {
     setError("")
 
     if (!form.start_at || !form.end_at) {
-      setError("시작일과 종료일을 입력해주세요")
+      setError("시작일과 종료일을 입력해 주세요")
       return
     }
     if (new Date(form.end_at) <= new Date(form.start_at)) {
@@ -81,10 +81,10 @@ export function PopupForm({ initialData }: { initialData?: Popup | null }) {
         router.push("/admin/popups")
         router.refresh()
       } else {
-        setError(data.error || "저장에 실패했습니다")
+        setError(data.error || "저장하지 못했어요. 잠시 뒤 다시 눌러 주세요")
       }
     } catch {
-      setError("서버 오류가 발생했습니다")
+      setError("저장하지 못했어요. 인터넷 연결을 확인하고 다시 눌러 주세요")
     } finally {
       setLoading(false)
     }
@@ -101,7 +101,7 @@ export function PopupForm({ initialData }: { initialData?: Popup | null }) {
       <div className="space-y-4 rounded-lg border border-warm-tan bg-card p-6">
         {initialData?.related_news_id && (
           <div className="rounded-md bg-warm-beige px-3 py-2 text-xs text-text-secondary">
-            이 팝업은 공지 #{initialData.related_news_id} 와(과) 연결되어 있습니다. 공지 수정 시 제목·내용·이미지가 함께 갱신됩니다.
+            이 팝업은 공지 #{initialData.related_news_id}와 연결돼 있어요. 공지를 고치면 제목·내용·이미지가 함께 바뀌어요.
           </div>
         )}
 
@@ -205,7 +205,7 @@ export function PopupForm({ initialData }: { initialData?: Popup | null }) {
 
       <div className="mt-6 flex items-center gap-3">
         <Button type="submit" disabled={loading}>
-          {loading ? "저장 중..." : "저장"}
+          {loading ? "저장 중…" : "저장"}
         </Button>
         <Button type="button" variant="outline" asChild>
           <Link href="/admin/popups">취소</Link>
