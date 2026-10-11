@@ -17,6 +17,16 @@ const nextConfig = {
       { protocol: "https", hostname: "*.public.blob.vercel-storage.com" },
     ],
   },
+  // 홈 전용 글꼴(public/home/fonts)은 파일 이름에 버전(v40)이 들어 있어 내용이 바뀌지 않는다.
+  // public 파일 기본값(max-age=0)이면 방문마다 글꼴 조각을 다시 확인하므로 Google Fonts처럼 1년 캐시한다.
+  async headers() {
+    return [
+      {
+        source: "/home/fonts/:file*",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+      },
+    ]
+  },
 }
 
 export default nextConfig

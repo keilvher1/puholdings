@@ -1,0 +1,2812 @@
+/* ============================================================
+   공개 홈(/) — 리뉴얼 시안(pu-holdings-renewal.puholdings.chatgpt.site)의
+   style.css · renewal.css를 그대로 옮기고 모든 선택자를 #puh 아래로 가뒀다.
+   - 원본의 :root·body 규칙은 #puh에, html 규칙은 html:has(#puh)에 건다.
+   - 이미지는 public/home/, 글꼴 'Noto Sans KR'은 같은 파일을 쓰는 "PUH Noto Sans KR"(./home-fonts.css)로 바꿨다.
+   - 늘 뒤 규칙에 덮여 화면에 나오지 않던 배경 이미지 선언 5개는 뺐다.
+   ============================================================ */
+
+/* 시안은 브라우저 기본 스타일 위에 그려졌다. 전역 Tailwind 프리플라이트·body 스타일을
+   #puh 안에서만 되돌려(기본값·UA 스타일) 원본과 같은 출발점을 만든다.
+   all은 lang="ko"에서 오는 값도 지우므로 다시 물려받게 한다 — 로캘이 빠지면 글자 폭(커닝)이 달라지고,
+   Safari는 한국어 밑줄 위치(text-underline-position)도 로캘에서 가져온다.
+   흰 배경은 시안의 기본 캔버스색이다(:has()를 못 쓰는 브라우저에서도 전역 body 배경이 비치지 않게). */
+#puh {
+  all: initial;
+  display: block;
+  -webkit-locale: inherit;
+  text-underline-position: inherit;
+  background: #fff;
+}
+#puh *,
+#puh *::before,
+#puh *::after {
+  all: revert;
+}
+body:has(#puh) {
+  background: none;
+}
+
+/* ---- style.css ---- */
+#puh {
+  --navy: #09162b;
+  --blue: #0068b9;
+  --cyan: #69d9ec;
+  --ink: #102036;
+  --line: #dbe1e8;
+}
+#puh * {
+  box-sizing: border-box;
+}
+html:has(#puh) {
+  scroll-behavior: smooth;
+  scroll-padding-top: 84px;
+}
+#puh {
+  margin: 0;
+  font-family: "PUH Noto Sans KR",Arial,sans-serif;
+  color: var(--ink);
+  word-break: keep-all;
+  font-size: 16px;
+}
+#puh a {
+  color: inherit;
+  text-decoration: none;
+}
+#puh button {
+  font: inherit;
+}
+#puh header {
+  height: 88px;
+  position: absolute;
+  top: 0;
+  z-index: 10;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 5%;
+  color: white;
+  border-bottom: 1px solid #ffffff30;
+}
+#puh .brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+#puh .brand>b {
+  font: 800 36px Arial;
+  letter-spacing: -3px;
+}
+#puh .brand>b span {
+  color: var(--cyan);
+}
+#puh .brand>span {
+  font-size: 17px;
+  font-weight: 600;
+}
+#puh .brand small {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 1px;
+  margin-top: 4px;
+}
+#puh nav {
+  display: flex;
+  gap: 32px;
+  font-size: 14px;
+}
+#puh nav a {
+  padding: 16px 0;
+}
+#puh nav a:hover {
+  color: var(--cyan);
+}
+#puh .menu {
+  display: none;
+}
+#puh .hero {
+  min-height: 760px;
+  height: 100svh;
+  max-height: 1100px;
+  background: var(--navy);
+  position: relative;
+  color: white;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+#puh .hero-art {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg,#09162b 5%,#102c46 65%,#235263);
+  background-size: cover;
+  background-position: center;
+}
+#puh .hero-art:after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,#061324b3,transparent),linear-gradient(0deg,#0613249e,transparent 40%);
+}
+#puh .hero-copy {
+  position: relative;
+  margin: 80px 8% 90px;
+  z-index: 1;
+}
+#puh .eyebrow {
+  font-size: 13px;
+  letter-spacing: 2.7px;
+  font-weight: 500;
+}
+#puh .hero .eyebrow {
+  color: var(--cyan);
+  margin-bottom: 32px;
+}
+#puh h1 {
+  font-size: clamp(40px,4.4vw,72px);
+  letter-spacing: -2px;
+  line-height: 1.35;
+  font-weight: 600;
+  margin: 0 0 30px;
+}
+#puh .hero-copy>p:not(.eyebrow) {
+  font-size: 19px;
+  color: #d4e0eb;
+  line-height: 1.9;
+}
+#puh .line-link {
+  margin-top: 32px;
+  display: flex;
+  align-items: center;
+  gap: 70px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #ffffff70;
+  width: max-content;
+  font-size: 14px;
+}
+#puh .line-link span {
+  font-size: 24px;
+}
+#puh .hero-bottom {
+  position: absolute;
+  bottom: 38px;
+  left: 8%;
+  right: 8%;
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  color: #c5d3de;
+}
+#puh .section {
+  padding: 125px 8%;
+  display: grid;
+  grid-template-columns: 210px 1fr;
+  gap: 35px;
+}
+#puh .section-label {
+  font-size: 13px;
+  letter-spacing: 1.5px;
+  color: var(--blue);
+  padding-top: 15px;
+  font-weight: 600;
+}
+#puh h2 {
+  font-size: clamp(32px,3vw,48px);
+  line-height: 1.4;
+  letter-spacing: -1.8px;
+  margin: 0 0 28px;
+  font-weight: 600;
+}
+#puh .lead {
+  font-size: 19px;
+  line-height: 1.85;
+  margin: 0 0 24px;
+}
+#puh .muted {
+  font-size: 16px;
+  line-height: 1.9;
+  color: #637083;
+  max-width: 730px;
+}
+#puh .principles {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  margin: 50px 0 35px;
+  border-top: 1px solid var(--line);
+  padding-top: 28px;
+  gap: 25px;
+}
+#puh .principles span {
+  font-size: 12px;
+  color: var(--blue);
+}
+#puh h3 {
+  font-size: 24px;
+  font-weight: 500;
+}
+#puh .principles h3 {
+  margin: 14px 0;
+}
+#puh .principles p {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #637083;
+}
+#puh .history {
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+  padding: 20px 0;
+}
+#puh .history summary {
+  display: flex;
+  justify-content: space-between;
+  cursor: pointer;
+}
+#puh .history b {
+  display: inline-block;
+  width: 70px;
+  color: var(--blue);
+}
+#puh .history p {
+  line-height: 1.8;
+}
+#puh .investment {
+  background: #f1f5f8;
+}
+#puh .areas {
+  margin-top: 45px;
+}
+#puh .areas article {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+  padding: 30px 0;
+  border-top: 1px solid #cbd4df;
+}
+#puh .areas article>span:first-child {
+  font-size: 12px;
+  color: #76899e;
+}
+#puh .areas h3 {
+  font-family: Arial,sans-serif;
+  font-size: 32px;
+  margin: 0 0 10px;
+  font-weight: 500;
+}
+#puh .areas p {
+  margin: 0;
+  font-size: 14px;
+  color: #637083;
+}
+#puh .area-symbol {
+  margin-left: auto;
+  color: var(--blue);
+  font-size: 32px;
+}
+#puh .support {
+  border-top: 1px solid #cbd4df;
+  padding-top: 20px;
+}
+#puh .support h3 {
+  font-size: 16px;
+}
+#puh .support p {
+  font-size: 14px;
+  line-height: 2;
+  color: #637083;
+}
+#puh .heading-row {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 25px;
+}
+#puh .text-link {
+  font-size: 14px;
+  white-space: nowrap;
+  padding-bottom: 35px;
+}
+#puh .portfolio-grid {
+  display: grid;
+  grid-template-columns: repeat(2,1fr);
+  margin-top: 20px;
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+}
+#puh .portfolio-grid article {
+  padding: 35px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  transition: background .2s;
+}
+#puh .portfolio-grid article:hover {
+  background: #f3f8fc;
+}
+#puh .portfolio-grid article>span {
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: #57718b;
+}
+#puh .portfolio-grid h3 {
+  font-family: Arial,"PUH Noto Sans KR",sans-serif;
+  font-weight: 700;
+  font-size: 32px;
+  margin: 35px 0 20px;
+}
+#puh .portfolio-grid h3 span {
+  display: block;
+  font: 400 14px "PUH Noto Sans KR",sans-serif;
+  margin-top: 10px;
+  color: #66778b;
+}
+#puh .portfolio-grid p {
+  font-size: 14px;
+}
+#puh .portfolio-grid small {
+  font-size: 12px;
+  color: #76899e;
+}
+#puh .team {
+  background: var(--navy);
+  color: white;
+}
+#puh .team .section-label {
+  color: var(--cyan);
+}
+#puh .team .lead {
+  color: #a5b6c9;
+}
+#puh .team-list {
+  margin-top: 45px;
+}
+#puh .team details {
+  border-top: 1px solid #ffffff30;
+}
+#puh .team details:last-child {
+  border-bottom: 1px solid #ffffff30;
+}
+#puh .team summary {
+  list-style: none;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: 35px 1fr 1fr 25px;
+  align-items: center;
+  gap: 20px;
+  padding: 28px 0;
+}
+#puh .team summary::-webkit-details-marker {
+  display: none;
+}
+#puh .person-num {
+  color: #8396ad;
+  font-size: 12px;
+}
+#puh .person-name {
+  font-size: 27px;
+}
+#puh .person-name small {
+  display: block;
+  color: #8fa3ba;
+  font-size: 13px;
+  margin-top: 8px;
+}
+#puh .person-role {
+  font-size: 14px;
+  color: #c0ccdb;
+}
+#puh .plus {
+  font-size: 24px;
+  color: var(--cyan);
+}
+#puh details[open] .plus {
+  transform: rotate(45deg);
+}
+#puh .bio {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  padding: 0 0 30px 55px;
+}
+#puh .bio h4 {
+  font-size: 14px;
+  color: var(--cyan);
+  font-weight: 500;
+}
+#puh .bio p {
+  font-size: 14px;
+  line-height: 2;
+  color: #b5c4d5;
+}
+#puh .contact {
+  background: #0867af;
+  color: white;
+  padding: 100px 8%;
+}
+#puh .contact .eyebrow {
+  color: #c6e8ff;
+}
+#puh .contact h2 {
+  font-size: clamp(36px,4vw,60px);
+  margin-top: 30px;
+}
+#puh .contact-button {
+  display: flex;
+  justify-content: space-between;
+  max-width: 300px;
+  margin-top: 40px;
+  border-bottom: 1px solid #ffffff80;
+  padding-bottom: 18px;
+}
+#puh .contact-info {
+  display: flex;
+  gap: 70px;
+  align-items: center;
+  font-size: 14px;
+  line-height: 1.9;
+  margin-top: 55px;
+  color: #d0e5f7;
+}
+#puh footer {
+  padding: 38px 8%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 25px;
+}
+#puh footer .brand>span {
+  font-size: 14px;
+}
+#puh footer p,
+#puh footer>a:last-child {
+  font-size: 12px;
+  color: #637083;
+}
+#puh .skip {
+  position: fixed;
+  left: 15px;
+  top: -80px;
+  background: white;
+  padding: 15px;
+  z-index: 100;
+}
+#puh .skip:focus {
+  top: 10px;
+}
+#puh :focus-visible {
+  outline: 2px solid #38b5e0;
+  outline-offset: 5px;
+}
+@media (min-width:1600px) {
+  #puh .section {
+    padding-left: 12%;
+    padding-right: 12%;
+  }
+}
+@media (max-width:1000px) {
+  #puh header {
+    padding: 0 6%;
+  }
+  #puh nav {
+    gap: 18px;
+  }
+  #puh .brand small {
+    display: none;
+  }
+  #puh .section {
+    grid-template-columns: 1fr;
+    padding: 80px 7%;
+    gap: 25px;
+  }
+  #puh .hero {
+    min-height: 670px;
+  }
+  #puh .hero-copy {
+    margin-left: 7%;
+  }
+  #puh .section-label {
+    padding: 0;
+  }
+  #puh .heading-row {
+    align-items: start;
+  }
+}
+@media (max-width:680px) {
+  #puh header {
+    height: 76px;
+  }
+  #puh .brand>b {
+    font-size: 30px;
+  }
+  #puh .brand>span {
+    font-size: 14px;
+  }
+  #puh .menu {
+    display: block;
+    color: white;
+    background: none;
+    border: 0;
+    font-size: 14px;
+  }
+  #puh nav {
+    display: none;
+    position: absolute;
+    top: 76px;
+    left: 0;
+    right: 0;
+    background: var(--navy);
+    padding: 20px 7%;
+    flex-direction: column;
+    gap: 0;
+  }
+  #puh nav.open {
+    display: flex;
+  }
+  #puh .hero {
+    min-height: 650px;
+    max-height: 900px;
+  }
+  #puh .hero-copy {
+    margin: 110px 7% 80px;
+  }
+  #puh h1 {
+    font-size: 39px;
+    letter-spacing: -1.6px;
+  }
+  #puh .hero-copy>p:not(.eyebrow) {
+    font-size: 16px;
+  }
+  #puh .eyebrow {
+    font-size: 11px;
+    letter-spacing: 1.5px;
+  }
+  #puh .hero-bottom span {
+    max-width: 220px;
+    font-size: 9px;
+    line-height: 1.8;
+  }
+  #puh .hero-bottom {
+    left: 7%;
+    right: 7%;
+    bottom: 26px;
+    align-items: center;
+  }
+  #puh .section {
+    padding: 65px 7%;
+  }
+  #puh h2 {
+    font-size: 32px;
+  }
+  #puh .lead {
+    font-size: 17px;
+  }
+  #puh .desktop {
+    display: none;
+  }
+  #puh .principles {
+    gap: 12px;
+  }
+  #puh .principles h3 {
+    font-size: 21px;
+  }
+  #puh .principles p {
+    font-size: 13px;
+  }
+  #puh .areas h3 {
+    font-size: 26px;
+  }
+  #puh .heading-row {
+    display: block;
+  }
+  #puh .text-link {
+    display: inline-block;
+    padding-bottom: 20px;
+  }
+  #puh .portfolio-grid article {
+    padding: 25px 18px;
+  }
+  #puh .portfolio-grid h3 {
+    font-size: 27px;
+  }
+  #puh .portfolio-grid p {
+    font-size: 13px;
+  }
+  #puh .team summary {
+    grid-template-columns: 20px 1fr 25px;
+    gap: 12px;
+  }
+  #puh .person-role {
+    grid-column: 2;
+    grid-row: 2;
+    font-size: 13px;
+  }
+  #puh .plus {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  #puh .person-name {
+    font-size: 25px;
+  }
+  #puh .person-name small {
+    display: inline;
+    margin-left: 12px;
+  }
+  #puh .bio {
+    grid-template-columns: 1fr;
+    padding-left: 32px;
+    gap: 5px;
+  }
+  #puh .contact {
+    padding: 65px 7%;
+  }
+  #puh .contact-info {
+    display: block;
+    margin-top: 40px;
+  }
+  #puh footer {
+    padding: 30px 7%;
+    flex-wrap: wrap;
+  }
+  #puh footer p {
+    order: 3;
+    width: 100%;
+    margin: 0;
+  }
+  #puh .history p {
+    font-size: 13px;
+  }
+}
+@media (prefers-reduced-motion:reduce) {
+  html:has(#puh) {
+    scroll-behavior: auto;
+  }
+  #puh * {
+    transition: none !important;
+  }
+}
+#puh header .brand>span {
+  font-size: 23px;
+  font-weight: 700;
+  letter-spacing: -.8px;
+}
+#puh header .brand small {
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 1.8px;
+}
+#puh .hero-art {
+  background-image: url(/home/hero.png);
+}
+#puh .hero h1 {
+  font-size: clamp(38px,4.1vw,66px);
+}
+#puh .identity {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 28px 0 40px;
+}
+#puh .identity span {
+  border: 1px solid #bfd1df;
+  color: #176395;
+  padding: 9px 14px;
+  font-size: 13px;
+}
+#puh .stats {
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  gap: 20px;
+  padding: 30px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+#puh .stats strong {
+  font: 500 58px Arial;
+  color: var(--blue);
+}
+#puh .stats strong span {
+  font: 400 15px "PUH Noto Sans KR",sans-serif;
+  margin-left: 5px;
+}
+#puh .stats p {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #637083;
+}
+#puh .note {
+  font-size: 12px;
+  line-height: 1.9;
+  color: #66768a;
+  margin: 17px 0 25px;
+}
+#puh .company-facts {
+  margin: 35px 0;
+  font-size: 14px;
+}
+#puh .company-facts p {
+  display: flex;
+  gap: 25px;
+  line-height: 1.9;
+}
+#puh .company-facts b {
+  min-width: 45px;
+}
+#puh .values {
+  margin: 35px 0;
+}
+#puh .values h3 {
+  font-size: 21px;
+}
+#puh .values p {
+  font-size: 15px;
+  line-height: 1.9;
+  color: #637083;
+}
+#puh .roadmap {
+  display: grid;
+  grid-template-columns: repeat(5,1fr);
+  gap: 12px;
+  margin: 25px 0;
+}
+#puh .roadmap p {
+  background: #edf4f9;
+  padding: 16px 10px;
+  margin: 0;
+}
+#puh .roadmap b {
+  display: block;
+  margin-bottom: 8px;
+}
+#puh .areas h4 {
+  font-size: 17px;
+  font-weight: 500;
+  margin: 0 0 10px;
+}
+#puh .areas article {
+  align-items: start;
+}
+#puh .areas article>span {
+  padding-top: 8px;
+}
+#puh .areas p {
+  line-height: 1.8;
+}
+#puh .platform {
+  margin-top: 55px;
+  border-top: 1px solid #cbd4df;
+  padding-top: 35px;
+}
+#puh .platform>h3 {
+  font-size: 29px;
+  line-height: 1.5;
+}
+#puh .platform .eyebrow {
+  color: var(--blue);
+}
+#puh .process {
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  gap: 20px;
+  margin: 30px 0;
+}
+#puh .process li {
+  counter-increment: step;
+  border-top: 2px solid #9dbbd2;
+  padding-top: 18px;
+}
+#puh .process li:before {
+  content: '0' counter(step);
+  display: block;
+  color: var(--blue);
+  font-size: 12px;
+  margin-bottom: 15px;
+}
+#puh .process strong {
+  font-size: 17px;
+  font-weight: 500;
+  display: block;
+}
+#puh .process span {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #637083;
+  display: block;
+  margin-top: 10px;
+}
+#puh .support-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 35px;
+  margin: 40px 0;
+}
+#puh .support-grid h3 {
+  font-size: 22px;
+}
+#puh .support-grid p {
+  font-size: 14px;
+  line-height: 1.9;
+  color: #637083;
+}
+#puh .support-grid strong {
+  font-size: 27px;
+  color: var(--blue);
+}
+#puh .support-grid strong span {
+  font-size: 13px;
+  font-weight: 400;
+}
+#puh .portfolio-grid h3 {
+  font-family: "PUH Noto Sans KR",Arial,sans-serif;
+  font-size: 26px;
+}
+#puh .status {
+  display: inline-block;
+  border: 1px solid #cedae5;
+  padding: 5px 10px;
+  margin-top: 12px;
+}
+#puh .programs {
+  margin-top: 60px;
+}
+#puh .programs h3 {
+  font-size: 25px;
+}
+#puh .partner-names {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 30px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 25px 0;
+  color: #40556c;
+}
+#puh .contact-info {
+  align-items: start;
+}
+#puh .contact-info a:hover {
+  text-decoration: underline;
+}
+@media (max-width:680px) {
+  #puh header .brand>span {
+    font-size: 20px;
+  }
+  #puh .hero h1 {
+    font-size: 35px;
+    line-height: 1.45;
+    letter-spacing: -1.8px;
+  }
+  #puh .stats {
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+  }
+  #puh .stats strong {
+    font-size: 47px;
+  }
+  #puh .roadmap {
+    grid-template-columns: 1fr 1fr;
+  }
+  #puh .process {
+    grid-template-columns: 1fr 1fr;
+  }
+  #puh .support-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  #puh .portfolio-grid {
+    grid-template-columns: 1fr;
+  }
+  #puh .portfolio-grid h3 {
+    font-size: 27px;
+    margin-top: 25px;
+  }
+  #puh .company-facts p {
+    gap: 10px;
+  }
+  #puh .contact-info>div {
+    margin-top: 25px;
+  }
+}
+#puh .review-note {
+  position: absolute;
+  top: 88px;
+  z-index: 3;
+  width: 100%;
+  padding: 10px 5%;
+  background: #08172baa;
+  color: #cadceb;
+  font-size: 12px;
+  line-height: 1.6;
+  text-align: right;
+}
+#puh .team-kicker {
+  color: var(--cyan);
+}
+#puh .team-note {
+  font-size: 12px;
+  line-height: 1.9;
+  color: #94a9bf;
+}
+#puh .people-grid {
+  display: grid;
+  grid-template-columns: repeat(2,1fr);
+  gap: 45px 28px;
+  margin: 45px 0 80px;
+}
+#puh .portrait {
+  aspect-ratio: 1.3;
+  background-color: #15253b;
+  background-size: 400% 100%;
+  background-repeat: no-repeat;
+}
+#puh .portrait-1 {
+  background-position: 33.3333% 0;
+}
+#puh .portrait-2 {
+  background-position: 66.6667% 0;
+}
+#puh .portrait-3 {
+  background-position: 100% 0;
+}
+#puh .portrait-empty {
+  background-image: none;
+  display: grid;
+  place-items: center;
+  color: #50647c;
+}
+#puh .portrait-empty span {
+  font: 300 70px Arial;
+  letter-spacing: 5px;
+}
+#puh .person-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-top: 22px;
+}
+#puh .person-heading h3 {
+  margin: 0;
+  font-size: 29px;
+}
+#puh .person-heading>span {
+  font-size: 14px;
+  color: #9db5cd;
+}
+#puh .person-duty {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #bacadc;
+  min-height: 24px;
+}
+#puh .person-card details {
+  border-bottom: 1px solid #ffffff30 !important;
+}
+#puh .person-card summary {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  padding: 16px 0;
+}
+#puh .person-card .bio {
+  display: block;
+  padding: 0 0 15px;
+}
+#puh .person-card .bio p {
+  font-size: 13px;
+}
+#puh .org-section {
+  border-top: 1px solid #ffffff30;
+  padding-top: 55px;
+}
+#puh .org-section>.eyebrow {
+  color: var(--cyan);
+}
+#puh .org-section>h3 {
+  font-size: 35px;
+  line-height: 1.5;
+  margin: 25px 0;
+}
+#puh .org-intro {
+  font-size: 16px;
+  line-height: 1.9;
+  color: #b5c5d7;
+  max-width: 700px;
+}
+#puh .org-chart {
+  padding: 35px;
+  background: #0d1d33;
+  margin-top: 35px;
+}
+#puh .org-board,
+#puh .org-ceo {
+  padding: 22px;
+  text-align: center;
+  max-width: 420px;
+  margin: auto;
+  border: 1px solid #4b657e;
+}
+#puh .org-board>span,
+#puh .org-ceo>span,
+#puh .org-core span {
+  display: block;
+  color: #8eaac5;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  margin-bottom: 12px;
+}
+#puh .org-chart strong {
+  font-size: 19px;
+  font-weight: 500;
+}
+#puh .org-chart p {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #b5c5d7;
+  margin-bottom: 0;
+}
+#puh .org-ceo {
+  background: #174b70;
+  border-color: #419cc6;
+}
+#puh .org-stem {
+  height: 26px;
+  border-left: 1px solid #6c879e;
+  margin: auto;
+  width: 1px;
+}
+#puh .org-core {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  position: relative;
+}
+#puh .org-core>div {
+  border: 1px solid #4b657e;
+  padding: 22px;
+  text-align: center;
+}
+#puh .org-collab {
+  font-size: 12px;
+  color: #8cacc7;
+  text-align: center;
+  padding: 30px 0;
+}
+#puh .org-network {
+  border: 1px dashed #548bab;
+  padding: 25px;
+}
+#puh .org-network h4 {
+  margin: 0 0 25px;
+  font-size: 18px;
+  font-weight: 500;
+  color: #82d7eb;
+}
+#puh .org-network small {
+  font-size: 11px;
+  color: #a9bfd2;
+  margin-left: 10px;
+}
+#puh .org-network>div {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 20px;
+}
+#puh .org-network article+article {
+  border-left: 1px solid #ffffff20;
+  padding-left: 20px;
+}
+#puh .org-network strong {
+  font-size: 16px;
+}
+#puh .partner-model {
+  margin-top: 30px;
+}
+#puh .partner-model summary {
+  display: flex;
+  justify-content: space-between;
+  font-size: 15px;
+}
+#puh .partner-steps {
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 25px;
+}
+#puh .partner-steps article>span {
+  color: var(--cyan);
+  font-size: 12px;
+}
+#puh .partner-steps h4 {
+  font-size: 16px;
+  line-height: 1.6;
+  font-weight: 500;
+}
+#puh .partner-steps p {
+  font-size: 13px;
+  line-height: 1.9;
+  color: #b5c5d7;
+}
+@media (max-width:680px) {
+  #puh .review-note {
+    top: 76px;
+    text-align: left;
+    font-size: 11px;
+    padding: 10px 7%;
+  }
+  #puh .people-grid {
+    grid-template-columns: 1fr;
+    gap: 35px;
+  }
+  #puh .portrait {
+    max-height: 340px;
+  }
+  #puh .org-chart {
+    padding: 20px 15px;
+  }
+  #puh .org-section>h3 {
+    font-size: 29px;
+  }
+  #puh .org-core {
+    gap: 12px;
+  }
+  #puh .org-core>div {
+    padding: 18px 10px;
+  }
+  #puh .org-chart strong {
+    font-size: 16px;
+  }
+  #puh .org-chart p {
+    font-size: 12px;
+  }
+  #puh .org-network {
+    padding: 20px 15px;
+  }
+  #puh .org-network>div {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  #puh .org-network article+article {
+    border-left: none;
+    border-top: 1px solid #ffffff20;
+    padding: 20px 0 0;
+  }
+  #puh .org-network small {
+    display: block;
+    margin: 10px 0 0;
+  }
+  #puh .partner-steps {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  #puh .team summary {
+    grid-template-columns: unset;
+  }
+  #puh .person-card summary {
+    display: flex;
+  }
+  #puh .org-collab {
+    font-size: 11px;
+    line-height: 1.8;
+  }
+  #puh .org-section>.eyebrow {
+    line-height: 1.9;
+  }
+}
+#puh .portrait-oh {
+  background-size: auto 125%;
+  background-position: center 18%;
+  background-color: #c6ddef;
+}
+
+/* ---- renewal.css ---- */
+#puh {
+  --blue: #0068b5;
+  --ink: #202830;
+  --navy: #071d32;
+  --line: #dfe5ea;
+}
+#puh header {
+  position: absolute;
+  padding: 0 5%;
+  height: 96px;
+}
+#puh header .brand>span {
+  font-size: 24px;
+}
+#puh nav {
+  gap: 30px;
+  font-size: 15px;
+}
+#puh nav a {
+  font-weight: 500;
+}
+#puh .hero {
+  min-height: 730px;
+  max-height: 1050px;
+}
+#puh .hero-copy {
+  margin: 110px auto 80px;
+  text-align: center;
+  width: 90%;
+  max-width: 1300px;
+}
+#puh .hero h1 {
+  font-weight: 700;
+  font-size: clamp(40px,4.8vw,74px);
+  line-height: 1.35;
+  letter-spacing: -2px;
+}
+#puh .hero .eyebrow {
+  color: #d4ecfa;
+  letter-spacing: 4px;
+}
+#puh .hero-art:after {
+  background: linear-gradient(180deg,#041a2c70,#041a2c32 45%,#041a2c80);
+}
+#puh .hero-copy>p:not(.eyebrow) {
+  font-size: 20px;
+  color: #f3f7fa;
+}
+#puh .line-link {
+  margin: 32px auto 0;
+  gap: 50px;
+}
+#puh .hero-bottom {
+  left: 5%;
+  right: 5%;
+}
+#puh .review-note {
+  top: 96px;
+  font-size: 11px;
+  background: #09203770;
+}
+#puh .section {
+  display: block;
+  padding: 105px max(5%,calc((100% - 1360px)/2));
+}
+#puh .section-label {
+  text-align: center;
+  padding: 0;
+  margin-bottom: 22px;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+#puh .section>div>h2 {
+  text-align: center;
+  font-size: clamp(30px,3.1vw,46px);
+  line-height: 1.45;
+  letter-spacing: -1.5px;
+  font-weight: 600;
+}
+#puh .section>div>.lead,
+#puh .section>div>.note,
+#puh .section>div>.team-note {
+  text-align: center;
+}
+#puh .section>div>.lead {
+  color: #6c747d;
+  font-size: 18px;
+  margin-bottom: 38px;
+}
+#puh .company-intro {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 65px;
+  align-items: center;
+  margin: 45px 0 64px;
+}
+#puh .company-intro h2 {
+  font-size: clamp(30px,3vw,43px);
+  font-weight: 600;
+  line-height: 1.5;
+}
+#puh .company-intro .lead {
+  font-size: 18px;
+  color: #414d58;
+}
+#puh .company-intro .muted {
+  font-size: 15px;
+}
+#puh .company-image {
+  margin: 0;
+  position: relative;
+  align-self: stretch;
+  min-height: 420px;
+  overflow: hidden;
+}
+#puh .company-image img {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  object-fit: cover;
+}
+#puh .company-image:after {
+  content: '';
+  position: absolute;
+  inset: 50% 0 0;
+  background: linear-gradient(transparent,#002445b0);
+}
+#puh .company-image figcaption {
+  position: absolute;
+  bottom: 28px;
+  left: 28px;
+  z-index: 1;
+  color: white;
+  font: 12px Arial;
+  letter-spacing: 2px;
+}
+#puh .identity {
+  margin: 25px 0 0;
+  gap: 8px;
+}
+#puh .identity span {
+  font-size: 12px;
+  padding: 8px 12px;
+}
+#puh .stats {
+  padding: 36px 0;
+  gap: 0;
+}
+#puh .stats>div {
+  text-align: center;
+  padding: 6px 12px;
+}
+#puh .stats>div+div {
+  border-left: 1px solid var(--line);
+}
+#puh .stats strong {
+  font-size: 62px;
+  white-space: nowrap;
+  letter-spacing: -2px;
+}
+#puh .stats strong small {
+  font-size: 16px;
+  margin-right: 7px;
+  letter-spacing: 0;
+}
+#puh .stats strong span {
+  font-size: 14px;
+  letter-spacing: 0;
+}
+#puh .stats p {
+  font-size: 14px;
+  margin: 15px 0 0;
+}
+#puh .company>div>.note {
+  max-width: 1050px;
+  margin: 18px auto 0;
+  font-size: 11px;
+  line-height: 1.9;
+}
+#puh .fund-plan {
+  background: #f5f8fa;
+  padding: 32px 40px;
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 45px;
+  margin: 40px 0 30px;
+}
+#puh .fund-plan .eyebrow {
+  font-size: 11px;
+  color: var(--blue);
+}
+#puh .fund-plan h3 {
+  font-size: 25px;
+  line-height: 1.6;
+  margin: 12px 0 0;
+  font-weight: 500;
+}
+#puh .fund-plan p {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  font-size: 14px;
+  padding-bottom: 13px;
+  border-bottom: 1px solid var(--line);
+}
+#puh .fund-plan b {
+  font-weight: 500;
+}
+#puh .fund-plan p span {
+  color: #637083;
+}
+#puh .fund-plan small {
+  font-size: 11px;
+  color: #637083;
+}
+#puh .more-content {
+  border-top: 1px solid #cdd8e1;
+  border-bottom: 1px solid #cdd8e1;
+  margin-top: 32px;
+}
+#puh .more-content>summary {
+  display: flex !important;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  font-size: 14px;
+  list-style: none;
+  padding: 22px 0 !important;
+  color: #38556c;
+}
+#puh .more-content>summary::-webkit-details-marker {
+  display: none;
+}
+#puh .more-content>summary>span {
+  font-size: 22px;
+  font-weight: 300;
+}
+#puh .more-content[open]>summary>span {
+  transform: rotate(45deg);
+}
+#puh .detail-body {
+  padding: 10px 0 25px;
+}
+#puh .company-facts {
+  margin-top: 10px;
+}
+#puh .values {
+  margin: 25px 0;
+}
+#puh .investment {
+  background: #f7f8fa;
+}
+#puh .areas {
+  display: grid;
+  grid-template-columns: repeat(4,minmax(0,1fr));
+  gap: 14px;
+  margin: 48px 0 40px;
+}
+#puh .areas article {
+  min-height: 410px;
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 22px;
+  padding: 28px 25px;
+  color: white;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  border: 0;
+  transition: transform .25s;
+}
+#puh .areas article:before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(180deg,#071b3240,#031a36da);
+}
+#puh .areas article:hover {
+  transform: translateY(-5px);
+}
+#puh .areas article:hover:before {
+  background: linear-gradient(180deg,#0068b570,#005495e8);
+}
+#puh .areas article:nth-child(1) {
+  background-image: url(/home/impact.jpg);
+}
+#puh .areas article:nth-child(3) {
+  background-image: url(/home/university.jpg);
+}
+#puh .areas article>span:first-child {
+  color: #fff9;
+  border: 1px solid #fff6;
+  border-radius: 50%;
+  height: 34px;
+  width: 34px;
+  padding: 8px 0;
+  text-align: center;
+}
+#puh .areas h3 {
+  font-size: 28px;
+  line-height: 1.15;
+  font-weight: 600;
+  margin-bottom: 20px;
+  overflow-wrap: normal;
+}
+#puh .areas h4 {
+  font-size: 15px;
+  line-height: 1.7;
+  margin-bottom: 14px;
+}
+#puh .areas p {
+  color: #e0e9f0;
+  font-size: 13px;
+  line-height: 1.8;
+}
+#puh .platform {
+  margin-top: 0;
+  border: 0;
+  padding-top: 0;
+}
+#puh .support-grid {
+  margin: 25px 0;
+}
+#puh .process {
+  grid-template-columns: repeat(7,1fr);
+}
+#puh .portfolio {
+  background: white;
+}
+#puh .portfolio-grid {
+  grid-template-columns: repeat(4,minmax(0,1fr));
+  border: 0;
+  gap: 18px;
+  margin-top: 40px;
+}
+#puh .portfolio-grid article {
+  border: 1px solid var(--line);
+  padding: 28px 22px;
+  min-height: 210px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  background: #fff;
+}
+#puh .portfolio-grid article:hover {
+  background: #f6f9fb;
+}
+#puh .portfolio-grid h3 {
+  font-size: 23px;
+  margin: 24px 0 12px;
+  letter-spacing: -.8px;
+}
+#puh .portfolio-grid p {
+  color: #647482;
+  font-size: 12px;
+  line-height: 1.7;
+  min-height: 40px;
+  margin: 0;
+}
+#puh .portfolio-grid .status {
+  align-self: center;
+  font-size: 11px;
+  margin-top: 18px;
+}
+#puh .programs {
+  margin-top: 45px;
+  text-align: center;
+}
+#puh .programs .muted {
+  max-width: 900px;
+  margin: auto;
+  font-size: 14px;
+}
+#puh .partner-names {
+  justify-content: center;
+  font-size: 14px;
+  margin-top: 25px;
+}
+#puh .team {
+  background: #f6f8fa;
+  color: var(--ink);
+}
+#puh .team .section-label {
+  color: var(--blue);
+}
+#puh .team .lead {
+  color: #637083;
+}
+#puh .team-note {
+  color: #687b8b;
+  font-size: 11px;
+}
+#puh .people-grid {
+  grid-template-columns: repeat(4,minmax(0,1fr));
+  gap: 24px;
+  margin: 38px 0;
+}
+#puh .portrait {
+  aspect-ratio: .82;
+  background-size: 400% 100%;
+  background-color: #e7edf3;
+}
+#puh .portrait-oh {
+  background-size: auto 125%;
+  background-position: center 18%;
+}
+#puh .person-heading {
+  display: block;
+  text-align: center;
+  margin-top: 20px;
+}
+#puh .person-heading h3 {
+  font-size: 24px;
+  font-weight: 500;
+  margin-bottom: 7px;
+}
+#puh .person-heading>span {
+  color: #263d52;
+  font-size: 14px;
+}
+#puh .person-duty {
+  text-align: center;
+  font-size: 11px;
+  color: #697a8a;
+  min-height: 40px;
+}
+#puh .team details,
+#puh .team details:last-child,
+#puh .person-card details {
+  border-color: #cdd8e1 !important;
+}
+#puh .person-card summary {
+  font-size: 12px;
+  color: #456075;
+}
+#puh .person-card .bio h4 {
+  color: var(--blue);
+}
+#puh .person-card .bio p {
+  color: #536777;
+  font-size: 12px;
+}
+#puh .org-section {
+  padding-top: 15px;
+}
+#puh .org-section>.eyebrow {
+  color: var(--blue);
+}
+#puh .org-intro {
+  color: #536777;
+}
+#puh .org-chart {
+  color: white;
+}
+#puh .partner-steps p {
+  color: #536777;
+}
+#puh .partner-steps article>span {
+  color: var(--blue);
+}
+#puh .signature {
+  background: white;
+}
+#puh .signature-grid {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 24px;
+  margin-top: 45px;
+}
+#puh .signature-card {
+  padding: 30px;
+  border: 1px solid #d6e1e9;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  transition: transform .2s,box-shadow .2s;
+}
+#puh .signature-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 14px 36px #0b355015;
+}
+#puh .program-no {
+  font-size: 11px;
+  letter-spacing: 1.2px;
+  color: #59778f;
+}
+#puh .signature-card h3 {
+  font-size: 25px;
+  letter-spacing: -1px;
+  font-weight: 600;
+  margin: 28px 0 12px;
+}
+#puh .signature-card h3 small {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 400;
+  margin-left: 6px;
+  color: #657e8f;
+}
+#puh .signature-card p {
+  font-size: 14px;
+  line-height: 1.8;
+  color: #647889;
+  min-height: 50px;
+  margin: 0 0 25px;
+}
+#puh .program-link {
+  border-top: 1px solid #d5e0e8;
+  padding-top: 20px;
+  font-size: 13px;
+  display: flex;
+  justify-content: space-between;
+  color: #0068b5;
+  margin-top: auto;
+}
+#puh .program-link b {
+  font-size: 20px;
+  font-weight: 400;
+}
+#puh .program-art {
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 20px;
+  overflow: hidden;
+}
+#puh .art-fit {
+  gap: 10px;
+  transform: skew(-15deg);
+}
+#puh .art-fit i {
+  width: 34px;
+  height: 48px;
+  background: #95c9eb;
+}
+#puh .art-fit i:nth-child(2) {
+  height: 78px;
+  background: #4099d2;
+}
+#puh .art-fit i:nth-child(3) {
+  height: 110px;
+  background: #0068b5;
+}
+#puh .art-feedback strong {
+  font: 500 100px Arial;
+  color: #0068b5;
+  letter-spacing: -8px;
+}
+#puh .art-feedback strong span {
+  font: 400 35px Arial;
+  margin-left: 10px;
+  letter-spacing: 0;
+}
+#puh .art-db {
+  display: grid;
+  grid-template-columns: repeat(3,23px);
+  grid-template-rows: repeat(3,23px);
+  gap: 15px;
+  align-content: center;
+}
+#puh .art-db i {
+  width: 23px;
+  height: 23px;
+  border: 1px solid #499aca;
+  border-radius: 50%;
+  background: #dbeefb;
+}
+#puh .art-db i:nth-child(5) {
+  background: #0068b5;
+  border-color: #0068b5;
+  box-shadow: 0 0 0 7px #dbeefb;
+}
+#puh .contact {
+  background: #075d9e;
+  padding: 75px max(5%,calc((100% - 1360px)/2));
+  position: relative;
+}
+#puh .contact h2 {
+  font-size: 42px;
+}
+#puh .contact-info {
+  margin-top: 40px;
+}
+#puh .social-links {
+  display: flex;
+  gap: 15px;
+  margin-top: 35px;
+  border-top: 1px solid #ffffff40;
+  padding-top: 25px;
+}
+#puh .social-links a {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  border: 1px solid #ffffff50;
+  padding: 12px 20px;
+  font: 14px Arial;
+}
+#puh .social-links a:hover {
+  background: #ffffff15;
+}
+#puh .social-links small {
+  font: 11px "PUH Noto Sans KR",sans-serif;
+  color: #d0e5f7;
+}
+#puh .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+#puh footer {
+  padding: 30px 5%;
+}
+#puh .menu {
+  cursor: pointer;
+}
+@media (min-width:1700px) {
+  #puh .areas article {
+    min-height: 450px;
+  }
+}
+@media (max-width:1050px) {
+  #puh nav {
+    gap: 18px;
+    font-size: 13px;
+  }
+  #puh header .brand>span {
+    font-size: 20px;
+  }
+  #puh .section {
+    padding: 80px 5%;
+  }
+  #puh .company-intro {
+    gap: 35px;
+  }
+  #puh .company-image {
+    min-height: 390px;
+  }
+  #puh .stats strong {
+    font-size: 48px;
+  }
+  #puh .areas {
+    gap: 10px;
+  }
+  #puh .areas article {
+    padding: 22px 18px;
+  }
+  #puh .areas h3 {
+    font-size: 24px;
+  }
+  #puh .areas h4 {
+    font-size: 14px;
+  }
+  #puh .portfolio-grid {
+    grid-template-columns: repeat(3,1fr);
+  }
+  #puh .people-grid {
+    gap: 16px;
+  }
+  #puh .person-heading>span {
+    font-size: 12px;
+  }
+  #puh .signature-card {
+    padding: 24px;
+  }
+  #puh .signature-card h3 {
+    font-size: 22px;
+  }
+  #puh .process {
+    grid-template-columns: repeat(4,1fr);
+  }
+}
+@media (max-width:760px) {
+  #puh header {
+    height: 76px;
+    padding: 0 6%;
+  }
+  #puh header .brand>span {
+    font-size: 20px;
+  }
+  #puh .menu {
+    display: block;
+    background: none;
+    border: 0;
+    color: white;
+    font-size: 14px;
+  }
+  #puh nav {
+    display: none;
+    position: absolute;
+    top: 76px;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    background: #071d32;
+    padding: 16px 6%;
+    gap: 0;
+  }
+  #puh nav.open {
+    display: flex;
+  }
+  #puh nav a {
+    padding: 14px 0;
+    font-size: 15px;
+  }
+  #puh .review-note {
+    top: 76px;
+    font-size: 10px;
+    text-align: left;
+    padding: 9px 6%;
+  }
+  #puh .hero {
+    min-height: 720px;
+    max-height: 900px;
+  }
+  #puh .hero-copy {
+    width: 88%;
+    margin: 115px auto 90px;
+  }
+  #puh .hero h1 {
+    font-size: clamp(32px,6.5vw,46px);
+    letter-spacing: -1.5px;
+    line-height: 1.5;
+  }
+  #puh .hero .eyebrow {
+    font-size: 10px;
+    letter-spacing: 2px;
+    margin-bottom: 25px;
+  }
+  #puh .hero-copy>p:not(.eyebrow) {
+    font-size: 15px;
+  }
+  #puh .hero-art {
+    background-position: 62% center;
+  }
+  #puh .hero-bottom {
+    left: 6%;
+    right: 6%;
+  }
+  #puh .section {
+    padding: 65px 6%;
+  }
+  #puh .section-label {
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    margin-bottom: 18px;
+  }
+  #puh .section>div>h2 {
+    font-size: 30px;
+  }
+  #puh .section>div>.lead {
+    font-size: 16px;
+    margin-bottom: 25px;
+  }
+  #puh .company-intro {
+    grid-template-columns: 1fr;
+    gap: 30px;
+    margin: 30px 0;
+  }
+  #puh .company-intro h2 {
+    font-size: 30px;
+  }
+  #puh .company-intro .lead {
+    font-size: 16px;
+  }
+  #puh .company-image {
+    min-height: 280px;
+    max-height: 350px;
+  }
+  #puh .company-intro .muted {
+    font-size: 14px;
+  }
+  #puh .stats {
+    grid-template-columns: 1fr 1fr;
+    row-gap: 26px;
+    padding: 25px 0;
+  }
+  #puh .stats>div:nth-child(3) {
+    border-left: 0;
+  }
+  #puh .stats strong {
+    font-size: 49px;
+  }
+  #puh .stats strong small {
+    font-size: 12px;
+  }
+  #puh .stats strong span {
+    font-size: 12px;
+  }
+  #puh .stats p {
+    font-size: 12px;
+  }
+  #puh .fund-plan {
+    grid-template-columns: 1fr;
+    padding: 25px;
+    gap: 15px;
+  }
+  #puh .fund-plan h3 {
+    font-size: 23px;
+  }
+  #puh .fund-plan p {
+    font-size: 12px;
+  }
+  #puh .fund-plan p span {
+    text-align: right;
+  }
+  #puh .more-content>summary {
+    font-size: 13px;
+  }
+  #puh .areas {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 30px;
+  }
+  #puh .areas article {
+    min-height: 355px;
+    padding: 22px 18px;
+  }
+  #puh .areas h3 {
+    font-size: 25px;
+  }
+  #puh .areas h4 {
+    font-size: 13px;
+  }
+  #puh .areas p {
+    font-size: 12px;
+  }
+  #puh .portfolio-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  #puh .portfolio-grid article {
+    padding: 22px 14px;
+    min-height: 200px;
+  }
+  #puh .portfolio-grid h3 {
+    font-size: 20px;
+    overflow-wrap: anywhere;
+  }
+  #puh .portfolio-grid article>span {
+    font-size: 9px;
+  }
+  #puh .programs h3 {
+    font-size: 22px;
+  }
+  #puh .people-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 30px 16px;
+  }
+  #puh .person-heading h3 {
+    font-size: 22px;
+  }
+  #puh .portrait {
+    max-height: none;
+  }
+  #puh .signature-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    margin-top: 30px;
+  }
+  #puh .signature-card {
+    padding: 28px;
+  }
+  #puh .program-art {
+    height: 100px;
+  }
+  #puh .art-fit i:nth-child(3) {
+    height: 95px;
+  }
+  #puh .signature-card h3 {
+    font-size: 25px;
+    margin-top: 20px;
+  }
+  #puh .signature-card p {
+    min-height: 0;
+  }
+  #puh .contact {
+    padding: 60px 6%;
+  }
+  #puh .contact h2 {
+    font-size: 32px;
+  }
+  #puh .social-links {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  #puh .social-links a {
+    font-size: 13px;
+    padding: 12px 16px;
+  }
+  #puh .process {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width:390px) {
+  #puh .hero h1 {
+    font-size: 29px;
+  }
+  #puh .areas article {
+    padding: 18px 14px;
+  }
+  #puh .areas h3 {
+    font-size: 21px;
+  }
+  #puh .stats strong {
+    font-size: 43px;
+  }
+  #puh .portfolio-grid h3 {
+    font-size: 18px;
+  }
+  #puh .people-grid {
+    gap: 25px 12px;
+  }
+}
+#puh .portrait:not(.portrait-oh) {
+  background-size: auto 100%;
+}
+#puh .portrait-1 {
+  background-position: 35.2% center;
+}
+#puh .portrait-2 {
+  background-position: 64.8% center;
+}
+#puh .portrait-3 {
+  background-position: 94.4% center;
+}
+/* Individual originals: match face scale and center without stretching. */
+#puh .centered-portrait {
+  position: relative;
+  overflow: hidden;
+  background: #e7edf3 !important;
+  aspect-ratio: .82;
+  max-height: none;
+}
+#puh .centered-portrait img {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  height: var(--portrait-height);
+  width: auto;
+  max-width: none;
+  transform: translate(var(--portrait-x),var(--portrait-y));
+}
+#puh .portrait-1 {
+  --portrait-height: 109%;
+  --portrait-x: -51.8%;
+  --portrait-y: -38.8%;
+}
+#puh .portrait-2 {
+  --portrait-height: 132%;
+  --portrait-x: -45.3%;
+  --portrait-y: -42.5%;
+}
+#puh .portrait-3 {
+  --portrait-height: 112%;
+  --portrait-x: -50.3%;
+  --portrait-y: -53.7%;
+}
+#puh .portrait-oh {
+  --portrait-height: 100%;
+  --portrait-x: -50%;
+  --portrait-y: -47.4%;
+  background: #c6ddef !important;
+}
+#puh .signature-logo {
+  height: 155px;
+  background: #fff;
+  position: relative;
+  margin-top: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+#puh .signature-logo img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+#puh .spit-brand img {
+  width: 153%;
+  max-width: none;
+  flex: none;
+  transform: translate(5%,0);
+}
+@media (max-width:760px) {
+  #puh .signature-logo {
+    height: 145px;
+  }
+  #puh .signature-card h3 small {
+    line-height: 1.7;
+  }
+}
+#puh .company-image {
+  min-height: 0;
+  aspect-ratio: 1.45;
+  align-self: center;
+}
+#puh .company-image img {
+  object-position: center center;
+}
+#puh .company-image figcaption {
+  font-family: "PUH Noto Sans KR",Arial,sans-serif;
+  font-size: 15px;
+  letter-spacing: .5px;
+}
+#puh .company-image figcaption span {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 1.4px;
+  margin-top: 7px;
+}
+@media (max-width:760px) {
+  #puh .company-image {
+    min-height: 0;
+    aspect-ratio: 1.55;
+    max-height: none;
+  }
+  #puh .company-image figcaption {
+    bottom: 20px;
+    left: 20px;
+  }
+}
+#puh .hero .eyebrow {
+  font-size: 17px;
+  letter-spacing: 2px;
+  font-weight: 600;
+}
+@media (max-width:760px) {
+  #puh .hero .eyebrow {
+    font-size: 13px;
+    letter-spacing: 1px;
+  }
+}
+#puh nav {
+  align-items: center;
+}
+#puh nav .signature-nav {
+  background: #080808;
+  color: #fff !important;
+  font-family: 'Caveat','Segoe Script','Brush Script MT',cursive;
+  font-size: 27px;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: 0;
+  padding: 9px 20px 11px;
+  transform: rotate(-3deg);
+  border: 1px solid #ffffff28;
+  box-shadow: 0 5px 16px #0002;
+}
+#puh nav .signature-nav:hover {
+  background: #202020;
+  transform: rotate(0deg);
+}
+@media (max-width:760px) {
+  #puh nav {
+    align-items: stretch;
+  }
+  #puh nav .signature-nav {
+    align-self: flex-start;
+    margin: 12px 0 8px;
+    padding: 8px 23px 10px;
+    font-size: 28px;
+  }
+}
+#puh .areas {
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 20px;
+}
+#puh .areas article {
+  min-height: 410px;
+  padding: 30px;
+}
+#puh .areas article:nth-child(1) {
+  background-image: url(/home/university.jpg);
+}
+#puh .areas article:nth-child(2) {
+  background-image: url(/home/impact.jpg);
+}
+#puh .areas h3 {
+  font-size: 31px;
+  line-height: 1.2;
+}
+#puh .areas h4 {
+  font-size: 16px;
+}
+#puh .areas p {
+  font-size: 14px;
+}
+@media (max-width:1050px) {
+  #puh .areas article {
+    padding: 25px;
+  }
+  #puh .areas h3 {
+    font-size: 27px;
+  }
+}
+@media (max-width:760px) {
+  #puh .areas {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+  #puh .areas article {
+    min-height: 340px;
+    padding: 28px;
+  }
+  #puh .areas h3 {
+    font-size: 29px;
+  }
+  #puh .areas h4 {
+    font-size: 16px;
+  }
+  #puh .areas p {
+    font-size: 14px;
+  }
+}
+#puh .centered-portrait {
+  aspect-ratio: 1;
+  background: #e7edf3 !important;
+}
+#puh .centered-portrait img {
+  left: 50%;
+  top: auto;
+  bottom: 0;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  transform: translateX(-50%);
+}
+#puh .portrait-1 img {
+  width: 115%;
+  max-width: none;
+  transform: translateX(-51.8%);
+}
+#puh .portrait-2 img {
+  width: 115%;
+  max-width: none;
+  transform: translateX(-46%);
+}
+#puh .portrait-3 img {
+  width: 100%;
+}
+#puh .portrait-oh {
+  background: #c6ddef !important;
+}
+#puh .portrait-oh img {
+  width: 100%;
+}
+#puh .portrait-oh img {
+  width: 85%;
+  max-width: 85%;
+}
+#puh .portrait-1 img,
+#puh .portrait-2 img {
+  width: 125%;
+}
+#puh .portrait-3 img {
+  width: 85%;
+}
+#puh .portrait-oh {
+  background: linear-gradient(135deg,#c4e0ef,#d4e6f2) !important;
+}
+#puh .official-brand {
+  display: block;
+  overflow: hidden;
+  background: white;
+  width: 290px;
+  height: 72px;
+  position: relative;
+  flex: none;
+}
+#puh .official-brand img {
+  position: absolute;
+  width: 119%;
+  height: auto;
+  max-width: none;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%,-50%);
+}
+#puh footer .official-brand {
+  width: 245px;
+  height: 66px;
+}
+#puh .footer-legal p {
+  font-size: 12px;
+  line-height: 1.7;
+  margin: 4px 0;
+  color: #637083;
+}
+@media (max-width:1050px) {
+  #puh header .official-brand {
+    width: 230px;
+    height: 62px;
+  }
+  #puh nav {
+    gap: 18px;
+  }
+}
+@media (max-width:760px) {
+  #puh header .official-brand {
+    width: 210px;
+    height: 56px;
+  }
+  #puh footer .official-brand {
+    width: 230px;
+    height: 62px;
+  }
+  #puh .footer-legal {
+    order: 3;
+    width: 100%;
+  }
+  #puh .footer-legal p {
+    width: auto;
+  }
+}
+#puh .signature-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#puh .signature-logo img {
+  width: 94%;
+  height: auto;
+  flex: none;
+}
+#puh .spit-brand img {
+  width: 145%;
+  max-width: none;
+  transform: translate(5.66%,.625%);
+}
+#puh .portrait-1 img {
+  width: auto;
+  max-width: none;
+  height: 105%;
+  top: 0;
+  bottom: auto;
+  left: 50%;
+  transform: translateX(-50%);
+}
+#puh .portrait-oh {
+  background: #fff !important;
+}
+#puh .portrait-oh img {
+  width: 85%;
+  max-width: 85%;
+  height: auto;
+  top: auto;
+  bottom: 0;
+  transform: translateX(-50%);
+}
+/* Match the team's framing to Bae Jung-gu. */
+#puh .centered-portrait,
+#puh .portrait-oh {
+  background: #e7edf3 !important;
+}
+#puh .portrait-1 img {
+  width: auto;
+  max-width: none;
+  height: 155%;
+  top: 4%;
+  bottom: auto;
+  left: 50%;
+  transform: translateX(-50%);
+}
+#puh .portrait-3 img {
+  width: 102%;
+  max-width: none;
+  height: auto;
+  top: -4.6%;
+  bottom: auto;
+  left: 50%;
+  transform: translateX(-50%);
+}
+#puh .portrait-oh img {
+  width: 80%;
+  max-width: none;
+  height: auto;
+  top: auto;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+/* Preserve the official artwork while displaying white ink over the hero. */
+#puh header .official-brand {
+  background: transparent;
+  overflow: hidden;
+  mix-blend-mode: screen;
+}
+#puh header .official-brand img {
+  filter: grayscale(1) invert(1) brightness(3);
+  mix-blend-mode: screen;
+}
+/* Updated investment, outcomes and operating experience. */
+#puh .areas article:nth-child(2) {
+  background-image: url(/home/pohang-sea.jpg);
+}
+#puh .areas article:nth-child(3) {
+  background-image: url(/home/impact.jpg);
+}
+#puh .areas h3 {
+  font-size: clamp(24px,2.05vw,31px);
+}
+#puh .portfolio-grid .exit-status {
+  background: #0068b5;
+  border: 1px solid #0068b5;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 9px 17px;
+  letter-spacing: .4px;
+}
+#puh .operation-images {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 32px;
+  text-align: left;
+}
+#puh .operation-images figure {
+  margin: 0;
+  background: #f5f8fb;
+  border: 1px solid #dfe5ea;
+  overflow: hidden;
+}
+#puh .operation-images img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2;
+  object-fit: cover;
+}
+#puh .operation-images figure:first-child img {
+  object-fit: contain;
+  background: #fff;
+  padding: 20px;
+}
+#puh .operation-images figcaption {
+  padding: 18px 22px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #183d5e;
+}
+#puh .person-card details {
+  margin-top: 26px;
+}
+#puh .signature-card h3 .development-badge {
+  display: inline-block;
+  vertical-align: middle;
+  margin: -4px 0 0 8px;
+  padding: 5px 8px;
+  background: #080808;
+  color: #fff;
+  font-size: 12px;
+  line-height: 1;
+  letter-spacing: 0;
+  font-weight: 500;
+}
+#puh .signature-card h3:has(.development-badge) small {
+  display: block;
+  margin: 9px 0 0;
+}
+#puh .contact {
+  background: linear-gradient(90deg,rgba(0,35,67,.84),rgba(0,48,84,.36)),url(/home/pohang-sea.jpg) center 48%/cover no-repeat;
+}
+@media (max-width:760px) {
+  #puh .operation-images {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+  #puh .areas h3 {
+    font-size: 29px;
+  }
+  #puh .contact {
+    background-position: center,right center;
+  }
+  #puh .operation-images img {
+    aspect-ratio: 1.8;
+  }
+}
+#puh .portrait-oh img {
+  width: 100%;
+  max-width: none;
+  top: 3%;
+  bottom: auto;
+  height: auto;
+}
+#puh .operation-images img {
+  aspect-ratio: 1.65;
+}
+#puh .operation-images figure:first-child img {
+  padding: 0;
+  background: #121414;
+}
+#puh .operation-images figure:nth-child(2) img {
+  object-position: 40% center;
+}
+#puh .areas article:nth-child(2) {
+  background-color: #087caf;
+  background-blend-mode: luminosity;
+}
+#puh .areas article:nth-child(2):before {
+  background: linear-gradient(180deg,#00345610,#00244dcc);
+}
+#puh .contact {
+  background-color: #087caf;
+  background-blend-mode: normal,luminosity;
+  background-position: center,70% 45%;
+}
+#puh .photo-credit {
+  display: block;
+  margin-top: 26px;
+  font-size: 11px;
+  color: #dbeaf5;
+  text-align: right;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+#puh .operation-images figcaption strong {
+  display: block;
+  font-size: 18px;
+}
+#puh .operation-subtitle {
+  display: block;
+  margin-top: 8px;
+  font-size: 14px;
+  font-weight: 400;
+  color: #536d82;
+}
+#puh .operation-count {
+  display: block;
+  margin-top: 10px;
+  font-size: 14px;
+  font-weight: 400;
+  color: #36516a;
+}
+#puh .operation-count b {
+  font-size: 22px;
+  font-weight: 700;
+  margin-left: 6px;
+  color: #0068b5;
+}
+#puh .institution-grid {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 12px;
+  align-self: center;
+}
+#puh .institution-grid figure {
+  margin: 0;
+  position: relative;
+  aspect-ratio: 1.25;
+  overflow: hidden;
+  background: #dce7ef;
+}
+#puh .institution-grid img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+#puh .institution-grid figure:after {
+  content: '';
+  position: absolute;
+  inset: 35% 0 0;
+  background: linear-gradient(transparent,rgba(0,24,43,.8));
+}
+#puh .institution-grid figcaption {
+  position: absolute;
+  bottom: 18px;
+  left: 18px;
+  z-index: 1;
+  color: #fff;
+  font-size: 17px;
+  font-weight: 600;
+}
+#puh .signature-card .program-link {
+  border: 1px solid #0068b5;
+  padding: 14px 18px;
+  align-items: center;
+  background: #fff;
+  min-height: 52px;
+  transition: background .2s,color .2s;
+}
+#puh .signature-card:hover .program-link {
+  background: #0068b5;
+  color: #fff;
+}
+#puh .signature-card .program-link b {
+  line-height: 1;
+}
+@media (max-width:760px) {
+  #puh .institution-grid {
+    gap: 10px;
+  }
+  #puh .institution-grid figure {
+    aspect-ratio: 1.15;
+  }
+  #puh .institution-grid figcaption {
+    font-size: 15px;
+    left: 12px;
+    bottom: 12px;
+  }
+}
+#puh .institution-grid figure:nth-child(3) img {
+  position: absolute;
+  bottom: 0;
+  height: 175%;
+  object-position: 64% bottom;
+}
+#puh .institution-grid figure:nth-child(3) img {
+  position: static;
+  height: 100%;
+  object-position: center;
+}
+#puh .areas article:nth-child(2) {
+  background-image: url(/home/east-sea-fisheries.jpg);
+  background-blend-mode: normal;
+  background-position: center;
+}
+#puh .areas article:nth-child(2):before {
+  background: linear-gradient(180deg,rgba(0,35,55,.08),rgba(0,25,48,.88));
+}
+#puh .areas article:nth-child(2) {
+  background-position: center bottom;
+}
+#puh .photo-credit+.photo-credit {
+  margin-top: 6px;
+}
+#puh .people-grid {
+  grid-template-columns: repeat(5,minmax(0,1fr));
+  gap: 22px;
+}
+#puh .advisor-card .portrait-advisor {
+  border: 2px solid #b59a67;
+  box-shadow: 0 5px 18px #142c4312;
+  isolation: isolate;
+}
+#puh .portrait-advisor:after {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border: 1px solid #b59a6766;
+  pointer-events: none;
+  z-index: 2;
+}
+#puh .portrait-advisor img {
+  width: 132%;
+  max-width: none;
+  height: auto;
+  top: 0;
+  bottom: auto;
+  left: 50%;
+  transform: translateX(-50%);
+  mix-blend-mode: multiply;
+}
+#puh .advisor-card .person-heading>span {
+  display: inline-block;
+  border: 1px solid #b59a67;
+  padding: 4px 13px;
+  color: #6f5831;
+  font-weight: 500;
+}
+#puh .advisor-card .person-heading h3 {
+  white-space: nowrap;
+}
+@media (min-width:761px) and (max-width:1050px) {
+  #puh .people-grid {
+    gap: 14px;
+  }
+  #puh .person-heading h3 {
+    font-size: 21px;
+  }
+  #puh .person-heading>span {
+    font-size: 11px;
+  }
+  #puh .person-card .bio p {
+    font-size: 12px;
+  }
+}
+@media (max-width:760px) {
+  #puh .people-grid {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+    gap: 30px 16px;
+  }
+  #puh .advisor-card {
+    grid-column: 1/-1;
+    max-width: 340px;
+    width: 100%;
+    justify-self: center;
+  }
+}
+
+/* ---- 이 사이트로 옮기며 더한 보정 ---- */
+/* 리셋(all: revert)이 width·height 속성의 비율 힌트까지 지우므로 로고에 다시 준다(이미지 로딩 전 자리). */
+#puh .official-brand img {
+  aspect-ratio: auto 621 / 196;
+}

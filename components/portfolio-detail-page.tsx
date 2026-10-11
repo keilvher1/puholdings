@@ -411,7 +411,7 @@ export function PortfolioDetailPage({ companies, contact }: { companies: Company
               포항연합기술지주와 함께 성장하고 싶은 기업의 연락을 기다립니다.
             </p>
             <Link
-              href="/#contact"
+              href="/contact"
               className="mt-8 inline-block bg-foreground px-8 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-dark-muted"
             >
               문의하기
