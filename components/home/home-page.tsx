@@ -321,8 +321,8 @@ function TeamSection() {
         <p className="lead">경영·투자·운영을 담당하는 핵심 인력과<br className="desktop" /> 전문성을 가진 임원급 인력이 함께합니다.</p>
         <div className="people-grid">
           <article className="person-card">
-            <div className="portrait portrait-1 centered-portrait">
-              <img src="/home/shim-cutout.png" alt="심규진 프로필 사진" loading="lazy" />
+            <div className="portrait portrait-photo centered-portrait">
+              <img src="/home/shim-kyujin.jpg" alt="심규진 프로필 사진" loading="lazy" />
             </div>
             <div className="person-heading">
               <h3>심규진</h3>
@@ -332,12 +332,14 @@ function TeamSection() {
               <summary>프로필 보기 <span>+</span></summary>
               <div className="bio">
                 <div>
-                  <h4>경력</h4>
-                  <p>現 한동대학교 창의융합교육원 조교수<br />現 글로컬사업단 지역혁신추진실장<br />前 포스코인재창조원 책임컨설턴트<br />前 한국능률협회 선임연구원<br />前 마이크임팩트 등기이사 · 와디즈 인사팀장<br />前 경남문화예술진흥원 과장<br />前 김해의생명산업진흥원 팀장<br />前 국립창원대학교 산학협력중점교수</p>
+                  <h4>경력 · 창업투자 분야 12년</h4>
+                  <p>現 한동대학교 정년트랙 창업(Global Entrepreneurship) 전공 교수<br />現 포항시의회 윤리심사자문위원(2026.5.~2028.5.)<br />現 (주)포항연합기술지주(모두의 창업 운영기관) 부대표<br />現 환동해지역혁신원 부원장 · 소셜벤처 사업 총괄<br />現 서울소셜벤처허브 전문 멘토<br />現 한국관광공사 창업 멘토<br />前 경상남도 김해시 창업 및 투자 펀드 총괄<br />— 공공 분야 600억 창업 펀드 조성(지역창업·바이오·콘텐츠 등)<br />— 콘텐츠기업지원센터 펀드투자 TF팀장<br />前 경상남도 김해 문화도시 시민협의회 회장<br />前 문화체육관광부 취창업지원실 전문 멘토<br />前 와디즈(국내 크라우드펀딩 No.1) 인사 총괄<br />前 국내 최대 규모 문화콘텐츠 기획사 창업: 매출 100억<br />前 포스코 인재혁신실 인사제도 기획 담당</p>
                 </div>
                 <div>
-                  <h4>학력 · 전문 분야</h4>
-                  <p>한동대학교 경영학·국제지역학 학사, 상담심리학 석사<br />국립창원대학교 문화기술경영학 박사<br />창업기업 육성 · 투자 연계 · 인적자원개발<br />『창업은 일상이다』 등 저술</p>
+                  <h4>학력 · 연구</h4>
+                  <p>Swiss School of Management 인공지능 박사(AI 스타트업 연구)<br />국립호치민경제대학교 CEO AMP Degree<br />AHP를 활용한 투자결정요인 분석 연구 외 창업 분야 논문 다수<br />글로컬대학 실장 · RISE사업단 K-콘텐츠 분야 부위원장</p>
+                  <h4>저서</h4>
+                  <p>창업 · 인공지능 · 에듀테크 등 총 11권(『창업은 일상이다』 등)<br /><a href="https://shimqjin.imweb.me/" target="_blank" rel="noopener noreferrer">shimqjin.imweb.me</a></p>
                 </div>
               </div>
             </details>
@@ -348,7 +350,7 @@ function TeamSection() {
             </div>
             <div className="person-heading">
               <h3>정원석</h3>
-              <span>이사</span>
+              <span>사내이사</span>
             </div>
             <details>
               <summary>프로필 보기 <span>+</span></summary>
@@ -360,6 +362,30 @@ function TeamSection() {
                 <div>
                   <h4>학력 · 주요 활동</h4>
                   <p>영남대학교 마케팅 박사<br />고려대학교 KMBA<br />한국창업학회 창업생태계혁신상(2025.11)</p>
+                </div>
+              </div>
+            </details>
+          </article>
+          <article className="person-card advisor-card">
+            <div className="portrait portrait-advisor centered-portrait">
+              <img src="/home/kim-hakju.png" alt="김학주 교수 프로필 사진" loading="lazy" />
+            </div>
+            <div className="person-heading">
+              <h3>김학주 교수</h3>
+              <span>투자자문</span>
+            </div>
+            <details>
+              <summary>프로필 보기 <span>+</span></summary>
+              <div className="bio">
+                <div>
+                  <h4>주요 경력</h4>
+                  <p>現 한동대학교 교수<br />유튜브 ‘김학주리서치’ 채널 운영<br />현대증권(현 KB증권) 입사<br />前 삼성증권 리서치센터 센터장(상무)<br />前 우리자산운용 운용총괄 CIO(전무)<br />前 한가람투자자문 CIO(부사장)<br />前 한국거래소 상장심의위원<br />前 공무원연금 자산배분위원</p>
+                </div>
+                <div>
+                  <h4>학력</h4>
+                  <p>서강대학교 경영학과<br />영국 에든버러대학교 대학원 경영학 석사</p>
+                  <h4>주요 수상 · 전문 분야</h4>
+                  <p>2001~2007 자동차산업 베스트 애널리스트(7년 연속)<br />2006~2008 「아시아머니」 선정 한국 최우수 애널리스트(3년 연속)<br />Institutional Investor 애널리스트 평가 최상위권<br />2005 매경 증권인상 기업분석 부문<br />2008 매경 Best Strategist<br />금융투자업계 이후 6개 기업 설립 · 상장 추진<br />바이오 · 친환경 신소재 · 핀테크 분야 창업</p>
                 </div>
               </div>
             </details>
@@ -408,29 +434,14 @@ function TeamSection() {
               </div>
             </details>
           </article>
-          <article className="person-card advisor-card">
-            <div className="portrait portrait-advisor centered-portrait">
-              <img src="/home/kim-hakju.png" alt="김학주 교수 프로필 사진" loading="lazy" />
+          <article className="person-card">
+            <div className="portrait portrait-photo centered-portrait">
+              <img src="/home/byun-jeongwoo.jpg" alt="변정우 프로필 사진" loading="lazy" />
             </div>
             <div className="person-heading">
-              <h3>김학주 교수</h3>
-              <span>투자자문</span>
+              <h3>변정우</h3>
+              <span>매니저</span>
             </div>
-            <details>
-              <summary>프로필 보기 <span>+</span></summary>
-              <div className="bio">
-                <div>
-                  <h4>주요 경력</h4>
-                  <p>現 한동대학교 교수<br />유튜브 ‘김학주리서치’ 채널 운영<br />현대증권(현 KB증권) 입사<br />前 삼성증권 리서치센터 센터장(상무)<br />前 우리자산운용 운용총괄 CIO(전무)<br />前 한가람투자자문 CIO(부사장)<br />前 한국거래소 상장심의위원<br />前 공무원연금 자산배분위원</p>
-                </div>
-                <div>
-                  <h4>학력</h4>
-                  <p>서강대학교 경영학과<br />영국 에든버러대학교 대학원 경영학 석사</p>
-                  <h4>주요 수상 · 전문 분야</h4>
-                  <p>2001~2007 자동차산업 베스트 애널리스트(7년 연속)<br />2006~2008 「아시아머니」 선정 한국 최우수 애널리스트(3년 연속)<br />Institutional Investor 애널리스트 평가 최상위권<br />2005 매경 증권인상 기업분석 부문<br />2008 매경 Best Strategist<br />금융투자업계 이후 6개 기업 설립 · 상장 추진<br />바이오 · 친환경 신소재 · 핀테크 분야 창업</p>
-                </div>
-              </div>
-            </details>
           </article>
         </div>
         <details className="more-content">
@@ -444,7 +455,7 @@ function TeamSection() {
                 <div className="org-board">
                   <span>GOVERNANCE</span>
                   <strong>이사회</strong>
-                  <p>정원석 이사 참여 · 경영 자문 및 감독</p>
+                  <p>정원석 사내이사 참여 · 경영 자문 및 감독</p>
                 </div>
                 <div className="org-stem"></div>
                 <div className="org-ceo">
