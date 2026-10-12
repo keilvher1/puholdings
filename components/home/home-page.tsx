@@ -350,7 +350,7 @@ function TeamSection() {
             </div>
             <div className="person-heading">
               <h3>정원석</h3>
-              <span>사내이사</span>
+              <span>사외이사</span>
             </div>
             <details>
               <summary>프로필 보기 <span>+</span></summary>
@@ -455,7 +455,7 @@ function TeamSection() {
                 <div className="org-board">
                   <span>GOVERNANCE</span>
                   <strong>이사회</strong>
-                  <p>정원석 사내이사 참여 · 경영 자문 및 감독</p>
+                  <p>정원석 사외이사 참여 · 경영 자문 및 감독</p>
                 </div>
                 <div className="org-stem"></div>
                 <div className="org-ceo">
