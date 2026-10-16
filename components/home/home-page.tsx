@@ -79,7 +79,7 @@ function CompanySection() {
         </div>
         <div className="stats">
           <div>
-            <strong>8<span>건</span></strong>
+            <strong>9<span>건</span></strong>
             <p>자기계정 직접투자</p>
           </div>
           <div>
@@ -238,7 +238,7 @@ function PortfolioSection() {
       <div className="section-label">PORTFOLIO</div>
       <div>
         <h2>가능성에 투자하고,<br />성장의 여정을 함께합니다.</h2>
-        <p className="lead">자기계정 직접투자 8건 · 회수 완료 3건</p>
+        <p className="lead">자기계정 직접투자 9건 · 회수 완료 3건</p>
         <p className="note">2026년 9월 기준 투자·회수 현황입니다.</p>
         <div className="portfolio-grid">
           <article>
