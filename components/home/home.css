@@ -677,7 +677,7 @@ html:has(#puh) {
   letter-spacing: 1.8px;
 }
 #puh .hero-art {
-  background-image: url(/home/hero.png);
+  background-image: url(/home/hero.webp);
 }
 #puh .hero h1 {
   font-size: clamp(38px,4.1vw,66px);
@@ -1491,10 +1491,10 @@ html:has(#puh) {
   background: linear-gradient(180deg,#0068b570,#005495e8);
 }
 #puh .areas article:nth-child(1) {
-  background-image: url(/home/impact.jpg);
+  background-image: url(/home/impact.webp);
 }
 #puh .areas article:nth-child(3) {
-  background-image: url(/home/university.jpg);
+  background-image: url(/home/university.webp);
 }
 #puh .areas article>span:first-child {
   color: #fff9;
@@ -2286,10 +2286,10 @@ html:has(#puh) {
   padding: 30px;
 }
 #puh .areas article:nth-child(1) {
-  background-image: url(/home/university.jpg);
+  background-image: url(/home/university.webp);
 }
 #puh .areas article:nth-child(2) {
-  background-image: url(/home/impact.jpg);
+  background-image: url(/home/impact.webp);
 }
 #puh .areas h3 {
   font-size: 31px;
@@ -2507,10 +2507,10 @@ html:has(#puh) {
 }
 /* Updated investment, outcomes and operating experience. */
 #puh .areas article:nth-child(2) {
-  background-image: url(/home/pohang-sea.jpg);
+  background-image: url(/home/pohang-sea.webp);
 }
 #puh .areas article:nth-child(3) {
-  background-image: url(/home/impact.jpg);
+  background-image: url(/home/impact.webp);
 }
 #puh .areas h3 {
   font-size: clamp(24px,2.05vw,31px);
@@ -2574,7 +2574,7 @@ html:has(#puh) {
   margin: 9px 0 0;
 }
 #puh .contact {
-  background: linear-gradient(90deg,rgba(0,35,67,.84),rgba(0,48,84,.36)),url(/home/pohang-sea.jpg) center 48%/cover no-repeat;
+  background: linear-gradient(90deg,rgba(0,35,67,.84),rgba(0,48,84,.36)),url(/home/pohang-sea.webp) center 48%/cover no-repeat;
 }
 @media (max-width:760px) {
   #puh .operation-images {
@@ -2728,7 +2728,7 @@ html:has(#puh) {
   object-position: center;
 }
 #puh .areas article:nth-child(2) {
-  background-image: url(/home/east-sea-fisheries.jpg);
+  background-image: url(/home/east-sea-fisheries.webp);
   background-blend-mode: normal;
   background-position: center;
 }

@@ -3,7 +3,7 @@ import { HomePage } from "@/components/home/home-page"
 
 // 메타 정보도 리뉴얼 시안과 같게 맞춘다(주소만 이 사이트 기준 — layout의 metadataBase로 절대 URL이 된다).
 const TITLE = "포항연합기술지주 | 경북 포항 유일 공공형 액셀러레이터"
-const OG_IMAGE = { url: "/home/og-main.png", alt: "포항연합기술지주 — 지역의 가능성을 발굴하고, 투자로 성장을 연결합니다." }
+const OG_IMAGE = { url: "/home/og-main.jpg", alt: "포항연합기술지주 — 지역의 가능성을 발굴하고, 투자로 성장을 연결합니다." }
 
 export const metadata: Metadata = {
   title: TITLE,

@@ -60,19 +60,19 @@ function CompanySection() {
           </div>
           <div className="institution-grid" aria-label="공동 출자 기관">
             <figure>
-              <img src="/home/handong-campus.png" alt="한동대학교 건물 전경" loading="lazy" />
+              <img src="/home/handong-campus.webp" alt="한동대학교 건물 전경" loading="lazy" />
               <figcaption>한동대학교</figcaption>
             </figure>
             <figure>
-              <img src="/home/pohang-tp.jpg" alt="포항TP 건물 전경" loading="lazy" />
+              <img src="/home/pohang-tp.webp" alt="포항TP 건물 전경" loading="lazy" />
               <figcaption>포항TP</figcaption>
             </figure>
             <figure>
-              <img src="/home/sunlin-campus-user.png" alt="선린대학교 건물 전경" loading="lazy" />
+              <img src="/home/sunlin-campus-user.webp" alt="선린대학교 건물 전경" loading="lazy" />
               <figcaption>선린대학교</figcaption>
             </figure>
             <figure>
-              <img src="/home/pohang-university-user.png" alt="포항대학교 건물 전경" loading="lazy" />
+              <img src="/home/pohang-university-user.webp" alt="포항대학교 건물 전경" loading="lazy" />
               <figcaption>포항대학교</figcaption>
             </figure>
           </div>
@@ -290,7 +290,7 @@ function PortfolioSection() {
           <p className="muted">모두의창업, 특화역량 BI, RISE 기업밀착 보육, 글로컬 AI 임팩트 비즈니스, 지역 창업·이전 활성화 등 대학과 지역 현장에서 창업기업을 지원합니다.</p>
           <div className="operation-images">
             <figure>
-              <img src="/home/modu-program.png" alt="모두의창업" loading="lazy" />
+              <img src="/home/modu-program.webp" alt="모두의창업" loading="lazy" />
               <figcaption>
                 <strong>모두의창업</strong>
                 <span className="operation-subtitle">1기·2기 연속 운영</span>
@@ -298,7 +298,7 @@ function PortfolioSection() {
               </figcaption>
             </figure>
             <figure>
-              <img src="/home/handong-incubator.png" alt="한동대학교 창업보육센터 표지석과 건물 전경" loading="lazy" />
+              <img src="/home/handong-incubator.webp" alt="한동대학교 창업보육센터 표지석과 건물 전경" loading="lazy" />
               <figcaption>
                 <strong>한동대학교 창업보육센터</strong>
                 <span className="operation-subtitle">2026년 기준</span>
@@ -322,7 +322,7 @@ function TeamSection() {
         <div className="people-grid">
           <article className="person-card">
             <div className="portrait portrait-photo centered-portrait">
-              <img src="/home/shim-kyujin.jpg" alt="심규진 프로필 사진" loading="lazy" />
+              <img src="/home/shim-kyujin.webp" alt="심규진 프로필 사진" loading="lazy" />
             </div>
             <div className="person-heading">
               <h3>심규진</h3>
@@ -346,7 +346,7 @@ function TeamSection() {
           </article>
           <article className="person-card">
             <div className="portrait portrait-3 centered-portrait">
-              <img src="/home/jung-wonseok.png" alt="정원석 프로필 사진" loading="lazy" />
+              <img src="/home/jung-wonseok.webp" alt="정원석 프로필 사진" loading="lazy" />
             </div>
             <div className="person-heading">
               <h3>정원석</h3>
@@ -368,7 +368,7 @@ function TeamSection() {
           </article>
           <article className="person-card advisor-card">
             <div className="portrait portrait-advisor centered-portrait">
-              <img src="/home/kim-hakju.png" alt="김학주 교수 프로필 사진" loading="lazy" />
+              <img src="/home/kim-hakju.webp" alt="김학주 교수 프로필 사진" loading="lazy" />
             </div>
             <div className="person-heading">
               <h3>김학주 교수</h3>
@@ -392,7 +392,7 @@ function TeamSection() {
           </article>
           <article className="person-card">
             <div className="portrait portrait-2 centered-portrait">
-              <img src="/home/bae-junggu.png" alt="배중구 프로필 사진" loading="lazy" />
+              <img src="/home/bae-junggu.webp" alt="배중구 프로필 사진" loading="lazy" />
             </div>
             <div className="person-heading">
               <h3>배중구</h3>
@@ -414,7 +414,7 @@ function TeamSection() {
           </article>
           <article className="person-card">
             <div className="portrait portrait-oh centered-portrait">
-              <img src="/home/oh-shoulders.png" alt="오재준 프로필 사진" loading="lazy" />
+              <img src="/home/oh-shoulders.webp" alt="오재준 프로필 사진" loading="lazy" />
             </div>
             <div className="person-heading">
               <h3>오재준</h3>
@@ -436,7 +436,7 @@ function TeamSection() {
           </article>
           <article className="person-card">
             <div className="portrait portrait-photo centered-portrait">
-              <img src="/home/byun-jeongwoo.jpg" alt="변정우 프로필 사진" loading="lazy" />
+              <img src="/home/byun-jeongwoo.webp" alt="변정우 프로필 사진" loading="lazy" />
             </div>
             <div className="person-heading">
               <h3>변정우</h3>
@@ -536,7 +536,7 @@ function SignatureSection() {
           <a className="signature-card" href="https://start-fit.co.kr/" target="_blank" rel="noopener noreferrer">
             <span className="program-no">01 / STARTUP FIT</span>
             <div className="program-art signature-logo spit-brand">
-              <img src="/home/spit-logo.png" alt="spit 스핏 로고" loading="lazy" />
+              <img src="/home/spit-logo.webp" alt="spit 스핏 로고" loading="lazy" />
             </div>
             <h3>스핏 <small>스타트업 핏</small></h3>
             <p>스타트업의 다음 가능성을 만나는 시작.</p>
