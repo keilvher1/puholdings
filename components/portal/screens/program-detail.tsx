@@ -22,6 +22,7 @@ import {
   ErrorSummary,
   Notice,
   PageHeader,
+  PageHeaderMeta,
   toastSuccess,
   useDelayedFlag,
   useFieldErrors,
@@ -33,6 +34,7 @@ import { friendlyError, MSG } from "@/lib/messages"
 import { PORTAL_PROGRAMS_HELP } from "@/lib/help/portal"
 import type { Attachment } from "@/lib/db"
 import { dateRange, isSubmitClosed, monthDay, submitDueText } from "./portal-model"
+import { portalEyebrow } from "@/lib/help/shell"
 
 interface ProgramDetail {
   id: number
@@ -63,7 +65,7 @@ function BackLink() {
   return (
     <Link
       href="/portal/programs"
-      className="-ml-1 mb-1 inline-flex min-h-11 items-center gap-1.5 rounded-md px-1 text-base text-link underline underline-offset-2 hover:text-dark"
+      className="-ml-1 inline-flex min-h-11 items-center gap-1.5 rounded-md px-1 text-base text-link underline underline-offset-2 hover:text-dark"
     >
       <ArrowLeft className="size-4" aria-hidden />
       프로그램 목록
@@ -124,7 +126,7 @@ export function PortalProgramDetail({ programId, mailEnabled, phone }: { program
   if (state.kind === "loading") {
     return (
       <div>
-        <BackLink />
+        <PageHeaderMeta eyebrow={portalEyebrow("programs")} back={<BackLink />} />
         {showSkeleton && <CardSkeleton lines={4} label="프로그램을 불러오는 중…" />}
       </div>
     )
@@ -132,7 +134,7 @@ export function PortalProgramDetail({ programId, mailEnabled, phone }: { program
   if (state.kind === "not_found") {
     return (
       <div>
-        <BackLink />
+        <PageHeaderMeta eyebrow={portalEyebrow("programs")} back={<BackLink />} />
         <EmptyState bordered title="프로그램을 찾을 수 없어요" description="공고가 내려갔거나 주소가 바뀌었을 수 있어요." />
       </div>
     )
@@ -140,7 +142,7 @@ export function PortalProgramDetail({ programId, mailEnabled, phone }: { program
   if (state.kind === "error") {
     return (
       <div>
-        <BackLink />
+        <PageHeaderMeta eyebrow={portalEyebrow("programs")} back={<BackLink />} />
         <EmptyState kind="error" bordered title="프로그램을 불러오지 못했어요" description={state.message} onRetry={() => { setState({ kind: "loading" }); load() }} />
       </div>
     )
@@ -224,8 +226,14 @@ export function PortalProgramDetail({ programId, mailEnabled, phone }: { program
   return (
     <div className="space-y-4">
       <div>
-        <BackLink />
-        <PageHeader title={program.title} help={PORTAL_PROGRAMS_HELP} helpContact={`창업보육센터 ${phone}`} className="mb-0">
+        <PageHeader
+          title={program.title}
+          eyebrow={portalEyebrow("programs")}
+          back={<BackLink />}
+          help={PORTAL_PROGRAMS_HELP}
+          helpContact={`창업보육센터 ${phone}`}
+          className="mb-0"
+        >
           <p className="mt-1.5 flex flex-wrap gap-x-2 text-[15px] text-text-secondary">
             {meta.map((m, i) => (
               <span key={m} className="whitespace-nowrap">

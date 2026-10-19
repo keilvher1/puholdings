@@ -55,9 +55,9 @@ export function BillLineList({ lines }: { lines: BillLineItem[] }) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="text-sm text-[#3f3f4e]">항목</TableHead>
-              <TableHead className="text-sm text-[#3f3f4e]">설명</TableHead>
-              <TableHead className="text-right text-sm text-[#3f3f4e]">금액</TableHead>
+              <TableHead className="text-sm">항목</TableHead>
+              <TableHead className="text-sm">설명</TableHead>
+              <TableHead className="text-right text-sm">금액</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

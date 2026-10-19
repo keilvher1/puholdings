@@ -10,7 +10,7 @@ import { statusMeta } from "@/lib/status"
 import { cn } from "@/lib/utils"
 import { leavingText, legendOf, pyeongText, type BoardRoom, type LegendKey } from "./move-model"
 
-// 빗금(사용 불가): CSS 그라데이션 대신 작은 SVG 무늬(차분한 회색 사선 — 관리자 테마의 차가운 회색)
+// 빗금(사용 불가): CSS 그라데이션 대신 작은 SVG 무늬(차분한 회색 사선 — SaaS 테마의 차가운 회색)
 const HATCH: CSSProperties = {
   backgroundImage:
     "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M-2 2l4-4M0 8l8-8M6 10l4-4' stroke='%23cdd6e0' stroke-width='1.5'/%3E%3C/svg%3E\")",

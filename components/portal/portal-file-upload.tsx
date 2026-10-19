@@ -134,7 +134,7 @@ export function PortalFileUpload({
               <div className="flex shrink-0 items-center">
                 <a
                   href={`/api/file?pathname=${encodeURIComponent(file.pathname)}&download=1&name=${encodeURIComponent(file.name)}`}
-                  className="inline-flex size-11 items-center justify-center rounded-md text-[#3f3f4e] hover:bg-warm-beige hover:text-dark"
+                  className="inline-flex size-11 items-center justify-center rounded-md text-text-muted-strong hover:bg-warm-beige hover:text-dark"
                   aria-label={`${file.name} 받기`}
                   title="받기"
                 >
@@ -144,7 +144,7 @@ export function PortalFileUpload({
                   type="button"
                   onClick={() => handleRemove(file.pathname)}
                   disabled={disabled}
-                  className="inline-flex size-11 items-center justify-center rounded-md text-[#3f3f4e] hover:bg-red-50 hover:text-red-800 disabled:opacity-50"
+                  className="inline-flex size-11 items-center justify-center rounded-md text-text-muted-strong hover:bg-red-50 hover:text-red-800 disabled:opacity-50"
                   aria-label={`${file.name} 목록에서 빼기`}
                   title="목록에서 빼기"
                 >
@@ -163,7 +163,7 @@ export function PortalFileUpload({
         disabled={uploading || disabled}
         aria-invalid={message ? true : undefined}
         aria-describedby={`${id}-hint${message ? ` ${errId}` : ""}`}
-        className="flex h-12 w-full items-center justify-center gap-2 rounded-md border border-dashed border-[#8a8a99] bg-card px-4 text-base font-medium text-dark hover:bg-warm-beige disabled:opacity-60 aria-[invalid=true]:border-red-700"
+        className="flex h-12 w-full items-center justify-center gap-2 rounded-md border border-dashed border-text-tertiary bg-card px-4 text-base font-medium text-dark hover:bg-warm-beige disabled:opacity-60 aria-[invalid=true]:border-red-700"
       >
         {uploading ? (
           <>

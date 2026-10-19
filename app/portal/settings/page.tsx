@@ -6,6 +6,7 @@ import { PageHeader, Section } from "@/components/saas"
 import { ChangePasswordForm } from "@/components/portal/change-password-form"
 import { PortalLogoutButton } from "@/components/portal/screens/settings"
 import { getPortalCompany, getPortalContactPhone, type PortalCompanyInfo } from "@/components/portal/screens/portal-data"
+import { portalEyebrow } from "@/lib/help/shell"
 
 // 포털 계정(WP8, 계획서 4.5.8). 한 열 카드 4개: 내 계정 · 비밀번호 바꾸기 · 회사 정보(읽기 전용, 세션 tenant_id) · 도움·로그아웃.
 // 임시 비밀번호 상태(must_change_password)면 메뉴 없는 화면에 "비밀번호를 새로 정해 주세요"만.
@@ -36,7 +37,7 @@ export default async function PortalSettingsPage() {
   if (session.must_change_password) {
     return (
       <div className="mx-auto max-w-lg">
-        <PageHeader title="비밀번호를 새로 정해 주세요" description="센터에서 받은 임시 비밀번호를 넣고, 앞으로 쓸 비밀번호를 정하면 끝나요" />
+        <PageHeader title="비밀번호를 새로 정해 주세요" eyebrow={portalEyebrow("account")} description="센터에서 받은 임시 비밀번호를 넣고, 앞으로 쓸 비밀번호를 정하면 끝나요" />
         <Section>
           <ChangePasswordForm mustChange />
         </Section>
@@ -63,7 +64,7 @@ export default async function PortalSettingsPage() {
 
   return (
     <div className="max-w-2xl">
-      <PageHeader title="계정" description="로그인 정보와 회사 정보를 확인해요" />
+      <PageHeader title="계정" eyebrow={portalEyebrow("account")} description="로그인 정보와 회사 정보를 확인해요" />
       <div className="space-y-4">
         <Section title="내 계정">
           <dl className="divide-y divide-warm-tan">

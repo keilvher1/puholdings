@@ -281,7 +281,7 @@ function Ops({ data, today }: { data: OpsData; today: string }) {
   return (
     <div className="grid gap-4">
       <div>
-        {/* 홈 실적 숫자처럼 큰 파랑 숫자(data-slot="stat-value" — app/admin/admin-theme.css) + 가는 막대 */}
+        {/* 홈 실적 숫자처럼 큰 파랑 숫자(data-slot="stat-value" — app/saas-theme.css) + 가는 막대 */}
         <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1 text-dark">
           <p>
             <span className="block text-sm font-medium text-text-muted-strong">입주율</span>

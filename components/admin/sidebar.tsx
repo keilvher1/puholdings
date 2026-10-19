@@ -87,7 +87,7 @@ export interface AdminShellProps {
 }
 
 // 메뉴 한 줄. 고정 사이드바 36px(높이 예산), 1024px 미만 서랍 44px(휴대폰 누름 영역, 계획서 2.4).
-// 활성: aria-current="page" + 왼쪽 3px 강조 막대 + 굵은 글자. 바탕은 홈 남색(--dark), 강조(--gold)는 어두운 바탕이라 하늘색이다(app/admin/admin-theme.css)
+// 활성: aria-current="page" + 왼쪽 3px 강조 막대 + 굵은 글자. 바탕은 홈 남색(--dark), 강조(--gold)는 어두운 바탕이라 하늘색이다(app/saas-theme.css)
 const ROW = "relative flex w-full items-center gap-3 rounded-md px-3 text-[15px] transition-colors"
 /** 서랍(onNavigate가 있음)이면 44px, 고정 사이드바면 36px */
 const rowHeight = (inDrawer: boolean) => (inDrawer ? "h-11" : "h-9")

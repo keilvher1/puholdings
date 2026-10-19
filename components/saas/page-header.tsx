@@ -1,6 +1,6 @@
 // 정형 페이지 헤더(PageHeader)·하위 탭(SubNav)·작업 맥락 한 줄(ContextBar) — 계획서 2.1·4.1.2.
 // PageHeader는 서버 컴포넌트에서 부르므로 이 파일에는 "use client"를 붙이지 않는다.
-//   배치: 1줄 [영문 머리말 | 브레드크럼(상위는 링크)] → 제목(h1 24px/700, 관리자 테마는 28px/600) + 오른쪽 [도움말][보조][주 버튼][⋯] → 한 줄 설명(16px, 해요체)
+//   배치: 1줄 [영문 머리말 | 브레드크럼(상위는 링크)] → 제목(h1 24px/700, SaaS 테마(관리자·포털)는 28px/600) + 오른쪽 [도움말][보조][주 버튼][⋯] → 한 줄 설명(16px, 해요체)
 //   주 버튼은 0~1개(채움). 보조는 외곽선. 휴대폰에서는 보조 버튼을 ⋯ 안으로 접는다.
 //   more는 링크만(함수 없음). 클릭 동작이 필요한 메뉴는 클라이언트 컴포넌트가 만든 RowActions 등을 moreMenu 슬롯으로 넘긴다.
 //
@@ -45,6 +45,7 @@ export function PageHeader({
   eyebrow,
   description,
   breadcrumbs,
+  back,
   primary,
   secondary,
   more,
@@ -55,10 +56,13 @@ export function PageHeader({
   children,
 }: {
   title: string
-  /** 제목 위 영문 머리말(관리자: lib/help/shell.ts adminEyebrow()). 이동 경로가 있으면 같은 줄 앞에 둔다 */
+  /** 제목 위 영문 머리말(lib/help/shell.ts adminEyebrow()·portalEyebrow()). 이동 경로가 있으면 같은 줄 앞에 둔다 */
   eyebrow?: string
   description?: ReactNode
   breadcrumbs?: BreadcrumbEntry[]
+  /** 이동 경로 대신 머리말 줄에 둘 [← 목록] 링크(포털 상세 화면 — 휴대폰 누름 영역 44px). 불러오는 중에도 같은 자리에
+   *  두려면 그 상태에서 PageHeaderMeta를 같은 값으로 그린다 */
+  back?: ReactNode
   /** 주 버튼 0~1개(헤더 오른쪽 끝, 채움) */
   primary?: ReactNode
   /** 보조 버튼(외곽선). 휴대폰에서는 ⋯ 안으로 접힌다 */
@@ -76,32 +80,16 @@ export function PageHeader({
   children?: ReactNode
 }) {
   const hasActions = help || secondary || primary || (more && more.length > 0) || moreMenu
-  const hasCrumbs = !!breadcrumbs && breadcrumbs.length > 0
   return (
     <header data-slot="page-header" className={cn("mb-6", className)}>
-      {/* 머리말과 이동 경로는 한 줄: "BILLING / 관리비 정산 › 청구서" (홈 섹션 머리말 — 파랑 대문자·넓은 자간).
-          짧은 화면에서 이 줄을 숨기려면 className에 [&>[data-slot=page-header-meta]]:hidden */}
-      {(eyebrow || hasCrumbs) && (
-        <div data-slot="page-header-meta" className="mb-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1">
-          {/* 영문 머리말은 꾸밈이다(메뉴 이름을 영어로 한 번 더) — 화면 읽기 프로그램에는 숨긴다 */}
-          {eyebrow && (
-            <p aria-hidden className="text-xs font-bold uppercase leading-5 tracking-[0.16em] text-link">
-              {eyebrow}
-            </p>
-          )}
-          {eyebrow && hasCrumbs && (
-            <span aria-hidden className="h-3 w-px bg-warm-tan" />
-          )}
-          {hasCrumbs && <Crumbs breadcrumbs={breadcrumbs} />}
-        </div>
-      )}
+      <PageHeaderMeta eyebrow={eyebrow} breadcrumbs={breadcrumbs} back={back} />
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
         <h1 data-slot="page-title" className="min-w-0 text-2xl font-bold leading-tight text-dark [word-break:keep-all]">{title}</h1>
         {hasActions && (
           // 클라이언트 컴포넌트(도움말·⋯·화면이 넘긴 버튼)는 형제 없는 display: contents 감싸개 안에 둔다.
           // JS 조각이 하이드레이션 때 늦게 오면 React가 그 배열의 부모를 다시 그리는데, 부모가 형제 배열의 한 칸이면
           // 그 아래 useId(도움말 시트 aria-controls 등)가 서버와 달라진다(components/admin/admin-shell.tsx 머리 주석).
-          <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className="flex flex-wrap items-center justify-end gap-2 print:hidden">
             <div className="contents">
               {help && <HelpButton topic={help} contact={helpContact} />}
               <HeaderSecondary secondary={secondary} more={more} title={title} />
@@ -118,6 +106,40 @@ export function PageHeader({
       )}
       {children}
     </header>
+  )
+}
+
+/**
+ * 제목 위 한 줄 — [영문 머리말 | 이동 경로 | ← 목록]. PageHeader가 쓰고, 제목 없이 이 줄만 먼저 그려야 하는 화면
+ * (포털 프로그램 상세의 불러오는 중·오류 상태 — 데이터가 오면 같은 자리에 PageHeader가 그려져 [← 목록]이 움직이지 않는다)도 쓴다.
+ * 머리말은 꾸밈이라(메뉴 이름을 영어로 한 번 더) 화면 읽기 프로그램에는 숨기고, 인쇄에서도 뺀다.
+ * 짧은 화면에서 이 줄을 숨기려면 PageHeader className에 [&>[data-slot=page-header-meta]]:hidden — [← 목록]도 함께 숨으니
+ * back을 넘기는 화면에는 쓰지 않는다.
+ */
+export function PageHeaderMeta({
+  eyebrow,
+  breadcrumbs,
+  back,
+}: {
+  eyebrow?: string
+  breadcrumbs?: BreadcrumbEntry[]
+  back?: ReactNode
+}) {
+  const hasCrumbs = !!breadcrumbs && breadcrumbs.length > 0
+  if (!eyebrow && !hasCrumbs && !back) return null
+  const divider = <span aria-hidden className="h-3 w-px bg-warm-tan print:hidden" />
+  return (
+    <div data-slot="page-header-meta" className="mb-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1">
+      {eyebrow && (
+        <p aria-hidden className="text-xs font-bold uppercase leading-5 tracking-[0.16em] text-link print:hidden">
+          {eyebrow}
+        </p>
+      )}
+      {eyebrow && (hasCrumbs || back) && divider}
+      {hasCrumbs && <Crumbs breadcrumbs={breadcrumbs} />}
+      {hasCrumbs && back && divider}
+      {back}
+    </div>
   )
 }
 

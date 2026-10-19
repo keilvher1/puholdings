@@ -4,7 +4,7 @@
 // 이 목록의 이름·props는 병렬 단계에서 바꾸지 않는다(추가만).
 
 export { AppProviders } from "./app-providers"
-export { PageHeader, SubNav, ContextBar, type BreadcrumbEntry, type SubNavItem } from "./page-header"
+export { PageHeader, PageHeaderMeta, SubNav, ContextBar, type BreadcrumbEntry, type SubNavItem } from "./page-header"
 export type { HeaderMoreLink } from "./header-actions"
 export { StatusBadge, ToneBadge, CountBadge } from "./status-badge"
 export { EmptyState, type EmptyKind } from "./empty-state"
@@ -38,6 +38,7 @@ export { HelpButton } from "./help-sheet"
 export { CopyButton } from "./copy-button"
 export { TableSkeleton, CardSkeleton, useDelayedFlag } from "./skeletons"
 export { Section } from "./section"
+export { BrandPhotoPanel } from "./brand-panel"
 export { SourceTag, type ValueSource } from "./source-tag"
 export { SearchCombobox, type ComboItem } from "./search-combobox"
 export { FilePreview, PdfPreviewSheet } from "./file-preview"

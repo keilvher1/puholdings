@@ -58,7 +58,7 @@ export function PasswordInput({
           onClick={() => setShow((v) => !v)}
           aria-label={show ? `${label} 숨기기` : `${label} 보기`}
           aria-pressed={show}
-          className="-my-px -mr-px h-11 min-w-14 rounded-l-none rounded-r-md px-3 text-sm text-[#3f3f4e] hover:bg-warm-beige hover:text-dark"
+          className="-my-px -mr-px h-11 min-w-14 rounded-l-none rounded-r-md px-3 text-sm text-text-muted-strong hover:bg-warm-beige hover:text-dark"
         >
           {show ? "숨기기" : "보기"}
         </InputGroupButton>

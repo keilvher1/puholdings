@@ -4,6 +4,8 @@ import { CardSkeleton } from "@/components/saas"
 export default function PortalLoading() {
   return (
     <div>
+      {/* 영문 머리말 줄 자리(PageHeader eyebrow) */}
+      <div aria-hidden className="mb-2.5 mt-1 h-3 w-24 rounded-sm bg-warm-beige/70" />
       <div aria-hidden className="mb-6 h-7 w-48 rounded-sm bg-warm-beige" />
       <CardSkeleton lines={4} label="화면을 불러오는 중…" />
     </div>

@@ -37,7 +37,7 @@ function PdfLink({ bill, className }: { bill: PortalBillsRow; className?: string
       href={pdfHref(bill)}
       aria-label={`${billMonth(bill.period)} 청구서 PDF 받기`}
       title="청구서 PDF 받기"
-      className={cn("inline-flex size-11 shrink-0 items-center justify-center rounded-md text-[#3f3f4e] hover:bg-warm-beige hover:text-dark", className)}
+      className={cn("inline-flex size-11 shrink-0 items-center justify-center rounded-md text-text-muted-strong hover:bg-warm-beige hover:text-dark", className)}
     >
       <FileDown className="size-5" aria-hidden />
     </a>
@@ -151,11 +151,11 @@ export function PortalBills({ bills, bank, today = todayKST() }: { bills: Portal
             <Table>
               <TableHeader>
                 <TableRow className="bg-warm-beige/60 hover:bg-warm-beige/60">
-                  <TableHead className="px-4 text-sm text-[#3f3f4e]">청구월</TableHead>
-                  <TableHead className="px-4 text-right text-sm text-[#3f3f4e]">금액</TableHead>
-                  <TableHead className="px-4 text-sm text-[#3f3f4e]">납부 기한</TableHead>
-                  <TableHead className="px-4 text-sm text-[#3f3f4e]">상태</TableHead>
-                  <TableHead className="w-16 px-4 text-center text-sm text-[#3f3f4e]">PDF</TableHead>
+                  <TableHead className="px-4 text-sm">청구월</TableHead>
+                  <TableHead className="px-4 text-right text-sm">금액</TableHead>
+                  <TableHead className="px-4 text-sm">납부 기한</TableHead>
+                  <TableHead className="px-4 text-sm">상태</TableHead>
+                  <TableHead className="w-16 px-4 text-center text-sm">PDF</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

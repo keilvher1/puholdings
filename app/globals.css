@@ -24,7 +24,7 @@
   --input: #d6cfc7;
   --ring: #c9a84c;
   --radius: 0.375rem;
-  /* rounded-lg·xl이 rounded-md보다 커지는 폭. 관리자 테마(app/admin/admin-theme.css)는 2px로 줄인다 */
+  /* rounded-lg·xl이 rounded-md보다 커지는 폭. SaaS 테마(app/saas-theme.css — 관리자·포털)는 2px로 줄인다 */
   --radius-step: 4px;
 
   --dark: #1a1a2e;

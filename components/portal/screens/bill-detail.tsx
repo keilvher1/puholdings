@@ -21,12 +21,13 @@ import type { BillingBankInfo } from "@/lib/bank-info"
 import { NO_DUE_SENTENCE, isPastDueState, monthDay, type PreviousCompare } from "./portal-model"
 import { receivableState } from "@/lib/receivables"
 import type { PortalBillDetail, PortalBillLine } from "./portal-data"
+import { portalEyebrow } from "@/lib/help/shell"
 
 function BackLink() {
   return (
     <Link
       href={portalBillsHref()}
-      className="-ml-1 mb-1 inline-flex min-h-11 items-center gap-1.5 rounded-md px-1 text-base text-link underline underline-offset-2 hover:text-dark print:hidden"
+      className="-ml-1 inline-flex min-h-11 items-center gap-1.5 rounded-md px-1 text-base text-link underline underline-offset-2 hover:text-dark print:hidden"
     >
       <ArrowLeft className="size-4" aria-hidden />
       청구서 목록
@@ -87,8 +88,14 @@ export function PortalBillDetailView({
   return (
     <div className="space-y-4">
       <div>
-        <BackLink />
-        <PageHeader title={title} help={PORTAL_BILLS_HELP} helpContact={`창업보육센터 ${phone}`} className="mb-0">
+        <PageHeader
+          title={title}
+          eyebrow={portalEyebrow("bills")}
+          back={<BackLink />}
+          help={PORTAL_BILLS_HELP}
+          helpContact={`창업보육센터 ${phone}`}
+          className="mb-0"
+        >
           <div className="mt-2">
             <StatusBadge domain="bill" status={badge.status} detail={badge.detail} />
           </div>
@@ -111,7 +118,7 @@ export function PortalBillDetailView({
           <p id="amount-title" className="text-base font-semibold text-dark">
             {paid ? "낸 금액" : "낼 금액"}
           </p>
-          <p className="mt-0.5 whitespace-nowrap text-[28px] leading-tight font-bold tabular-nums text-dark">{won(bill.total_amount)}</p>
+          <p data-slot="stat-value" className="mt-0.5 whitespace-nowrap text-[28px] leading-tight font-bold tabular-nums text-dark">{won(bill.total_amount)}</p>
           {paid ? (
             <p className="mt-1.5 flex items-start gap-1.5 text-base text-green-800">
               <CircleCheck className="mt-1 size-4 shrink-0" aria-hidden />
@@ -165,7 +172,7 @@ export function PortalBillDetailView({
               <table className="mt-1 w-full text-[15px]">
                 <caption className="sr-only">항목별 금액 비교</caption>
                 <thead>
-                  <tr className="text-left text-sm text-[#3f3f4e]">
+                  <tr className="text-left text-sm text-text-muted-strong">
                     <th scope="col" className="py-1 font-medium">
                       항목
                     </th>
@@ -219,7 +226,7 @@ export function PortalBillDetailView({
           type="button"
           variant="ghost"
           size="sm"
-          className="hidden text-[#3f3f4e] hover:bg-warm-beige hover:text-dark sm:inline-flex"
+          className="hidden text-text-muted-strong hover:bg-warm-beige hover:text-dark sm:inline-flex"
           onClick={() => window.print()}
         >
           <Printer aria-hidden />
@@ -236,10 +243,7 @@ export function PortalBillDetailView({
 export function PortalBillCorrecting({ period, phone }: { period: string; phone: string }) {
   return (
     <div className="space-y-4">
-      <div>
-        <BackLink />
-        <h1 className="text-2xl leading-tight font-bold text-dark">{billMonth(period)} 관리비</h1>
-      </div>
+      <PageHeader title={`${billMonth(period)} 관리비`} eyebrow={portalEyebrow("bills")} back={<BackLink />} className="mb-0" />
       <Notice
         tone="info"
         title="이 청구서는 센터에서 고치는 중이에요"

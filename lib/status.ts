@@ -43,7 +43,7 @@ export interface StatusMeta {
   pattern?: "dashed" | "hatched"
 }
 
-// 대비(흰 바탕 기준): text-muted-strong(#3f3f4e, 관리자 테마 #344559)/warm-beige 9.0·8.7 · blue-800/blue-50 8.6 · amber-800/amber-50 6.8 · red-800/red-50 7.6 · green-800/green-50 6.8
+// 대비(흰 바탕 기준): text-muted-strong(#3f3f4e, SaaS 테마 #344559)/warm-beige 9.0·8.7 · blue-800/blue-50 8.6 · amber-800/amber-50 6.8 · red-800/red-50 7.6 · green-800/green-50 6.8
 export const TONE_CLASS: Record<Tone, string> = {
   neutral: "border-warm-beige bg-warm-beige text-text-muted-strong",
   info: "border-blue-200 bg-blue-50 text-blue-800",

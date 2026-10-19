@@ -200,6 +200,20 @@ export const PORTAL_NAV: PortalNavItem[] = [
   { key: "account", href: "/portal/settings", label: "계정" },
 ]
 
+/** 포털 화면 제목 위 영문 머리말(관리자 adminEyebrow와 같은 말투). 화면에서는 대문자로 보인다 */
+const PORTAL_EYEBROWS: Record<PortalNavKey, string> = {
+  home: "Tenant portal",
+  bills: "Bills",
+  programs: "Programs",
+  messenger: "Messenger",
+  account: "Account",
+}
+
+/** PageHeader eyebrow 값. 예: portalEyebrow("bills") → "Bills"(화면에는 BILLS) */
+export function portalEyebrow(key: PortalNavKey): string {
+  return PORTAL_EYEBROWS[key]
+}
+
 /** 전화 링크(tel:)용 숫자만 남긴 번호. "054-279-8710" → "0542798710" */
 export function telHref(phone: string): string {
   return `tel:${phone.replace(/[^0-9+]/g, "")}`

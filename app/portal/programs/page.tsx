@@ -7,6 +7,7 @@ import { EmptyState, PageHeader } from "@/components/saas"
 import { PortalPrograms } from "@/components/portal/screens/programs"
 import { getPortalContactPhone, listPortalPrograms } from "@/components/portal/screens/portal-data"
 import type { PortalProgramRow } from "@/components/portal/screens/portal-model"
+import { portalEyebrow } from "@/lib/help/shell"
 
 // 포털 프로그램 목록(WP8, 계획서 4.5.6). /api/portal/programs 목록과 같은 범위를 서버에서 세션 tenant_id로 읽는다.
 export const metadata: Metadata = { title: "프로그램" }
@@ -26,7 +27,7 @@ export default async function PortalProgramsPage() {
   const phone = await getPortalContactPhone()
   return (
     <div>
-      <PageHeader title="프로그램" description="지원사업·교육 프로그램을 신청하고 자료를 내는 곳이에요" help={PORTAL_PROGRAMS_HELP} helpContact={`창업보육센터 ${phone}`} />
+      <PageHeader title="프로그램" eyebrow={portalEyebrow("programs")} description="지원사업·교육 프로그램을 신청하고 자료를 내는 곳이에요" help={PORTAL_PROGRAMS_HELP} helpContact={`창업보육센터 ${phone}`} />
       {programs === null ? (
         <EmptyState kind="error" bordered title="프로그램을 불러오지 못했어요" description="잠시 뒤 새로고침해 주세요." retryHref="/portal/programs" />
       ) : (

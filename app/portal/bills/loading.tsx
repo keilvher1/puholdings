@@ -3,6 +3,8 @@ export default function PortalBillsLoading() {
   return (
     <div role="status" aria-live="polite">
       <span className="sr-only">청구서를 불러오는 중…</span>
+      {/* 영문 머리말 줄 자리(PageHeader eyebrow) */}
+      <div aria-hidden className="mb-2.5 mt-1 h-3 w-24 rounded-sm bg-warm-beige/70" />
       <div aria-hidden className="mb-6 h-7 w-32 rounded-sm bg-warm-beige" />
       <div aria-hidden className="mb-4 flex gap-1">
         <span className="h-9 w-20 rounded-md bg-warm-beige" />

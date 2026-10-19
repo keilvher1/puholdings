@@ -131,9 +131,10 @@ export function BottomTabs({ restricted, unpaidCount }: BottomTabsProps) {
                   active ? "font-semibold text-dark" : "font-medium text-text-secondary hover:text-dark",
                 )}
               >
-                {active && <span aria-hidden className="absolute inset-x-3 top-0 h-0.5 rounded-full bg-dark" />}
+                {/* 지금 탭: 위쪽 파랑 막대 + 파랑 아이콘(SaaS 테마 강조색) + 굵은 남색 글자 */}
+                {active && <span aria-hidden className="absolute inset-x-3 top-0 h-0.5 bg-primary" />}
                 <span className="relative">
-                  <Icon aria-hidden className="h-5 w-5" strokeWidth={active ? 2.25 : 1.75} />
+                  <Icon aria-hidden className={cn("h-5 w-5", active && "text-primary")} strokeWidth={active ? 2.25 : 1.75} />
                   {count > 0 && (
                     <CountBadge
                       count={count}

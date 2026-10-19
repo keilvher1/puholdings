@@ -1,6 +1,7 @@
 /* ============================================================
-   관리자 테마 — 리뉴얼 홈(components/home/home.css)의 디자인 언어를 관리자 화면에 옮긴다.
-   app/admin/layout.tsx가 이 파일과 홈 글꼴(components/home/home-fonts.css)을 불러오고, 셸 루트에 .admin-theme을 단다.
+   SaaS 테마(관리자·입주기업 포털) — 리뉴얼 홈(components/home/home.css)의 디자인 언어를 옮긴다.
+   app/admin/layout.tsx·app/portal/layout.tsx가 이 파일과 홈 글꼴(components/home/home-fonts.css)을 불러오고,
+   셸 루트에 .saas-theme을 단다(2026-10 관리자 → 포털 순서로 적용).
 
    원칙(홈에서 가져온 것)
    - 색: 짙은 남색(#071d32)은 구조·선택 상태, 파랑(#0068b5) 하나만 동작·강조, 하늘색(#69d9ec)은 어두운 바탕에서만.
@@ -9,18 +10,18 @@
    - 글자: 홈과 같은 가변 Noto Sans KR(400~800) — 제목은 600에 자간을 조인다. 영문 대문자 머리말은 파랑·넓은 자간.
 
    범위
-   - 토큰은 :root:has(.admin-theme)에 다시 정의한다. 대화상자·시트·메뉴는 body 바로 아래에 그려지므로
-     셸 div가 아니라 문서 루트에 걸어야 그쪽도 같은 색을 받는다. 입주기업 포털·공개 사이트는 globals.css 값 그대로다.
-   - 이름은 예전 그대로다(warm-ivory·warm-beige·warm-tan·gold·dark). 관리자 화면에서 뜻은 이렇다:
+   - 토큰은 :root:has(.saas-theme)에 다시 정의한다. 대화상자·시트·메뉴는 body 바로 아래에 그려지므로
+     셸 div가 아니라 문서 루트에 걸어야 그쪽도 같은 색을 받는다. 공개 사이트 하위 화면은 globals.css 값(따뜻한 팔레트) 그대로다.
+   - 이름은 예전 그대로다(warm-ivory·warm-beige·warm-tan·gold·dark). 이 테마에서 뜻은 이렇다:
        warm-ivory = 화면 바탕(차가운 회색) · warm-beige = 옅은 면(배지·마우스 올림·표 머리)
        warm-tan = 선 · dark = 글자와 짙은 남색 면 · gold = 강조(밝은 바탕 파랑, 어두운 바탕 하늘색) · link = 파랑
-   - 부품 모양은 클래스가 아니라 data-slot·data-variant로 고른다(포털에는 아무 영향이 없다).
+   - 부품 모양은 클래스가 아니라 data-slot·data-variant로 고른다(공개 사이트에는 아무 영향이 없다).
      이 파일은 (제목 자간 기본값 하나를 빼고) Tailwind 층 밖(unlayered)이라 같은 속성이면 유틸리티 클래스보다 앞선다 —
      크기·간격처럼 화면마다 다른 값은 건드리지 않고 색·굵기·자간만 바꾼다(예외: 화면 제목 page-title 크기).
    대비(흰 바탕 기준): 글자 #071d32 17:1, 보조 글자 #5b6b7c 5.5:1(옅은 면 #edf1f5에서도 4.8:1), 파랑 #0068b5 5.8:1.
    ============================================================ */
 
-:root:has(.admin-theme) {
+:root:has(.saas-theme) {
   --background: #ffffff;
   --foreground: #071d32;
   --card: #ffffff;
@@ -58,37 +59,37 @@
   accent-color: #0068b5;
 }
 
-/* 어두운 바탕(사이드바·모바일 바·로그인 그림 판): 강조는 하늘색 — 홈 머리말·팀 띠와 같다(남색 위 10.4:1) */
-:root:has(.admin-theme) [data-surface="dark"] {
+/* 어두운 바탕(관리자 사이드바·모바일 바, 포털 상단 바, 로그인 그림 판): 강조는 하늘색 — 홈 머리말·팀 띠와 같다(남색 위 10.4:1) */
+:root:has(.saas-theme) [data-surface="dark"] {
   --gold: #69d9ec;
   --ring: #69d9ec;
 }
 /* 남색으로 채운 선택 상태(메신저 열린 방·켜진 조건 단추 등) 안의 강조도 하늘색 — 파랑이면 남색 위 2.96:1.
    --ring은 두지 않는다: 그 요소 자신의 초점 테두리는 흰 바탕 위에 그려지므로 파랑이어야 한다 */
-:root:has(.admin-theme) .bg-dark {
+:root:has(.saas-theme) .bg-dark {
   --gold: #69d9ec;
 }
 
 /* Tailwind의 이름 없는 rounded는 토큰이 아니라 고정 4px라 따로 맞춘다(작은 아이콘 버튼들) */
-:root:has(.admin-theme) .rounded {
+:root:has(.saas-theme) .rounded {
   border-radius: var(--radius);
 }
 
 /* 글꼴: 홈과 같은 파일·같은 패밀리. 전역 next/font(300·400·500·700·900)에는 600이 없어 font-semibold가 700으로 보였다 */
-:root:has(.admin-theme) body {
+:root:has(.saas-theme) body {
   font-family: "PUH Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
   background: var(--warm-ivory);
 }
-:root:has(.admin-theme) ::selection {
+:root:has(.saas-theme) ::selection {
   background: #cfe3f5;
   color: #071d32;
 }
 
 /* 키보드 초점: 밝은 바탕은 파랑 2px(5.8:1). 어두운 바탕은 globals.css 규칙이 var(--gold)(= 하늘색)를 쓴다 */
-html body:has(.admin-theme) :focus-visible {
+html body:has(.saas-theme) :focus-visible {
   outline-color: var(--ring);
 }
-html body:has(.admin-theme) [data-slot="input-group"]:has(> [data-slot="input-group-control"]:focus-visible) {
+html body:has(.saas-theme) [data-slot="input-group"]:has(> [data-slot="input-group-control"]:focus-visible) {
   outline-color: var(--ring);
 }
 
@@ -96,21 +97,21 @@ html body:has(.admin-theme) [data-slot="input-group"]:has(> [data-slot="input-gr
 /* 홈 제목처럼 자간을 조인다(홈 h2 -0.033em, 카드 제목 -0.035em). 화면 제목은 크기로 위계를 준다.
    이 기본값만 Tailwind base 층에 둔다 — tracking-* 클래스를 단 제목은 그 값을 따른다 */
 @layer base {
-  :root:has(.admin-theme) :is(h1, h2, h3, h4) {
+  :root:has(.saas-theme) :is(h1, h2, h3, h4) {
     letter-spacing: -0.015em;
   }
 }
-:root:has(.admin-theme) [data-slot="page-title"] {
+:root:has(.saas-theme) [data-slot="page-title"] {
   font-size: 1.625rem;
   font-weight: 600;
   letter-spacing: -0.03em;
 }
 @media (min-width: 640px) {
-  :root:has(.admin-theme) [data-slot="page-title"] {
+  :root:has(.saas-theme) [data-slot="page-title"] {
     font-size: 1.75rem;
   }
 }
-:root:has(.admin-theme) :is([data-slot="dialog-title"], [data-slot="alert-dialog-title"], [data-slot="sheet-title"]) {
+:root:has(.saas-theme) :is([data-slot="dialog-title"], [data-slot="alert-dialog-title"], [data-slot="sheet-title"]) {
   letter-spacing: -0.025em;
 }
 
@@ -123,7 +124,7 @@ html body:has(.admin-theme) [data-slot="input-group"]:has(> [data-slot="input-gr
      (모든 버튼 기본 클래스에 aria-invalid:ring-destructive가 있어 "destructive" 전체가 아니라 text-·bg-만 본다)
    - 터치 화면은 누른 뒤 hover가 남으므로 Tailwind hover:처럼 (hover: hover)에서만 */
 @media (hover: hover) {
-  :root:has(.admin-theme)
+  :root:has(.saas-theme)
     :is([data-slot="button"], [data-slot$="-trigger"], [data-slot="alert-dialog-cancel"])[data-variant="outline"]:not(
       :disabled,
       [aria-pressed="true"],
@@ -141,60 +142,60 @@ html body:has(.admin-theme) [data-slot="input-group"]:has(> [data-slot="input-gr
 }
 
 /* ── 표 ───────────────────────────────────────────────────────────────── */
-:root:has(.admin-theme) [data-slot="table-head"] {
+:root:has(.saas-theme) [data-slot="table-head"] {
   color: var(--text-on-beige);
   font-weight: 600;
 }
-:root:has(.admin-theme) [data-slot="table-row"][data-state="selected"] {
+:root:has(.saas-theme) [data-slot="table-row"][data-state="selected"] {
   background-color: #eaf2fa;
 }
 
 /* ── 대화상자·시트 ─────────────────────────────────────────────────────── */
 /* 덮개는 검정 대신 홈 사진 덮개와 같은 남색 */
-:root:has(.admin-theme)
+:root:has(.saas-theme)
   :is([data-slot="dialog-overlay"], [data-slot="alert-dialog-overlay"], [data-slot="sheet-overlay"], [data-slot="drawer-overlay"]) {
   background-color: rgb(4 21 38 / 0.55);
 }
-:root:has(.admin-theme) :is([data-slot="dialog-content"], [data-slot="alert-dialog-content"]) {
+:root:has(.saas-theme) :is([data-slot="dialog-content"], [data-slot="alert-dialog-content"]) {
   box-shadow: 0 28px 64px -28px rgb(7 29 50 / 0.5);
 }
 
 /* ── 숫자 카드(StatCard) ─────────────────────────────────────────────── */
 /* 홈 실적 숫자(#puh .stats strong — "500 58px Arial", 파랑)를 작게 옮긴다. 숫자는 Arial, 한글 단위는 Noto */
-:root:has(.admin-theme) [data-slot="stat-value"] {
+:root:has(.saas-theme) [data-slot="stat-value"] {
   font-family: Arial, "Helvetica Neue", "PUH Noto Sans KR", sans-serif;
   color: var(--primary);
   font-weight: 500;
   letter-spacing: -0.02em;
 }
 /* 누를 수 있는 숫자 카드는 홈 카드처럼 마우스를 올리면 살짝 떠오른다(홈 -5px → 관리자 -2px) */
-:root:has(.admin-theme) a[data-slot="stat-card"] {
+:root:has(.saas-theme) a[data-slot="stat-card"] {
   transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
 }
 @media (hover: hover) {
-  :root:has(.admin-theme) a[data-slot="stat-card"]:hover {
+  :root:has(.saas-theme) a[data-slot="stat-card"]:hover {
     border-color: var(--primary);
     transform: translateY(-2px);
     box-shadow: 0 14px 30px -18px rgb(11 53 80 / 0.35);
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  :root:has(.admin-theme) a[data-slot="stat-card"] {
+  :root:has(.saas-theme) a[data-slot="stat-card"] {
     transition: none;
   }
-  :root:has(.admin-theme) a[data-slot="stat-card"]:hover {
+  :root:has(.saas-theme) a[data-slot="stat-card"]:hover {
     transform: none;
   }
 }
 
 /* ── 하위 탭(SubNav) ─────────────────────────────────────────────────── */
-:root:has(.admin-theme) [data-slot="sub-nav-link"][aria-current="page"] {
+:root:has(.saas-theme) [data-slot="sub-nav-link"][aria-current="page"] {
   border-bottom-color: var(--primary);
 }
 
 /* ── 홈 화면 할 일 목록 ──────────────────────────────────────────────── */
 @media (hover: hover) {
-  :root:has(.admin-theme) [data-slot="todo-row"]:hover {
+  :root:has(.saas-theme) [data-slot="todo-row"]:hover {
     background-color: #f6f9fb;
   }
 }

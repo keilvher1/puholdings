@@ -6,6 +6,9 @@
 //   누름 영역은 모두 44px(계획서 2.4 포털 44px)
 // - 640px 미만: 기업명 + 전화 아이콘 버튼(44×44)만. 메뉴는 하단 탭(components/portal/bottom-tabs.tsx), 로그아웃은 "계정" 화면 맨 아래
 // - 임시 비밀번호 상태(restricted): 메뉴·전화를 숨기고 로고·로그아웃만(눌러도 되돌아오는 메뉴를 없앤다)
+// - 모양(SaaS 테마, 2026-10): 홈 머리처럼 남색 바탕(data-surface="dark") + 공식 로고의 P 표지(흰색) + 기업명,
+//   메뉴는 흰 글자, 지금 메뉴는 하늘색 글자 + 아래 막대(홈 메뉴의 하늘색 강조). 전체 로고는 기업명과 함께 넣으면
+//   1024px 폭에서 메뉴·전화·로그아웃과 한 줄에 들어가지 않아 P 표지만 쓴다(전체 로고는 로그인 화면).
 //
 // 사용 예(레이아웃): <PortalNav tenantName="(주)솔바람테크" userName="김담당" restricted={false} contact={{ phone: "054-279-8710" }} />
 
@@ -38,21 +41,16 @@ export function PortalNav({ tenantName, userName, restricted = false, contact }:
 
   const brand = (
     <>
-      <span
-        aria-hidden
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-dark text-sm font-bold text-primary-foreground"
-      >
-        PU
-      </span>
+      <img src="/brand/pu-mark-white.png" alt="" width={82} height={93} className="h-7 w-auto shrink-0" />
       <span className="min-w-0 leading-tight">
-        <span className="block truncate text-[15px] font-semibold text-dark">{tenantName || "입주기업 포털"}</span>
-        <span className="block truncate text-xs text-text-secondary">입주기업 포털</span>
+        <span className="block truncate text-[15px] font-semibold text-white">{tenantName || "입주기업 포털"}</span>
+        <span className="block truncate text-xs text-white/65">입주기업 포털</span>
       </span>
     </>
   )
 
   return (
-    <header data-sticky-top="" className="sticky top-0 z-40 border-b border-warm-tan bg-card print:hidden">
+    <header data-sticky-top="" data-surface="dark" className="sticky top-0 z-40 bg-dark print:hidden">
       <div className="mx-auto flex h-14 w-full max-w-5xl items-center gap-3 px-4 sm:h-16">
         {restricted ? (
           <div className="flex min-w-0 flex-1 items-center gap-3">{brand}</div>
@@ -76,11 +74,12 @@ export function PortalNav({ tenantName, userName, restricted = false, contact }:
                   href={item.href}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "flex h-11 items-center whitespace-nowrap rounded-md px-2.5 text-[15px] font-medium transition-colors md:px-3",
-                    active ? "bg-dark text-primary-foreground" : "text-text-secondary hover:bg-warm-beige hover:text-dark",
+                    "relative flex h-11 items-center whitespace-nowrap rounded-md px-2.5 text-[15px] transition-colors md:px-3",
+                    active ? "font-semibold text-gold" : "font-medium text-white/80 hover:bg-white/[0.06] hover:text-white",
                   )}
                 >
                   {item.label}
+                  {active && <span aria-hidden className="absolute inset-x-2.5 bottom-0.5 h-0.5 bg-gold md:inset-x-3" />}
                 </Link>
               )
             })}
@@ -95,15 +94,15 @@ export function PortalNav({ tenantName, userName, restricted = false, contact }:
                 href={telHref(phone)}
                 aria-label={`문의 ${phone}`}
                 title={`창업보육센터에 전화 ${phone}`}
-                className="hidden h-11 items-center gap-1.5 whitespace-nowrap rounded-md px-2 text-sm text-text-secondary hover:bg-warm-beige hover:text-dark md:flex"
+                className="hidden h-11 items-center gap-1.5 whitespace-nowrap rounded-md px-2 text-sm text-white/75 hover:bg-white/[0.06] hover:text-white md:flex"
               >
                 <Phone aria-hidden className="h-4 w-4" />
-                문의 <span className="hidden font-medium tabular-nums text-dark lg:inline">{phone}</span>
+                문의 <span className="hidden font-medium tabular-nums text-white lg:inline">{phone}</span>
               </a>
               {/* 768px 미만: 전화 아이콘 버튼 44×44 */}
               <a
                 href={telHref(phone)}
-                className="flex h-11 w-11 items-center justify-center rounded-md text-dark hover:bg-warm-beige md:hidden"
+                className="flex h-11 w-11 items-center justify-center rounded-md text-white hover:bg-white/10 md:hidden"
                 aria-label={`창업보육센터에 전화 ${phone}`}
                 title={`창업보육센터에 전화 ${phone}`}
               >
@@ -111,13 +110,13 @@ export function PortalNav({ tenantName, userName, restricted = false, contact }:
               </a>
             </>
           )}
-          {userName && <span className="hidden whitespace-nowrap px-1 text-sm text-text-secondary lg:inline">{userName} 님</span>}
+          {userName && <span className="hidden whitespace-nowrap px-1 text-sm text-white/65 lg:inline">{userName} 님</span>}
           {/* 로그아웃: 휴대폰에서는 "계정" 화면 맨 아래(하단 탭 → 계정). 임시 비밀번호 상태는 탭이 없으므로 여기 늘 보인다 */}
           <button
             type="button"
             onClick={handleLogout}
             className={cn(
-              "h-11 min-w-11 items-center justify-center gap-2 whitespace-nowrap rounded-md px-2.5 text-sm text-text-secondary transition-colors hover:bg-warm-beige hover:text-dark",
+              "h-11 min-w-11 items-center justify-center gap-2 whitespace-nowrap rounded-md px-2.5 text-sm text-white/75 transition-colors hover:bg-white/[0.06] hover:text-white",
               restricted ? "flex" : "hidden sm:flex",
             )}
             aria-label="로그아웃"

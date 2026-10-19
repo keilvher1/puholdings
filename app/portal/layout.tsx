@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { cookies } from "next/headers"
 import { getPortalSession, verifyPortalToken } from "@/lib/auth"
 import { getDb } from "@/lib/db"
@@ -6,6 +6,9 @@ import { getSiteContent } from "@/lib/site-content"
 import { RECEIVABLE_SQL } from "@/lib/receivables"
 import { DEFAULT_CONTACT, type ContactInfo } from "@/components/sections/footer"
 import { PortalShellFrame } from "@/components/portal/portal-shell"
+// SaaS 테마(리뉴얼 홈의 색·형태·글꼴, 관리자와 같다). 토큰은 .saas-theme이 있는 문서 전체에 걸린다 — app/saas-theme.css 머리 주석
+import "@/components/home/home-fonts.css"
+import "../saas-theme.css"
 
 // 입주기업 포털 셸 레이아웃(WP0a). 상단 바·하단 탭의 모양은 components/portal/nav.tsx·bottom-tabs.tsx(WP0b).
 // - AppProviders를 세션 있는/없는(로그인 화면) 분기 모두에 감싼다(PortalShellFrame 안). 루트에 .app-shell.
@@ -21,9 +24,12 @@ export const metadata: Metadata = {
   title: { template: "%s · 입주기업 포털", default: "입주기업 포털" },
 }
 
+// 휴대폰 브라우저 주소창 색을 포털 상단 바(홈 남색)와 맞춘다
+export const viewport: Viewport = { themeColor: "#071d32" }
+
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="app-shell min-h-screen bg-warm-ivory">
+    <div className="app-shell saas-theme min-h-screen bg-warm-ivory">
       <div className="contents">
         <PortalShell>{children}</PortalShell>
       </div>

@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils"
 import type { BillingBankInfo } from "@/lib/bank-info"
 import { billDueText, groupPrograms, summarizeUnpaid, type PortalProgramRow } from "./portal-model"
 import type { PortalBillListRow } from "./portal-data"
+import { portalEyebrow } from "@/lib/help/shell"
 
 /** 첫 화면 높이를 지키려고 홈에는 낼 관리비 행을 이만큼만 보이고 나머지는 청구서 화면으로 보낸다 */
 const MAX_HOME_ROWS = 3
@@ -67,9 +68,9 @@ function PayCard({ bills, bank, today }: { bills: PortalBillListRow[]; bank: Bil
           </h2>
           <span className="text-base tabular-nums text-text-secondary">{s.count}건</span>
         </div>
-        <p className="mt-0.5 whitespace-nowrap text-[28px] leading-tight font-bold tabular-nums text-dark">
+        <p data-slot="stat-value" className="mt-0.5 whitespace-nowrap text-[28px] leading-tight font-bold tabular-nums text-dark">
           {wonNum(s.total)}
-          <span className="ml-0.5 text-xl font-semibold">원</span>
+          <span className="ml-0.5 text-xl">원</span>
         </p>
         {s.lateSentence && (
           <p className="mt-1.5 flex items-start gap-1.5 text-base font-medium text-red-800 [word-break:keep-all]">
@@ -189,9 +190,13 @@ function ProgramArea({ programs, today }: { programs: PortalProgramRow[] | null;
 export function PortalHome({ rooms, bills, programs, bank, phone, today = todayKST() }: PortalHomeProps) {
   return (
     <div>
-      <h1 className="mb-4 text-xl leading-tight font-bold text-dark [word-break:keep-all] sm:mb-6 sm:text-2xl">
-        {headline(rooms)}
-      </h1>
+      {/* 머리: 영문 머리말 + 제목(관리자·포털 화면 제목과 같은 600·좁은 자간, 휴대폰은 한 줄에 들어가게 22px) */}
+      <div className="mb-4 sm:mb-6">
+        <p aria-hidden className="mb-1.5 text-xs font-bold uppercase leading-5 tracking-[0.16em] text-link">{portalEyebrow("home")}</p>
+        <h1 className="text-[22px] leading-tight font-semibold tracking-[-0.03em] text-dark [word-break:keep-all] sm:text-[28px]">
+          {headline(rooms)}
+        </h1>
+      </div>
       <div className="grid gap-4 lg:grid-cols-5 lg:gap-6">
         <div className="lg:col-span-3">
           {bills === null ? (

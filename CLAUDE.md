@@ -16,10 +16,10 @@
 ### 3. UI
 - `components/ui`의 shadcn/ui 컴포넌트를 사용한다.
 - 새 UI 라이브러리를 추가하지 않는다.
-- 관리자 화면은 리뉴얼 홈 디자인을 옮긴 **관리자 테마**(`app/admin/admin-theme.css`, 셸 루트 `.admin-theme`)를 쓴다.
-  토큰 이름(`warm-ivory`·`warm-beige`·`warm-tan`·`gold`·`dark`)은 예전 그대로지만 관리자에서는 바탕 회색·옅은 면·선·파랑(어두운 바탕은 하늘색)·남색이다.
-  색을 하드코딩하지 말고 토큰을 쓴다. 부품 모양을 관리자만 바꿀 때는 클래스 대신 `data-slot`으로 고른다(포털은 이전 팔레트 그대로).
-- 관리자 화면 머리는 `PageHeader`에 `eyebrow={adminEyebrow("<메뉴 key>")}`(lib/help/shell.ts)를 넘긴다.
+- 관리자·입주기업 포털은 리뉴얼 홈 디자인을 옮긴 **SaaS 테마**(`app/saas-theme.css`, 셸 루트 `.saas-theme`)를 쓴다.
+  토큰 이름(`warm-ivory`·`warm-beige`·`warm-tan`·`gold`·`dark`)은 예전 그대로지만 이 테마에서는 바탕 회색·옅은 면·선·파랑(어두운 바탕은 하늘색)·남색이다.
+  색을 하드코딩하지 말고 토큰을 쓴다. 공용 부품 모양을 테마 안에서만 바꿀 때는 클래스 대신 `data-slot`으로 고른다(공개 사이트 하위 화면은 이전 팔레트 그대로).
+- 화면 머리는 `PageHeader`에 `eyebrow`를 넘긴다 — 관리자 `adminEyebrow("<메뉴 key>")`, 포털 `portalEyebrow("<메뉴 key>")`(lib/help/shell.ts).
 
 ### 4. 파일 저장
 - Vercel Blob(`access: private`) + `/api/file` 프록시 패턴을 따른다.
