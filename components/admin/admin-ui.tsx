@@ -14,14 +14,17 @@ import { cn } from "@/lib/utils"
 
 export function AdminPageHeader({
   title,
+  eyebrow,
   description,
   actions,
 }: {
   title: string
+  /** 제목 위 영문 머리말 — adminEyebrow(메뉴 key) */
+  eyebrow?: string
   description?: string
   actions?: React.ReactNode
 }) {
-  return <PageHeader title={title} description={description} primary={actions} />
+  return <PageHeader title={title} eyebrow={eyebrow} description={description} primary={actions} />
 }
 
 export function AdminCard({
@@ -45,7 +48,7 @@ export function StepIntro({
   children: React.ReactNode
   tone?: "info" | "warn"
 }) {
-  const cls = tone === "warn" ? "border-amber-200 bg-amber-50 text-amber-900" : "border-warm-tan bg-warm-beige/40 text-[#3f3f4e]"
+  const cls = tone === "warn" ? "border-amber-200 bg-amber-50 text-amber-900" : "border-warm-tan bg-warm-beige/40 text-text-muted-strong"
   return <div className={`mb-5 rounded-md border ${cls} px-4 py-3 text-[15px] leading-relaxed [word-break:keep-all]`}>{children}</div>
 }
 
@@ -64,7 +67,7 @@ export function HelpNote({
         <ChevronRight className="size-4 shrink-0 text-text-secondary group-open:rotate-90" aria-hidden />
         {title}
       </summary>
-      <div className="border-t border-warm-tan px-3 py-2.5 text-sm leading-[1.85] text-[#3f3f4e] [word-break:keep-all]">{children}</div>
+      <div className="border-t border-warm-tan px-3 py-2.5 text-sm leading-[1.85] text-text-muted-strong [word-break:keep-all]">{children}</div>
     </details>
   )
 }

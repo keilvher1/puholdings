@@ -4,6 +4,8 @@ import { TableSkeleton } from "@/components/saas"
 export default function TenantsLoading() {
   return (
     <div className="p-4 sm:p-6 lg:p-8">
+      {/* 영문 머리말 줄 자리(PageHeader eyebrow) */}
+      <div className="mb-2.5 mt-1 h-3 w-24 rounded-sm bg-warm-beige/70" aria-hidden />
       <div className="mb-4 h-8 w-32 rounded-md bg-warm-beige" aria-hidden />
       <div className="mb-6 h-5 w-72 max-w-full rounded-md bg-warm-beige/70" aria-hidden />
       <div className="mb-4 h-9 w-full max-w-xl rounded-md bg-warm-beige/70" aria-hidden />

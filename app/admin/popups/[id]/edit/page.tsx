@@ -2,6 +2,8 @@ import { redirect, notFound } from "next/navigation"
 import { getSession } from "@/lib/auth"
 import { getDb, type Popup } from "@/lib/db"
 import { PopupForm } from "@/components/admin/popup-form"
+import { PageHeader } from "@/components/saas"
+import { adminEyebrow } from "@/lib/help/shell"
 
 async function getPopup(id: string): Promise<Popup | null> {
   const sql = getDb()
@@ -28,10 +30,12 @@ export default async function EditPopupPage({
 
   return (
     <div className="p-5 md:p-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-dark">팝업 수정</h1>
-        <p className="mt-1 text-sm text-text-secondary">기존 팝업을 수정합니다</p>
-      </div>
+      <PageHeader
+        title="팝업 수정"
+        eyebrow={adminEyebrow("popups")}
+        breadcrumbs={[{ label: "팝업", href: "/admin/popups" }, { label: "팝업 수정" }]}
+        description="기존 팝업을 수정합니다"
+      />
       <PopupForm initialData={popup} />
     </div>
   )

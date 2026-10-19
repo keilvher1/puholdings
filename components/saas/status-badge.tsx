@@ -87,7 +87,7 @@ export function CountBadge({
   return (
     <span
       className={cn(
-        "inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-warm-beige px-1.5 text-xs font-semibold tabular-nums leading-none text-[#3f3f4e]",
+        "inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-warm-beige px-1.5 text-xs font-semibold tabular-nums leading-none text-text-muted-strong",
         className,
       )}
     >

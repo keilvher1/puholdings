@@ -589,9 +589,9 @@ export function MoveInForm({
           <Hint>비워 두면 ‘보증금 기록 없음’으로 저장돼요.</Hint>
         </div>
         <div className="rounded-md bg-warm-beige/60 px-3 py-2.5">
-          <p className="text-[15px] text-[#3f3f4e]">매달 청구 예상</p>
+          <p className="text-[15px] text-text-muted-strong">매달 청구 예상</p>
           <p className="mt-0.5 text-base font-semibold text-dark tabular-nums">{monthlyText(monthly)}</p>
-          <p className="text-sm text-[#5f6070]">부가세 포함, 전기료 별도</p>
+          <p className="text-sm text-text-on-beige">부가세 포함, 전기료 별도</p>
         </div>
       </Group>
 

@@ -30,11 +30,11 @@ const CODES: (keyof FactoryReadings)[] = ["MAIN", "F101", "F103", "HVAC"]
 function stateCell(state: MeterState, usage: number | null, typical: number | null) {
   switch (state) {
     case "empty":
-      return <span className="text-[#3f3f4e]">입력 전</span>
+      return <span className="text-text-muted-strong">입력 전</span>
     case "noPrev":
-      return <span className="text-[#3f3f4e]">지난달 지침이 없어요</span>
+      return <span className="text-text-muted-strong">지난달 지침이 없어요</span>
     case "ok":
-      return <span className="text-[#3f3f4e]">정상</span>
+      return <span className="text-text-muted-strong">정상</span>
     case "check":
       return (
         <span className="flex flex-col items-start gap-0.5">
@@ -195,7 +195,7 @@ export function StepMeters({
                 <ChevronDown className={scanOpen ? "rotate-180" : ""} aria-hidden />
               </Button>
             ) : (
-              <p className="text-[15px] text-[#3f3f4e]">자동 인식이 설정되지 않았어요 — 직접 입력해 주세요</p>
+              <p className="text-[15px] text-text-muted-strong">자동 인식이 설정되지 않았어요 — 직접 입력해 주세요</p>
             ))}
         </div>
         {scanEnabled && !locked && (
@@ -209,7 +209,7 @@ export function StepMeters({
         {/* 데스크톱 표 */}
         <table className="hidden w-full text-[15px] sm:table">
           <caption className="sr-only">계량기별 검침</caption>
-          <thead className="bg-warm-ivory text-left text-sm text-[#3f3f4e]">
+          <thead className="bg-warm-ivory text-left text-sm text-text-muted-strong">
             <tr>
               <th scope="col" className="px-4 py-2 font-medium sm:pl-5">계량기</th>
               <th scope="col" className="px-3 py-2 text-right font-medium">지난달 지침</th>
@@ -225,12 +225,12 @@ export function StepMeters({
                 <th scope="row" className="px-4 py-3 text-left font-medium text-dark sm:pl-5">
                   {label(r)}
                   <SourceTag source={sources[r.code]} />
-                  {r.code === "MAIN" && <span className="block text-sm font-normal text-[#3f3f4e]">F102 요금에 영향</span>}
+                  {r.code === "MAIN" && <span className="block text-sm font-normal text-text-muted-strong">F102 요금에 영향</span>}
                 </th>
-                <td className="px-3 py-3 text-right tabular-nums text-[#3f3f4e]">{num(r.prev)}</td>
+                <td className="px-3 py-3 text-right tabular-nums text-text-muted-strong">{num(r.prev)}</td>
                 <td className="px-3 py-2">{input1(r, "")}</td>
                 <td className="px-3 py-3 text-right tabular-nums">{usage === null ? "-" : num(usage)}</td>
-                <td className="px-3 py-3 text-right tabular-nums text-[#3f3f4e]">{num(r.typical)}</td>
+                <td className="px-3 py-3 text-right tabular-nums text-text-muted-strong">{num(r.typical)}</td>
                 <td className="px-3 py-3 sm:pr-5">{stateCell(state, usage, r.typical)}</td>
               </tr>
             ))}
@@ -245,9 +245,9 @@ export function StepMeters({
                 {label(r)}
                 <SourceTag source={sources[r.code]} />
               </p>
-              {r.code === "MAIN" && <p className="text-sm text-[#3f3f4e]">F102 요금에 영향</p>}
+              {r.code === "MAIN" && <p className="text-sm text-text-muted-strong">F102 요금에 영향</p>}
               <div className="mt-2">{input1(r, "-m")}</div>
-              <p className="mt-1.5 text-sm tabular-nums text-[#3f3f4e]">
+              <p className="mt-1.5 text-sm tabular-nums text-text-muted-strong">
                 지난달 {num(r.prev)} · 사용 {usage === null ? "-" : num(usage)} · 평소 {num(r.typical)}
               </p>
               <div className="mt-1 text-[15px]">{stateCell(state, usage, r.typical)}</div>
@@ -255,7 +255,7 @@ export function StepMeters({
           ))}
         </ul>
 
-        <div className="border-t border-warm-tan px-4 py-3 text-[15px] leading-relaxed text-[#3f3f4e] sm:px-5 [word-break:keep-all]">{preview}</div>
+        <div className="border-t border-warm-tan px-4 py-3 text-[15px] leading-relaxed text-text-muted-strong sm:px-5 [word-break:keep-all]">{preview}</div>
       </div>
 
       <StepHelp notes={BILLING_CLOSE_STEP_NOTES.meters} className="mt-4" />

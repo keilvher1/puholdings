@@ -201,16 +201,16 @@ export function ContractsTab({ draftBills }: { draftBills: DraftBillsInfo | null
           <Table className="text-[15px]">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="h-11 text-[#3f3f4e]">기업</TableHead>
-                <TableHead className="hidden h-11 text-[#3f3f4e] sm:table-cell">호실</TableHead>
-                <TableHead className="hidden h-11 text-right text-[#3f3f4e] sm:table-cell">부과 면적</TableHead>
-                <TableHead className="h-11 text-right text-[#3f3f4e]">
+                <TableHead className="h-11 text-text-muted-strong">기업</TableHead>
+                <TableHead className="hidden h-11 text-text-muted-strong sm:table-cell">호실</TableHead>
+                <TableHead className="hidden h-11 text-right text-text-muted-strong sm:table-cell">부과 면적</TableHead>
+                <TableHead className="h-11 text-right text-text-muted-strong">
                   <span className="hidden sm:inline">평당 임대료(원)</span>
                   <span className="sm:hidden">임대료·관리비(원)</span>
                 </TableHead>
-                <TableHead className="hidden h-11 text-right text-[#3f3f4e] sm:table-cell">관리비(원)</TableHead>
-                <TableHead className="hidden h-11 text-[#3f3f4e] md:table-cell">전기료</TableHead>
-                {status !== "active" && <TableHead className="hidden h-11 text-[#3f3f4e] sm:table-cell">상태</TableHead>}
+                <TableHead className="hidden h-11 text-right text-text-muted-strong sm:table-cell">관리비(원)</TableHead>
+                <TableHead className="hidden h-11 text-text-muted-strong md:table-cell">전기료</TableHead>
+                {status !== "active" && <TableHead className="hidden h-11 text-text-muted-strong sm:table-cell">상태</TableHead>}
                 <TableHead className="h-11 w-12">
                   <span className="sr-only">동작</span>
                 </TableHead>

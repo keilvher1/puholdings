@@ -98,6 +98,29 @@ export const ADMIN_NAV: AdminNavGroup[] = [
   },
 ]
 
+/** 화면 제목 위 영문 머리말(홈 섹션 머리말 "PORTFOLIO"·"TEAM"과 같은 말투). 화면에서는 대문자로 보인다 */
+const ADMIN_EYEBROWS: Record<AdminNavKey, string> = {
+  home: "Dashboard",
+  billing: "Billing",
+  expenses: "Expenses",
+  rooms: "Rooms",
+  tenants: "Tenants",
+  programs: "Programs",
+  messenger: "Messenger",
+  inquiries: "Inquiries",
+  emails: "Mail",
+  site: "Site content",
+  news: "News",
+  popups: "Popups",
+  portfolio: "Portfolio",
+  stats: "Statistics",
+}
+
+/** PageHeader eyebrow 값. 예: adminEyebrow("billing") → "Billing"(화면에는 BILLING) */
+export function adminEyebrow(key: AdminNavKey): string {
+  return ADMIN_EYEBROWS[key]
+}
+
 /** 배지의 화면 읽기용 문장 */
 export function adminBadgeSrLabel(key: AdminBadgeKey, count: number): string {
   switch (key) {

@@ -111,7 +111,7 @@ export function MeterScanPanel({
 
   return (
     <div>
-      <p className="text-[15px] leading-relaxed text-[#3f3f4e] [word-break:keep-all]">
+      <p className="text-[15px] leading-relaxed text-text-muted-strong [word-break:keep-all]">
         계량기 사진과 한전 고지서 사진을 올리면 숫자를 읽어 칸을 채워요. 자동 인식 결과는 제안이에요. 숫자를 확인한 뒤 저장은 직접 눌러야 해요.
       </p>
 
@@ -181,12 +181,12 @@ export function MeterScanPanel({
       {result && (
         <div className="mt-3 rounded-md border border-warm-tan bg-card p-3">
           {result.meters.length === 0 && !result.kepco ? (
-            <p className="text-[15px] text-[#3f3f4e]">사진에서 읽은 값이 없어요. 사진을 다시 찍거나 직접 입력해 주세요.</p>
+            <p className="text-[15px] text-text-muted-strong">사진에서 읽은 값이 없어요. 사진을 다시 찍거나 직접 입력해 주세요.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[28rem] text-[15px]">
                 <caption className="sr-only">자동 인식 결과</caption>
-                <thead className="text-left text-sm text-[#3f3f4e]">
+                <thead className="text-left text-sm text-text-muted-strong">
                   <tr>
                     <th scope="col" className="pb-1.5 font-medium">항목</th>
                     <th scope="col" className="pb-1.5 text-right font-medium">읽은 값</th>
@@ -203,9 +203,9 @@ export function MeterScanPanel({
                         <ToneBadge tone={CONFIDENCE[m.confidence].tone} icon={false}>
                           {CONFIDENCE[m.confidence].label}
                         </ToneBadge>
-                        <span className="ml-1 text-sm text-[#3f3f4e]">사진 {m.image_index + 1}번</span>
+                        <span className="ml-1 text-sm text-text-muted-strong">사진 {m.image_index + 1}번</span>
                       </td>
-                      <td className="py-1.5 pl-3 text-sm text-[#3f3f4e] [word-break:keep-all]">{m.note}</td>
+                      <td className="py-1.5 pl-3 text-sm text-text-muted-strong [word-break:keep-all]">{m.note}</td>
                     </tr>
                   ))}
                   {result.kepco && (
@@ -216,9 +216,9 @@ export function MeterScanPanel({
                         <ToneBadge tone={CONFIDENCE[result.kepco.confidence].tone} icon={false}>
                           {CONFIDENCE[result.kepco.confidence].label}
                         </ToneBadge>
-                        <span className="ml-1 text-sm text-[#3f3f4e]">사진 {result.kepco.image_index + 1}번</span>
+                        <span className="ml-1 text-sm text-text-muted-strong">사진 {result.kepco.image_index + 1}번</span>
                       </td>
-                      <td className="py-1.5 pl-3 text-sm text-[#3f3f4e] [word-break:keep-all]">{result.kepco.note}</td>
+                      <td className="py-1.5 pl-3 text-sm text-text-muted-strong [word-break:keep-all]">{result.kepco.note}</td>
                     </tr>
                   )}
                 </tbody>

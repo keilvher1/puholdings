@@ -62,30 +62,41 @@ export function AdminLoginForm({ next, supportContact }: { next: string | null; 
   }
 
   return (
-    <div className="flex min-h-screen">
-      {/* 왼쪽 패널(데스크톱): 단색 진남색 + 로고 + 이름 */}
-      <div className="hidden w-[32%] max-w-md shrink-0 flex-col justify-between bg-dark p-10 lg:flex" data-surface="dark">
-        <div className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-md bg-gold text-sm font-black text-dark" aria-hidden>
-            PU
-          </div>
-          <span className="text-base font-semibold text-primary-foreground">포항연합기술지주 관리자</span>
+    <div className="flex min-h-screen bg-card">
+      {/* 왼쪽 패널(데스크톱): 홈 첫 화면과 같은 포항 바다 사진(public/brand/login-hero.jpg — public/home/hero.png를 줄인 것)
+          + 같은 남색 덮개 + 홈 문구. 배경 그림이라 휴대폰(패널 숨김)에서는 받지 않는다 */}
+      <div
+        className="relative hidden w-[44%] max-w-[640px] shrink-0 flex-col justify-between overflow-hidden bg-dark bg-cover bg-[62%_center] p-10 text-white lg:flex xl:p-14"
+        style={{ backgroundImage: "url(/brand/login-hero.jpg)" }}
+        data-surface="dark"
+      >
+        <div aria-hidden className="absolute inset-0 bg-[linear-gradient(180deg,#041a2cb3,#041a2c40_45%,#041a2ce6)]" />
+        <img src="/brand/pu-holdings-logo-white.png" alt="포항연합기술지주" width={473} height={93} className="relative h-9 w-auto self-start" />
+        <div className="relative">
+          <p className="text-xs font-medium uppercase tracking-[0.3em] text-[#d4ecfa]">PU Holdings Admin</p>
+          <p className="mt-6 text-[34px] font-semibold leading-[1.4] tracking-[-0.03em] [word-break:keep-all] xl:text-[40px]">
+            지역의 가능성을 발굴하고,
+            <br />
+            투자로 성장을 연결합니다.
+          </p>
+          <p className="mt-5 text-base leading-relaxed text-[#d4e0eb] [word-break:keep-all]">
+            입주기업 관리비·증빙·프로그램·소통을 한곳에서 관리해요
+          </p>
         </div>
-        <p className="text-sm text-primary-foreground/70">© {new Date().getFullYear()} 포항연합기술지주</p>
+        <div className="relative flex items-end justify-between gap-6 border-t border-white/25 pt-5 text-[11px] tracking-[0.12em] text-[#c5d3de]">
+          <span>UNIVERSITY TECHNOLOGY HOLDINGS &amp; ACCELERATOR</span>
+          <span className="shrink-0 tracking-normal">© {new Date().getFullYear()} 포항연합기술지주</span>
+        </div>
       </div>
 
       {/* 로그인 폼 */}
-      <div className="flex flex-1 items-center justify-center bg-warm-ivory px-4 py-10">
+      <div className="flex flex-1 items-center justify-center px-4 py-10 sm:px-8">
         <div className="w-full max-w-sm">
-          <div className="mb-8 flex items-center gap-3 lg:hidden">
-            <div className="flex size-10 items-center justify-center rounded-md bg-dark text-sm font-black text-gold" aria-hidden>
-              PU
-            </div>
-            <span className="text-base font-semibold text-dark">포항연합기술지주 관리자</span>
-          </div>
+          <img src="/brand/pu-holdings-logo.png" alt="포항연합기술지주" width={473} height={93} className="mb-10 h-8 w-auto lg:hidden" />
 
-          <h1 className="text-2xl font-bold text-dark">관리자 로그인</h1>
-          <p className="mt-1 text-base text-text-secondary">관리자 계정의 이메일과 비밀번호를 입력해 주세요</p>
+          <p aria-hidden className="text-xs font-bold uppercase leading-5 tracking-[0.16em] text-link">Admin login</p>
+          <h1 className="mt-1.5 text-[28px] font-semibold leading-tight tracking-[-0.03em] text-dark">관리자 로그인</h1>
+          <p className="mt-2 text-base text-text-secondary [word-break:keep-all]">관리자 계정의 이메일과 비밀번호를 입력해 주세요</p>
 
           <form onSubmit={handleSubmit} noValidate className="mt-7">
             {error && (

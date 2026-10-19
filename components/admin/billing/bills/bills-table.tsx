@@ -107,17 +107,17 @@ export function BillsTable({ variant, rows, selected, onToggle, onToggleAll, onO
                   />
                 </TableHead>
               )}
-              <TableHead className={cn("text-[#3f3f4e]", !showCheck && "pl-4")}>기업</TableHead>
-              {variant !== "month" && <TableHead className="text-[#3f3f4e]">청구월</TableHead>}
-              {variant === "month" && <TableHead className="text-right text-[#3f3f4e]">임대·관리</TableHead>}
-              {variant === "month" && <TableHead className="text-right text-[#3f3f4e]">전기</TableHead>}
-              <TableHead className="text-right text-[#3f3f4e]">{variant === "month" ? "합계(원)" : "금액(원)"}</TableHead>
-              {variant === "receivable" && <TableHead className="text-[#3f3f4e]">납부 기한</TableHead>}
-              {variant === "receivable" && <TableHead className="text-[#3f3f4e]">경과</TableHead>}
-              <TableHead className="text-[#3f3f4e]">상태</TableHead>
-              {variant === "month" && <TableHead className="text-[#3f3f4e]">발행일</TableHead>}
-              {variant === "month" && <TableHead className="text-[#3f3f4e]">메일</TableHead>}
-              {variant === "draft" && <TableHead className="text-[#3f3f4e]">종류</TableHead>}
+              <TableHead className={cn("text-text-muted-strong", !showCheck && "pl-4")}>기업</TableHead>
+              {variant !== "month" && <TableHead className="text-text-muted-strong">청구월</TableHead>}
+              {variant === "month" && <TableHead className="text-right text-text-muted-strong">임대·관리</TableHead>}
+              {variant === "month" && <TableHead className="text-right text-text-muted-strong">전기</TableHead>}
+              <TableHead className="text-right text-text-muted-strong">{variant === "month" ? "합계(원)" : "금액(원)"}</TableHead>
+              {variant === "receivable" && <TableHead className="text-text-muted-strong">납부 기한</TableHead>}
+              {variant === "receivable" && <TableHead className="text-text-muted-strong">경과</TableHead>}
+              <TableHead className="text-text-muted-strong">상태</TableHead>
+              {variant === "month" && <TableHead className="text-text-muted-strong">발행일</TableHead>}
+              {variant === "month" && <TableHead className="text-text-muted-strong">메일</TableHead>}
+              {variant === "draft" && <TableHead className="text-text-muted-strong">종류</TableHead>}
               <TableHead className="w-12 pr-3">
                 <span className="sr-only">동작</span>
               </TableHead>
@@ -149,23 +149,23 @@ export function BillsTable({ variant, rows, selected, onToggle, onToggleAll, onO
                   <Money value={r.total_amount} unit="none" />
                 </TableCell>
                 {variant === "receivable" && (
-                  <TableCell className="whitespace-nowrap text-[#3f3f4e]">{r.due_date ? dateShort(r.due_date, today) : "기한 없음"}</TableCell>
+                  <TableCell className="whitespace-nowrap text-text-muted-strong">{r.due_date ? dateShort(r.due_date, today) : "기한 없음"}</TableCell>
                 )}
                 {variant === "receivable" && (
-                  <TableCell className={cn("whitespace-nowrap tabular-nums", lateTone(r) ? "font-medium text-red-800" : "text-[#3f3f4e]")}>
+                  <TableCell className={cn("whitespace-nowrap tabular-nums", lateTone(r) ? "font-medium text-red-800" : "text-text-muted-strong")}>
                     {elapsedText(r, today)}
                   </TableCell>
                 )}
                 <TableCell>{badge(r)}</TableCell>
                 {variant === "month" && (
-                  <TableCell className="whitespace-nowrap text-[#3f3f4e]">{r.issued_at && r.status !== "draft" ? dateShort(r.issued_at, today) : "-"}</TableCell>
+                  <TableCell className="whitespace-nowrap text-text-muted-strong">{r.issued_at && r.status !== "draft" ? dateShort(r.issued_at, today) : "-"}</TableCell>
                 )}
                 {variant === "month" && (
                   <TableCell>
                     <MailCell row={r} />
                   </TableCell>
                 )}
-                {variant === "draft" && <TableCell className="text-[#3f3f4e]">{r.is_manual ? "수기" : "정기"}</TableCell>}
+                {variant === "draft" && <TableCell className="text-text-muted-strong">{r.is_manual ? "수기" : "정기"}</TableCell>}
                 <TableCell className="pr-3 text-right" onClick={(e) => e.stopPropagation()}>
                   <RowActions label={`${r.tenant_name} ${billMonthShort(r.period, today)}`} items={rowActions(r)} />
                 </TableCell>
@@ -181,7 +181,7 @@ export function BillsTable({ variant, rows, selected, onToggle, onToggleAll, onO
         {showCheck && (
           <div className="mb-2 flex min-h-11 items-center gap-3 px-1">
             <SelectAllCheckbox total={payable.length} selected={selectedVisible} onToggle={onToggleAll} label="보이는 납부 대기·기한 지남 청구서 모두 선택" />
-            <span className="text-[15px] text-[#3f3f4e]">보이는 납부 대기·기한 지남 모두 선택</span>
+            <span className="text-[15px] text-text-muted-strong">보이는 납부 대기·기한 지남 모두 선택</span>
           </div>
         )}
         {rows.length === 0 ? (
@@ -204,14 +204,14 @@ export function BillsTable({ variant, rows, selected, onToggle, onToggleAll, onO
                       {r.tenant_name}
                       {r.is_manual && <span className="ml-1.5 text-sm font-normal text-text-secondary">수기</span>}
                     </span>
-                    <span className="mt-0.5 flex flex-wrap items-baseline gap-x-2 text-[15px] text-[#3f3f4e]">
+                    <span className="mt-0.5 flex flex-wrap items-baseline gap-x-2 text-[15px] text-text-muted-strong">
                       <span>{billMonthShort(r.period, today)}</span>
                       <span aria-hidden>·</span>
                       <Money value={r.total_amount} strong />
                     </span>
                     <span className="mt-1.5 flex flex-wrap items-center gap-2">
                       <StatusBadge domain="bill" status={b.status} showDefaultDetail={false} />
-                      <span className={cn("text-sm tabular-nums", lateTone(r) ? "font-medium text-red-800" : "text-[#3f3f4e]")}>
+                      <span className={cn("text-sm tabular-nums", lateTone(r) ? "font-medium text-red-800" : "text-text-muted-strong")}>
                         {variant === "receivable" ? elapsedText(r, today) : b.status === "correcting" ? "다시 발행해야 포털에 보여요" : (b.detail ?? (r.due_date ? dueText(r.due_date, today) : ""))}
                       </span>
                       {(unpaidMonths?.get(r.tenant_id) ?? 0) >= LONG_UNPAID_MONTHS && (

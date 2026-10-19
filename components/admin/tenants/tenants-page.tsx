@@ -39,6 +39,7 @@ import { cn } from "@/lib/utils"
 import { TenantCardSheet, CARD_TABS, type CardActionSink } from "./tenant-card-sheet"
 import { activeContractSentence, useTenantForm } from "./tenant-edit-form"
 import { billMailTarget, matchesTenant, roomsLabel, type TenantRow, type TenantSummary } from "@/lib/tenant-model"
+import { adminEyebrow } from "@/lib/help/shell"
 
 export interface TenantsPageProps {
   /** isMailEnabled() — 서버 컴포넌트가 넘긴다 */
@@ -337,7 +338,7 @@ export function TenantsPage({ mailEnabled, bank, contactPhone, supportContact }:
         {t.unpaid_count}건 <Money value={t.unpaid_total} tone={t.unpaid_late_count > 0 ? "danger" : "default"} />
       </span>
     ) : (
-      <span className="text-[#5f6070]">-</span>
+      <span className="text-text-on-beige">-</span>
     )
 
   const mailCell = (t: TenantRow) => {
@@ -346,8 +347,8 @@ export function TenantsPage({ mailEnabled, bank, contactPhone, supportContact }:
     if (m.via === "contact")
       return (
         <span>
-          <span className="block text-[#5f6070]">담당자 메일을 써요</span>
-          <span className="block break-all text-sm text-[#5f6070]">{m.email}</span>
+          <span className="block text-text-on-beige">담당자 메일을 써요</span>
+          <span className="block break-all text-sm text-text-on-beige">{m.email}</span>
         </span>
       )
     return <ToneBadge tone="warning">없음</ToneBadge>
@@ -420,24 +421,24 @@ export function TenantsPage({ mailEnabled, bank, contactPhone, supportContact }:
                     >
                       {t.name}
                     </button>
-                    <div className="flex flex-wrap items-center gap-x-2 text-sm text-[#5f6070]">
+                    <div className="flex flex-wrap items-center gap-x-2 text-sm text-text-on-beige">
                       {t.business_no && <span className="tabular-nums">{t.business_no}</span>}
                       {showStatus && <StatusBadge domain="tenant" status={t.status} />}
                     </div>
                   </TableCell>
-                  <TableCell className="whitespace-nowrap">{roomsLabel(t.contract_rooms) || <span className="text-[#5f6070]">없음</span>}</TableCell>
+                  <TableCell className="whitespace-nowrap">{roomsLabel(t.contract_rooms) || <span className="text-text-on-beige">없음</span>}</TableCell>
                   <TableCell className="max-w-64">{mailCell(t)}</TableCell>
                   <TableCell className="whitespace-nowrap">
                     {t.account_id ? (
                       <span title={t.account_last_login ? dateTime(t.account_last_login) : undefined}>{portalText(t)}</span>
                     ) : (
-                      <span className="text-[#5f6070]">없음</span>
+                      <span className="text-text-on-beige">없음</span>
                     )}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">
                     {recvCell(t)}
                     {Number(t.overpaid_balance ?? 0) > 0 && (
-                      <div className="text-sm text-[#5f6070]">더 받은 금액 {won(t.overpaid_balance)}</div>
+                      <div className="text-sm text-text-on-beige">더 받은 금액 {won(t.overpaid_balance)}</div>
                     )}
                   </TableCell>
                   <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
@@ -465,7 +466,7 @@ export function TenantsPage({ mailEnabled, bank, contactPhone, supportContact }:
                     <span className="font-medium text-dark">{t.name}</span>
                     {showStatus && <StatusBadge domain="tenant" status={t.status} />}
                   </span>
-                  <span className="mt-0.5 block text-[15px] text-[#3f3f4e] [word-break:keep-all]">{parts.join(" · ")}</span>
+                  <span className="mt-0.5 block text-[15px] text-text-muted-strong [word-break:keep-all]">{parts.join(" · ")}</span>
                   {(t.unpaid_count > 0 || m.via === "none") && (
                     <span className="mt-1 flex flex-wrap items-center gap-2">
                       {t.unpaid_count > 0 && <Money value={t.unpaid_total} tone={t.unpaid_late_count > 0 ? "danger" : "default"} strong />}
@@ -488,6 +489,7 @@ export function TenantsPage({ mailEnabled, bank, contactPhone, supportContact }:
     <div className="p-4 sm:p-6 lg:p-8">
       <PageHeader
         title="입주기업"
+        eyebrow={adminEyebrow("tenants")}
         description="입주기업 정보·청구서 받을 메일·포털 계정을 한곳에서 관리해요"
         help={TENANTS_HELP}
         helpContact={supportContact}
@@ -530,7 +532,7 @@ export function TenantsPage({ mailEnabled, bank, contactPhone, supportContact }:
           className="mb-2"
         />
         <div className="mb-3 flex flex-wrap items-center gap-2" role="group" aria-label="조건">
-          <span className="text-[15px] text-[#3f3f4e]">조건:</span>
+          <span className="text-[15px] text-text-muted-strong">조건:</span>
           {FILTERS.map((f) => {
             const on = filters.includes(f.key)
             const n = searched.filter(f.test).length

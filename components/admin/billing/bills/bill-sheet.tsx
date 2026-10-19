@@ -393,7 +393,7 @@ export function BillSheet({
               </Link>
             </Notice>
           )}
-          {comparison && <p className="text-[15px] text-[#3f3f4e] [word-break:keep-all]">{comparison}</p>}
+          {comparison && <p className="text-[15px] text-text-muted-strong [word-break:keep-all]">{comparison}</p>}
 
           <section aria-labelledby="bill-lines-title">
             <h3 id="bill-lines-title" className="mb-2 text-base font-semibold text-dark">
@@ -452,7 +452,7 @@ export function BillSheet({
                       type="button"
                       variant="ghost"
                       size="icon-sm"
-                      className="text-[#3f3f4e] hover:bg-warm-beige hover:text-red-800"
+                      className="text-text-muted-strong hover:bg-warm-beige hover:text-red-800"
                       aria-label={`${e.label || "조정"} 항목 삭제`}
                       onClick={() => setEdits((p) => p.filter((x) => x.key !== e.key))}
                     >
@@ -466,7 +466,7 @@ export function BillSheet({
               </li>
             </ul>
             {Number(bill.supply_amount ?? 0) > 0 && (
-              <p className="mt-1.5 text-sm text-[#3f3f4e]">
+              <p className="mt-1.5 text-sm text-text-muted-strong">
                 임대료·관리비 공급가액 {won(bill.supply_amount)} · 부가세 {won(bill.vat_amount)}
               </p>
             )}
@@ -494,11 +494,11 @@ export function BillSheet({
                     </>
                   )}
                 </div>
-                <p id="ml-amount-hint" className="text-sm text-[#3f3f4e] [word-break:keep-all]">
+                <p id="ml-amount-hint" className="text-sm text-text-muted-strong [word-break:keep-all]">
                   조정 항목은 차감이면 앞에 −(빼기)를 붙여요. 합계는 저장하면 서버가 다시 계산해요.
                 </p>
                 {generated.length > 0 && (
-                  <p className="text-sm text-[#3f3f4e] [word-break:keep-all]">
+                  <p className="text-sm text-text-muted-strong [word-break:keep-all]">
                     임대료·관리비·전기료는 여기서 고치지 않아요. 계약·단가를 고친 뒤 월 마감 3단계에서 다시 만들면 이 값으로 바뀌어요.{" "}
                     <Link href={billingCloseHrefForBillMonth(bill.period, 3)} className="whitespace-nowrap text-link underline underline-offset-2">
                       월 마감 3단계 열기
@@ -543,7 +543,7 @@ export function BillSheet({
                   {dueError}
                 </p>
               )}
-              <p className="mt-1.5 text-sm text-[#3f3f4e]">지금: {bill.due_date ? dueText(bill.due_date, today) : "납부 기한 없음"}</p>
+              <p className="mt-1.5 text-sm text-text-muted-strong">지금: {bill.due_date ? dueText(bill.due_date, today) : "납부 기한 없음"}</p>
             </section>
           )}
 
@@ -567,11 +567,11 @@ export function BillSheet({
                 </div>
               </div>
             ) : (
-              <p className="whitespace-pre-line text-[15px] text-[#3f3f4e] [word-break:keep-all]">{bill.memo?.trim() ? bill.memo : "메모가 없어요"}</p>
+              <p className="whitespace-pre-line text-[15px] text-text-muted-strong [word-break:keep-all]">{bill.memo?.trim() ? bill.memo : "메모가 없어요"}</p>
             )}
           </section>
 
-          <p className="text-sm text-[#3f3f4e]">
+          <p className="text-sm text-text-muted-strong">
             {bill.is_manual ? "수기 청구서예요(추가 청구로 만든 것)" : "정기 청구서예요(월 마감에서 만든 것)"}
             {bill.issued_at && bill.status !== "draft" ? ` · 발행 ${dateShort(bill.issued_at, today)}` : ""}
           </p>
@@ -594,9 +594,9 @@ function LineRow({ line, lines }: { line: BillLine; lines: BillLine[] }) {
           )}
           {d.label}
         </p>
-        {d.description && line.line_type !== "manual" && <p className="mt-0.5 text-sm text-[#3f3f4e]">{d.description}</p>}
+        {d.description && line.line_type !== "manual" && <p className="mt-0.5 text-sm text-text-muted-strong">{d.description}</p>}
         {d.formula && (
-          <details className="mt-0.5 text-sm text-[#3f3f4e]">
+          <details className="mt-0.5 text-sm text-text-muted-strong">
             <summary className="cursor-pointer text-link underline underline-offset-2">계산 보기</summary>
             <p className="mt-1">{d.formula}</p>
           </details>

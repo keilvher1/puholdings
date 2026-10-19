@@ -141,7 +141,7 @@ export function PayDialog({
       <DialogContent showCloseButton={false} className="app-shell flex max-h-[calc(100dvh-2rem)] flex-col gap-4 overflow-hidden p-0 sm:max-w-2xl">
         <DialogHeader className="border-b border-warm-tan px-5 pb-3 pt-5 text-left">
           <DialogTitle className="text-lg font-semibold text-dark">납부 처리</DialogTitle>
-          <DialogDescription className="text-[15px] leading-relaxed text-[#3f3f4e] [word-break:keep-all]">
+          <DialogDescription className="text-[15px] leading-relaxed text-text-muted-strong [word-break:keep-all]">
             통장에 찍힌 입금일을 넣어 주세요. 잘못 바꿨다면 바로 뒤 [되돌리기]나 청구서의 [납부 처리 취소]로 되돌릴 수 있어요.
           </DialogDescription>
         </DialogHeader>
@@ -174,7 +174,7 @@ export function PayDialog({
             </Notice>
           )}
           {done.size > 0 && pending.length > 0 && (
-            <p className="text-[15px] text-[#3f3f4e]">{done.size}건은 납부 완료로 바꿨어요. 아래는 남은 건이에요.</p>
+            <p className="text-[15px] text-text-muted-strong">{done.size}건은 납부 완료로 바꿨어요. 아래는 남은 건이에요.</p>
           )}
 
           {pending.length > 0 && (
@@ -189,7 +189,7 @@ export function PayDialog({
                     오늘
                   </Button>
                 </div>
-                <p id="pay-common-hint" className="mt-1.5 text-sm text-[#3f3f4e]">
+                <p id="pay-common-hint" className="mt-1.5 text-sm text-text-muted-strong">
                   통장에 찍힌 날짜를 넣어 주세요. 고르면 아래 모든 건에 들어가고, 건마다 다시 고칠 수 있어요.
                 </p>
               </div>
@@ -213,7 +213,7 @@ export function PayDialog({
                       />
                       <div className={cn("min-w-0 flex-1", !it.include && "text-text-secondary")}>
                         <p className="font-medium text-dark [word-break:keep-all]">{r.tenant_name}</p>
-                        <p className="text-sm text-[#3f3f4e]">
+                        <p className="text-sm text-text-muted-strong">
                           {billMonthShort(r.period, today)} · <Money value={r.total_amount} />
                         </p>
                       </div>
@@ -251,7 +251,7 @@ export function PayDialog({
                   메모(선택)
                 </Label>
                 <Input id="pay-memo" value={memo} onChange={(e) => setMemo(e.target.value)} placeholder="예: 입금자명 솔바람" className="mt-1.5 h-10 bg-card text-[15px]" aria-describedby="pay-memo-hint" />
-                <p id="pay-memo-hint" className="mt-1 text-sm text-[#3f3f4e]">
+                <p id="pay-memo-hint" className="mt-1 text-sm text-text-muted-strong">
                   적으면 각 청구서의 기존 메모 뒤에 “입금일 입금 확인 · 메모”로 덧붙어요.
                 </p>
               </div>
@@ -261,7 +261,7 @@ export function PayDialog({
 
         <DialogFooter className="flex-row flex-wrap items-center justify-end gap-2 border-t border-warm-tan px-5 py-3">
           {pending.length > 0 && (
-            <p className="mr-auto text-[15px] tabular-nums text-[#3f3f4e]" aria-live="polite">
+            <p className="mr-auto text-[15px] tabular-nums text-text-muted-strong" aria-live="polite">
               {included.length}건 · 합계 {won(includedSum)}
             </p>
           )}

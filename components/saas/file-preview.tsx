@@ -65,7 +65,7 @@ export function FilePreview({
       ) : (
         <iframe src={url} title={title} className="block w-full bg-card" style={{ height }} />
       )}
-      <figcaption className="flex items-center justify-between gap-2 border-t border-warm-tan bg-card px-3 py-2 text-sm text-[#3f3f4e]">
+      <figcaption className="flex items-center justify-between gap-2 border-t border-warm-tan bg-card px-3 py-2 text-sm text-text-muted-strong">
         <span className="truncate">{name ?? ""}</span>
         {openLink}
       </figcaption>
@@ -94,7 +94,7 @@ export function PdfPreviewSheet({
             <SheetTitle className="truncate text-lg font-semibold text-dark">{title}</SheetTitle>
             <SheetDescription className="sr-only">{title}</SheetDescription>
           </div>
-          <Button type="button" variant="ghost" size="icon-sm" className="text-[#3f3f4e] hover:bg-warm-beige hover:text-dark" onClick={() => onOpenChange(false)} aria-label={`${title} 닫기`}>
+          <Button type="button" variant="ghost" size="icon-sm" className="text-text-muted-strong hover:bg-warm-beige hover:text-dark" onClick={() => onOpenChange(false)} aria-label={`${title} 닫기`}>
             <X aria-hidden />
           </Button>
         </SheetHeader>

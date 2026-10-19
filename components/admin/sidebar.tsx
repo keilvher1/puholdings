@@ -87,15 +87,15 @@ export interface AdminShellProps {
 }
 
 // 메뉴 한 줄. 고정 사이드바 36px(높이 예산), 1024px 미만 서랍 44px(휴대폰 누름 영역, 계획서 2.4).
-// 활성: aria-current="page" + 왼쪽 3px 금색 막대 + 굵은 글자
+// 활성: aria-current="page" + 왼쪽 3px 강조 막대 + 굵은 글자. 바탕은 홈 남색(--dark), 강조(--gold)는 어두운 바탕이라 하늘색이다(app/admin/admin-theme.css)
 const ROW = "relative flex w-full items-center gap-3 rounded-md px-3 text-[15px] transition-colors"
 /** 서랍(onNavigate가 있음)이면 44px, 고정 사이드바면 36px */
 const rowHeight = (inDrawer: boolean) => (inDrawer ? "h-11" : "h-9")
-const ROW_IDLE = "font-medium text-white/75 hover:bg-white/5 hover:text-white"
-const ROW_ACTIVE = "bg-white/10 font-semibold text-white"
+const ROW_IDLE = "font-medium text-white/75 hover:bg-white/[0.06] hover:text-white"
+const ROW_ACTIVE = "bg-white/[0.09] font-semibold text-white"
 
 function ActiveBar() {
-  return <span aria-hidden className="absolute inset-y-1.5 left-0 w-[3px] rounded-full bg-gold" />
+  return <span aria-hidden className="absolute inset-y-1.5 left-0 w-[3px] bg-gold" />
 }
 
 function NavLink({
@@ -225,7 +225,7 @@ function UserMenu({ user }: { user: AdminUser }) {
       >
         <span
           aria-hidden
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/15 text-sm font-bold text-white"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold/15 text-sm font-bold text-white ring-1 ring-inset ring-gold/40"
         >
           {initial}
         </span>
@@ -254,13 +254,18 @@ function UserMenu({ user }: { user: AdminUser }) {
   )
 }
 
+// 홈 머리와 같은 공식 로고의 흰색판(public/brand/pu-holdings-logo-white.png — public/home/pu-holdings-logo.png에서
+// 여백을 잘라 내고 색만 흰색으로 바꾼 것) + 홈 칩 모양의 "ADMIN" 표시
 function Logo({ onNavigate }: { onNavigate?: () => void }) {
   return (
-    <Link href="/admin" onClick={onNavigate} className="flex items-center gap-3 rounded-md" aria-label="포항연합기술지주 관리자 홈">
-      <span aria-hidden className="flex h-8 w-8 items-center justify-center rounded-md bg-gold text-sm font-black text-dark">
-        PU
+    <Link href="/admin" onClick={onNavigate} className="flex min-w-0 items-center gap-2.5 rounded-sm" aria-label="포항연합기술지주 관리자 홈">
+      <img src="/brand/pu-holdings-logo-white.png" alt="" width={473} height={93} className="h-7 w-auto shrink-0" />
+      <span
+        aria-hidden
+        className="shrink-0 rounded-sm border border-white/30 px-1.5 text-[10px] font-semibold uppercase leading-[18px] tracking-[0.14em] text-white/75"
+      >
+        Admin
       </span>
-      <span className="text-[15px] font-bold text-white">포항연합기술지주</span>
     </Link>
   )
 }

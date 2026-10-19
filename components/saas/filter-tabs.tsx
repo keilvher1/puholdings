@@ -63,7 +63,7 @@ export function FilterTabs({
             value={o.value}
             aria-label={o.ariaLabel}
             className={cn(
-              "h-11 flex-none shrink-0 gap-1.5 rounded-md border border-warm-tan bg-card px-3 text-[15px] font-medium text-[#3f3f4e] hover:bg-warm-beige hover:text-dark sm:h-9",
+              "h-11 flex-none shrink-0 gap-1.5 rounded-md border border-warm-tan bg-card px-3 text-[15px] font-medium text-text-muted-strong hover:bg-warm-beige hover:text-dark sm:h-9",
               "data-[state=on]:border-dark data-[state=on]:bg-dark data-[state=on]:text-primary-foreground",
               itemClassName,
             )}

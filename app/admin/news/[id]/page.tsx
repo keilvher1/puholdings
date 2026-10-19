@@ -2,6 +2,8 @@ import { redirect, notFound } from "next/navigation"
 import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/db"
 import { NewsForm } from "@/components/admin/news-form"
+import { PageHeader } from "@/components/saas"
+import { adminEyebrow } from "@/lib/help/shell"
 
 async function getNewsItem(id: string) {
   if (id === "new") return null
@@ -38,14 +40,12 @@ export default async function AdminNewsEditPage({
 
   return (
     <div className="p-5 md:p-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-dark">
-          {id === "new" ? "새 소식 작성" : "소식 수정"}
-        </h1>
-        <p className="mt-1 text-sm text-text-secondary">
-          {id === "new" ? "새로운 뉴스 또는 공지사항을 작성합니다" : "기존 게시물을 수정합니다"}
-        </p>
-      </div>
+      <PageHeader
+        title={id === "new" ? "새 소식 작성" : "소식 수정"}
+        eyebrow={adminEyebrow("news")}
+        breadcrumbs={[{ label: "최신 소식", href: "/admin/news" }, { label: id === "new" ? "새 소식 작성" : "소식 수정" }]}
+        description={id === "new" ? "새로운 뉴스 또는 공지사항을 작성합니다" : "기존 게시물을 수정합니다"}
+      />
 
       <NewsForm initialData={news} />
     </div>

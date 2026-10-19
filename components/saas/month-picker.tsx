@@ -59,7 +59,7 @@ export function MonthPicker({
         <PopoverTrigger asChild>
           <Button type="button" variant="outline" size="sm" className={cn("min-w-36 justify-between tabular-nums", outline)} aria-label={`${label}: ${format(cur)} — 다른 달 고르기`}>
             <span className="text-[15px] font-semibold text-dark">{format(cur)}</span>
-            <ChevronsUpDown className="text-[#3f3f4e]" aria-hidden />
+            <ChevronsUpDown className="text-text-muted-strong" aria-hidden />
           </Button>
         </PopoverTrigger>
         <PopoverContent align="start" className="app-shell w-72 p-0">
@@ -82,7 +82,7 @@ export function MonthPicker({
                       className={cn("flex min-h-9 items-center justify-between gap-2 text-[15px]", ym === cur && "font-semibold")}
                     >
                       <span>{format(ym)}</span>
-                      {note && <span className="text-sm text-[#3f3f4e]">{note}</span>}
+                      {note && <span className="text-sm text-text-muted-strong">{note}</span>}
                     </CommandItem>
                   )
                 })}

@@ -124,7 +124,7 @@ function RateList({ groups, unit, onShow }: { groups: RateGroup[]; unit: "평당
 
 function Rule({ children }: { children: ReactNode }) {
   return (
-    <p className="mt-3 rounded-md bg-warm-beige px-3 py-2 text-[15px] leading-relaxed text-[#3f3f4e] [word-break:keep-all]">
+    <p className="mt-3 rounded-md bg-warm-beige px-3 py-2 text-[15px] leading-relaxed text-text-muted-strong [word-break:keep-all]">
       <span className="font-semibold">규칙</span> · {children}
     </p>
   )
@@ -133,7 +133,7 @@ function Rule({ children }: { children: ReactNode }) {
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="grid gap-1 py-2.5 sm:grid-cols-[9rem_1fr] sm:gap-4">
-      <dt className="text-[15px] font-medium text-[#3f3f4e]">{label}</dt>
+      <dt className="text-[15px] font-medium text-text-muted-strong">{label}</dt>
       <dd className="text-base text-dark tabular-nums [word-break:keep-all]">{children}</dd>
     </div>
   )

@@ -4,6 +4,7 @@ import { getDb } from "@/lib/db"
 import { isMailEnabled } from "@/lib/runtime-flags"
 import { AdminPageHeader } from "@/components/admin/admin-ui"
 import { ProgramsManager } from "@/components/admin/programs-manager"
+import { adminEyebrow } from "@/lib/help/shell"
 
 export const metadata = { title: "프로그램" }
 
@@ -33,7 +34,7 @@ export default async function AdminProgramsPage() {
 
   return (
     <div className="p-5 md:p-8">
-      <AdminPageHeader title="프로그램" description="지원사업·교육 프로그램 공고와 신청·제출을 관리해요" />
+      <AdminPageHeader title="프로그램" eyebrow={adminEyebrow("programs")} description="지원사업·교육 프로그램 공고와 신청·제출을 관리해요" />
       <ProgramsManager mailEnabled={isMailEnabled()} recipientCount={recipientCount} />
     </div>
   )

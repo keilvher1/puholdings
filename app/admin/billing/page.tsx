@@ -11,6 +11,7 @@ import { todayKST } from "@/lib/format"
 import { BILLING_CLOSE_HELP } from "@/lib/help/billing-close"
 import { billingCloseHref, type CloseStepNumber } from "@/lib/links"
 import { getSupportContact, isMailEnabled, isMeterScanEnabled } from "@/lib/runtime-flags"
+import { adminEyebrow } from "@/lib/help/shell"
 
 // 관리비 정산 > 월 마감(계획서 4.4.1~4.4.6). ?month=전기 사용월(YYYY-MM)&step=1..4.
 // 파라미터가 없거나 틀리면 기본 마감 월(2.2.1 규칙, getCloseProgress)과 "다음 할 단계"로 연다(오류 화면을 띄우지 않는다).
@@ -46,12 +47,13 @@ export default async function AdminBillingPage({ searchParams }: { searchParams:
     <div className="px-4 py-5 sm:p-6 lg:p-8">
       <PageHeader
         title="월 마감"
+        eyebrow={adminEyebrow("billing")}
         breadcrumbs={[{ label: "관리비 정산" }, { label: "월 마감" }]}
         description="검침 → 전기료 배분 → 청구서 만들기 → 발행 순서로 한 달치 관리비를 마감해요"
         help={BILLING_CLOSE_HELP}
         helpContact={getSupportContact()}
         // 낮은 화면(1280×600 등)에서는 이동 경로·설명 줄을 숨겨 첫 입력칸이 첫 화면에 들어오게(바로 아래 하위 탭이 위치를 알려 준다)
-        className="mb-4 lg:[@media(max-height:760px)]:[&>nav]:hidden lg:[@media(max-height:760px)]:[&>p]:hidden"
+        className="mb-4 lg:[@media(max-height:760px)]:[&>[data-slot=page-header-meta]]:hidden lg:[@media(max-height:760px)]:[&>p]:hidden"
       />
       <BillingNav />
       {status ? (

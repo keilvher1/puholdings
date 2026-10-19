@@ -7,6 +7,7 @@ import { InquiryActions } from "@/components/admin/inquiry-actions"
 import { EmptyState, StatusBadge } from "@/components/saas"
 import { dateTime, relative } from "@/lib/format"
 import { inquiriesHref } from "@/lib/links"
+import { adminEyebrow } from "@/lib/help/shell"
 
 // 문의(계획서 3.4·4.1.7). ?status=new면 새 문의만 보여 준다(그 밖의 값은 전체). 상태 배지는 StatusBadge domain="inquiry".
 // 조회에 실패하면 빈 목록이 아니라 "불러오지 못했어요"를 보인다.
@@ -70,7 +71,7 @@ export default async function AdminInquiriesPage({ searchParams }: { searchParam
 
   return (
     <div className="p-5 md:p-8">
-      <AdminPageHeader title="문의" description="홈페이지로 들어온 문의를 확인해요" />
+      <AdminPageHeader title="문의" eyebrow={adminEyebrow("inquiries")} description="홈페이지로 들어온 문의를 확인해요" />
 
       <nav aria-label="문의 보기" className="mb-4 flex gap-2">
         {tab(inquiriesHref(), "전체", !onlyNew)}

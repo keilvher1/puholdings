@@ -64,7 +64,7 @@ export function ResultCard({
       <dl className="divide-y divide-warm-tan/70 px-4 sm:px-5">
         {rows.map((r, i) => (
           <div key={i} className="flex items-baseline justify-between gap-4 py-2.5">
-            <dt className="text-[15px] text-[#3f3f4e]">{r.label}</dt>
+            <dt className="text-[15px] text-text-muted-strong">{r.label}</dt>
             <dd className={cn("text-right text-[15px] text-dark", r.emphasis && "text-lg font-bold")}>
               {typeof r.value === "number" ? <Money value={r.value} strong={r.emphasis} /> : r.value}
             </dd>

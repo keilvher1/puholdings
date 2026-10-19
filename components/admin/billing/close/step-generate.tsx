@@ -46,7 +46,7 @@ function ReasonPicker({ onChange }: { onChange: (reason: string | null) => void 
       <span role="radiogroup" aria-label="정정 사유" className="mt-1 flex flex-col gap-1">
         {[...REASONS, "기타"].map((r) => (
           <label key={r} className="flex min-h-8 cursor-pointer items-center gap-2 text-[15px]">
-            <input type="radio" name="correction-reason" value={r} checked={choice === r} onChange={() => pick(r)} className="size-4 accent-[#1f2235]" />
+            <input type="radio" name="correction-reason" value={r} checked={choice === r} onChange={() => pick(r)} className="size-4 accent-primary" />
             {r === "기타" ? "기타(직접 입력)" : r}
           </label>
         ))}
@@ -391,7 +391,7 @@ export function StepGenerate({
             { label: "확인 필요", value: `${flagged.length}건` },
           ].map((c) => (
             <div key={c.label} className="bg-card px-4 py-2.5 lg:[@media(max-height:760px)]:flex lg:[@media(max-height:760px)]:items-baseline lg:[@media(max-height:760px)]:gap-2 lg:[@media(max-height:760px)]:py-1.5">
-              <dt className="text-sm text-[#3f3f4e]">{c.label}</dt>
+              <dt className="text-sm text-text-muted-strong">{c.label}</dt>
               <dd className="text-lg font-semibold tabular-nums text-dark lg:[@media(max-height:760px)]:text-base">{c.value}</dd>
             </div>
           ))}
@@ -427,7 +427,7 @@ export function StepGenerate({
               <>
                 <table className="hidden w-full text-[15px] md:table">
                   <caption className="sr-only">{bmName} 지난달 대비</caption>
-                  <thead className="bg-warm-ivory text-left text-sm text-[#3f3f4e]">
+                  <thead className="bg-warm-ivory text-left text-sm text-text-muted-strong">
                     <tr>
                       <th scope="col" className="px-3 py-2 font-medium">기업</th>
                       <th scope="col" className="px-3 py-2 text-right font-medium">지난달(원)</th>
@@ -443,7 +443,7 @@ export function StepGenerate({
                     {shown.map((r) => (
                       <tr key={r.billId} className="border-t border-warm-tan/70">
                         <th scope="row" className="px-3 py-2.5 text-left font-medium text-dark">{r.tenantName}</th>
-                        <td className="px-3 py-2.5 text-right tabular-nums text-[#3f3f4e]">{r.prevTotal === null ? "-" : wonNum(r.prevTotal)}</td>
+                        <td className="px-3 py-2.5 text-right tabular-nums text-text-muted-strong">{r.prevTotal === null ? "-" : wonNum(r.prevTotal)}</td>
                         <td className="px-3 py-2.5 text-right font-medium tabular-nums text-dark">{wonNum(r.total)}</td>
                         <td className="px-3 py-2.5 text-right tabular-nums text-dark">{changeText(r)}</td>
                         <td className="px-3 py-2.5">
@@ -466,7 +466,7 @@ export function StepGenerate({
                         <p className="min-w-0 font-medium text-dark [word-break:keep-all]">{r.tenantName}</p>
                         <p className="shrink-0 text-right font-semibold tabular-nums text-dark">{won(r.total)}</p>
                       </div>
-                      <p className="mt-0.5 text-sm tabular-nums text-[#3f3f4e]">
+                      <p className="mt-0.5 text-sm tabular-nums text-text-muted-strong">
                         지난달 {r.prevTotal === null ? "-" : won(r.prevTotal)} · {changeText(r)}
                       </p>
                       <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2">

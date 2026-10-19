@@ -17,7 +17,7 @@ export function StepHelp({ notes, className }: { notes: StepNote[]; className?: 
             <ChevronRight className="size-4 shrink-0 text-text-secondary group-open:rotate-90" aria-hidden />
             {note.title}
           </summary>
-          <div className="space-y-1.5 border-t border-warm-tan px-4 py-3 text-[15px] leading-relaxed text-[#3f3f4e] [word-break:keep-all]">
+          <div className="space-y-1.5 border-t border-warm-tan px-4 py-3 text-[15px] leading-relaxed text-text-muted-strong [word-break:keep-all]">
             {note.body.map((line, i) => (
               <p key={i}>{line}</p>
             ))}

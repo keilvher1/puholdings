@@ -88,7 +88,7 @@ export function CloseCard({
         />
       </div>
       {why && (
-        <div id="close-card-why" className="mt-2 space-y-1 rounded-md bg-warm-ivory px-3 py-2 text-[15px] leading-relaxed text-[#3f3f4e] [word-break:keep-all]">
+        <div id="close-card-why" className="mt-2 space-y-1 rounded-md bg-warm-ivory px-3 py-2 text-[15px] leading-relaxed text-text-muted-strong [word-break:keep-all]">
           {whyNote.body.map((line, i) => (
             <p key={i}>{line}</p>
           ))}
@@ -96,7 +96,7 @@ export function CloseCard({
       )}
       <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
         <div className="min-w-0 flex-1 basis-80">
-          <p className="text-[15px] leading-relaxed text-[#3f3f4e] [word-break:keep-all]">
+          <p className="text-[15px] leading-relaxed text-text-muted-strong [word-break:keep-all]">
             <span className="lg:[@media(max-height:760px)]:hidden">{parts.join(" · ")}</span>
             <span className="block text-dark xl:inline">
               <span className="hidden xl:inline lg:[@media(max-height:760px)]:hidden"> · </span>
@@ -107,7 +107,7 @@ export function CloseCard({
               ) : issuedAll > 0 ? (
                 <>
                   이 달 마감이 끝났어요
-                  {finishedNote && <span className="text-[#3f3f4e]"> · {finishedNote}(정정이 필요할 때만 확인해 주세요)</span>}
+                  {finishedNote && <span className="text-text-muted-strong"> · {finishedNote}(정정이 필요할 때만 확인해 주세요)</span>}
                 </>
               ) : (
                 "할 일을 확인하고 있어요"
@@ -127,7 +127,7 @@ export function CloseCard({
                   aria-current={step === i + 1 ? "step" : undefined}
                   className={cn(
                     "inline-flex h-8 items-center gap-1 rounded-md border px-2.5 text-sm",
-                    step === i + 1 ? "border-2 border-dark font-semibold text-dark" : "border-warm-tan text-[#3f3f4e] hover:border-dark",
+                    step === i + 1 ? "border-2 border-dark font-semibold text-dark" : "border-warm-tan text-text-muted-strong hover:border-dark",
                   )}
                 >
                   {i + 1} {STEP_LABELS[i]} ·{" "}

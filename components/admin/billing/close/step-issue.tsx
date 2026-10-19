@@ -453,7 +453,7 @@ export function StepIssue({
           <h3 className="text-base font-semibold text-dark">3단계 ‘확인 필요’ {flagged.length}건</h3>
           {baselineAlert(baseline) && <p className="mt-1 text-[15px] font-medium text-amber-800 [word-break:keep-all]">{baselineAlert(baseline)}</p>}
           {flagged.length === 0 ? (
-            <p className="mt-1 text-[15px] text-[#3f3f4e]">지난달보다 크게 달라진 곳·신규·0원·전기 0원이 없어요</p>
+            <p className="mt-1 text-[15px] text-text-muted-strong">지난달보다 크게 달라진 곳·신규·0원·전기 0원이 없어요</p>
           ) : (
             <ul className="mt-1 divide-y divide-warm-tan/70">
               {flagged.map((r) => {
@@ -466,7 +466,7 @@ export function StepIssue({
                       <span className="tabular-nums text-dark">
                         {diff === null ? `신규 ${won(r.total)}` : `${diff >= 0 ? "+" : "−"}${won(Math.abs(diff))}${pct !== null ? `(${diff >= 0 ? "+" : "−"}${Math.abs(pct)}%)` : ""}`}
                       </span>{" "}
-                      <span className="text-[#3f3f4e]">{[...r.events, ...reviewReasons(r, baseline).map((x) => reviewReasonLabel(x, r, baseline))].join(" · ")}</span>
+                      <span className="text-text-muted-strong">{[...r.events, ...reviewReasons(r, baseline).map((x) => reviewReasonLabel(x, r, baseline))].join(" · ")}</span>
                     </span>
                     <button type="button" className="inline-flex min-h-8 items-center text-link underline underline-offset-2 hover:text-dark" onClick={() => onGoStep(3)}>
                       3단계에서 보기
@@ -485,7 +485,7 @@ export function StepIssue({
             <h3 className="text-base font-semibold text-dark">변동이 가장 큰 기업 청구서</h3>
             {sortedDrafts.length > 1 && (
               <div className="grid gap-1">
-                <Label htmlFor="issue-preview-pick" className="text-sm text-[#3f3f4e]">
+                <Label htmlFor="issue-preview-pick" className="text-sm text-text-muted-strong">
                   다른 기업 고르기
                 </Label>
                 <Select value={pickedPreview ? String(pickedPreview) : undefined} onValueChange={(v) => setPreviewId(Number(v))}>

@@ -115,7 +115,7 @@ function ConfirmContent({
           <tbody>
             {summary.map((row, i) => (
               <tr key={i} className="border-b border-warm-tan/70 last:border-b-0">
-                <th scope="row" className="bg-warm-ivory px-3 py-2 text-left font-medium text-[#3f3f4e]">
+                <th scope="row" className="bg-warm-ivory px-3 py-2 text-left font-medium text-text-muted-strong">
                   {row.label}
                 </th>
                 <td className="px-3 py-2 text-right tabular-nums">{row.value}</td>
@@ -234,7 +234,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
             <AlertDialogHeader>
               <AlertDialogTitle className="text-lg font-semibold leading-snug text-dark [word-break:keep-all]">{o.title}</AlertDialogTitle>
               {o.body && (
-                <AlertDialogDescription className="text-base leading-relaxed text-[#3f3f4e] [word-break:keep-all]">{o.body}</AlertDialogDescription>
+                <AlertDialogDescription className="text-base leading-relaxed text-text-muted-strong [word-break:keep-all]">{o.body}</AlertDialogDescription>
               )}
             </AlertDialogHeader>
             <ConfirmContent
@@ -360,7 +360,7 @@ export function ConfirmDialog({
         <AlertDialogHeader>
           <AlertDialogTitle className="text-lg font-semibold leading-snug text-dark [word-break:keep-all]">{options.title}</AlertDialogTitle>
           {options.body && (
-            <AlertDialogDescription className="text-base leading-relaxed text-[#3f3f4e] [word-break:keep-all]">{options.body}</AlertDialogDescription>
+            <AlertDialogDescription className="text-base leading-relaxed text-text-muted-strong [word-break:keep-all]">{options.body}</AlertDialogDescription>
           )}
         </AlertDialogHeader>
         <ConfirmContent

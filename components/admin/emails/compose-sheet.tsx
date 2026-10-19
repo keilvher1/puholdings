@@ -348,7 +348,7 @@ export function ComposeSheet({
                             type="button"
                             onClick={() => setSelected((s) => s.filter((x) => x !== t.id))}
                             aria-label={`${t.name} 빼기`}
-                            className="inline-flex size-8 items-center justify-center rounded-sm text-[#3f3f4e] hover:bg-warm-beige"
+                            className="inline-flex size-8 items-center justify-center rounded-sm text-text-muted-strong hover:bg-warm-beige"
                           >
                             <X className="size-4" aria-hidden />
                           </button>

@@ -132,11 +132,11 @@ export function PortalAccountPanel({
             임시 비밀번호는 지금 한 번만 보여요. 안내문을 복사해 전달해 주세요.
           </Notice>
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-base">
-            <dt className="text-[#5f6070]">포털 주소</dt>
+            <dt className="text-text-on-beige">포털 주소</dt>
             <dd className="min-w-0 break-all">{portalUrl}</dd>
-            <dt className="text-[#5f6070]">로그인 이메일</dt>
+            <dt className="text-text-on-beige">로그인 이메일</dt>
             <dd className="min-w-0 break-all">{issued.email}</dd>
-            <dt className="text-[#5f6070]">임시 비밀번호</dt>
+            <dt className="text-text-on-beige">임시 비밀번호</dt>
             <dd className="flex flex-wrap items-center gap-2">
               <span className="font-mono tabular-nums" aria-live="polite">
                 {showPw ? issued.password : "••••••••"}
@@ -258,9 +258,9 @@ export function PortalAccountPanel({
     >
       <div className="space-y-4">
         <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-base">
-          <dt className="text-[#5f6070]">로그인 이메일</dt>
+          <dt className="text-text-on-beige">로그인 이메일</dt>
           <dd className="min-w-0 break-all">{tenant.account_email}</dd>
-          <dt className="text-[#5f6070]">로그인</dt>
+          <dt className="text-text-on-beige">로그인</dt>
           <dd>
             {last ? (
               <span title={dateTime(last)}>발급 · 마지막 로그인 {relative(last)}</span>

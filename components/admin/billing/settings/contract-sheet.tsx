@@ -473,7 +473,7 @@ function Group({ title, children }: { title: string; children: ReactNode }) {
 function ReadRow({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="grid grid-cols-[4.5rem_1fr] gap-2">
-      <dt className="text-[#3f3f4e]">{label}</dt>
+      <dt className="text-text-muted-strong">{label}</dt>
       <dd className="min-w-0 font-medium text-dark [word-break:keep-all]">{children}</dd>
     </div>
   )
@@ -553,7 +553,7 @@ function Choice({
             htmlFor={`${id}-${o.value}`}
             className="flex min-h-11 cursor-pointer items-start gap-3 rounded-md border border-warm-tan bg-card px-3 py-2.5 hover:bg-warm-ivory has-[[data-state=checked]]:border-dark"
           >
-            <RadioGroupItem id={`${id}-${o.value}`} value={o.value} className="mt-1 border-[#6b6b7b]" />
+            <RadioGroupItem id={`${id}-${o.value}`} value={o.value} className="mt-1 border-text-secondary" />
             <span className="min-w-0">
               <span className="block text-base font-medium text-dark">{o.label}</span>
               <span className="block text-sm text-text-secondary [word-break:keep-all]">{o.hint}</span>

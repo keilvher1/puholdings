@@ -157,9 +157,9 @@ function NoteRow({ note, onChanged, onUndoFailed }: { note: Note; onChanged: () 
           className="flex min-h-12 min-w-0 flex-1 items-center gap-2 px-4 py-2.5 text-left hover:bg-warm-ivory sm:px-5"
         >
           {open ? (
-            <ChevronDown className="size-4 shrink-0 text-[#3f3f4e]" aria-hidden />
+            <ChevronDown className="size-4 shrink-0 text-text-muted-strong" aria-hidden />
           ) : (
-            <ChevronRight className="size-4 shrink-0 text-[#3f3f4e]" aria-hidden />
+            <ChevronRight className="size-4 shrink-0 text-text-muted-strong" aria-hidden />
           )}
           <span className={`min-w-0 flex-1 truncate text-base ${resolved ? "text-text-secondary" : "font-medium text-dark"}`}>
             {note.title}
@@ -187,7 +187,7 @@ function NoteRow({ note, onChanged, onUndoFailed }: { note: Note; onChanged: () 
               {note.answer ? (
                 <div className="rounded-md bg-warm-beige/60 px-3 py-2 text-base">
                   <span className="font-medium text-dark">답변 </span>
-                  <span className="whitespace-pre-line text-[#3f3f4e]">{note.answer}</span>
+                  <span className="whitespace-pre-line text-text-muted-strong">{note.answer}</span>
                 </div>
               ) : (
                 <p className="text-sm text-text-secondary">답변 없이 해결했어요</p>
@@ -363,7 +363,7 @@ export function AdminNotesCard() {
                 type="button"
                 onClick={() => setShowResolved((v) => !v)}
                 aria-expanded={showResolved}
-                className="flex min-h-11 w-full items-center gap-1.5 px-4 text-left text-[15px] text-[#3f3f4e] hover:bg-warm-ivory sm:px-5"
+                className="flex min-h-11 w-full items-center gap-1.5 px-4 text-left text-[15px] text-text-muted-strong hover:bg-warm-ivory sm:px-5"
               >
                 {showResolved ? <ChevronDown className="size-4" aria-hidden /> : <ChevronRight className="size-4" aria-hidden />}
                 해결한 메모 {resolved.length}개 {showResolved ? "접기" : "보기"}

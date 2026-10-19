@@ -50,7 +50,7 @@ export function Callout({
     <div role="note" className={cn("flex items-start gap-3 rounded-md border border-warm-tan bg-warm-beige/50 px-4 py-3 text-base text-dark", className)}>
       <div className="min-w-0 flex-1 leading-relaxed [word-break:keep-all]">
         {title && <p className="font-semibold">{title}</p>}
-        <div className={cn(title && "mt-1", "text-[#3f3f4e]")}>{children}</div>
+        <div className={cn(title && "mt-1", "text-text-muted-strong")}>{children}</div>
         {action && <div className="mt-2 flex flex-wrap gap-2">{action}</div>}
       </div>
       {storageKey && (
@@ -58,7 +58,7 @@ export function Callout({
           type="button"
           onClick={dismiss}
           aria-label="안내 닫기"
-          className="-mr-1 inline-flex size-8 shrink-0 items-center justify-center rounded-md text-[#3f3f4e] hover:bg-warm-beige"
+          className="-mr-1 inline-flex size-8 shrink-0 items-center justify-center rounded-md text-text-muted-strong hover:bg-warm-beige"
         >
           <X className="size-4" aria-hidden />
         </button>

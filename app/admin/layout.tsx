@@ -2,6 +2,13 @@ import { getSession } from "@/lib/auth"
 import { getDb } from "@/lib/db"
 import { getAdminTodo, sidebarBadges, type SidebarBadges } from "@/lib/admin-todo"
 import { AdminShellFrame } from "@/components/admin/admin-shell"
+// 관리자 테마(리뉴얼 홈의 색·형태·글꼴). 토큰은 .admin-theme이 있는 문서 전체에 걸린다 — 자세한 건 admin-theme.css 머리 주석
+import "@/components/home/home-fonts.css"
+import "./admin-theme.css"
+import type { Viewport } from "next"
+
+// 휴대폰 브라우저 주소창 색을 관리자 상단 바(홈 남색)와 맞춘다
+export const viewport: Viewport = { themeColor: "#071d32" }
 
 // 관리자 셸 레이아웃(WP0a). 사이드바·모바일 바 자체는 components/admin/sidebar.tsx(WP0b).
 // - AppProviders(확인창·토스트·툴팁)를 세션이 있는 분기와 없는 분기(로그인·최초 설정 화면) 모두에 감싼다(AdminShellFrame 안).
@@ -19,7 +26,7 @@ import { AdminShellFrame } from "@/components/admin/admin-shell"
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="app-shell min-h-screen bg-warm-ivory">
+    <div className="app-shell admin-theme min-h-screen bg-warm-ivory">
       <div className="contents">
         <AdminShell>{children}</AdminShell>
       </div>

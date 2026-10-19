@@ -50,10 +50,9 @@ export default function AdminSetupPage() {
     <div className="flex min-h-screen items-center justify-center bg-warm-ivory px-4">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-dark text-primary-foreground font-bold">
-            PU
-          </div>
-          <h1 className="text-2xl font-bold text-dark">관리자 계정 생성</h1>
+          <img src="/brand/pu-holdings-logo.png" alt="포항연합기술지주" width={473} height={93} className="mx-auto mb-8 h-8 w-auto" />
+          <p aria-hidden className="text-xs font-bold uppercase leading-5 tracking-[0.16em] text-link">Admin setup</p>
+          <h1 className="mt-1.5 text-[28px] font-semibold leading-tight tracking-[-0.03em] text-dark">관리자 계정 생성</h1>
           <p className="mt-2 text-sm text-text-secondary">
             처음 쓸 관리자 계정을 만들어 주세요
           </p>
@@ -75,7 +74,7 @@ export default function AdminSetupPage() {
               type="text"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full rounded-md border border-warm-tan bg-card px-3 py-2.5 text-sm outline-none focus:border-gold focus:ring-1 focus:ring-gold"
+              className="w-full rounded-md border border-input bg-card px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
               placeholder="홍길동"
               required
             />
@@ -90,7 +89,7 @@ export default function AdminSetupPage() {
               type="email"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="w-full rounded-md border border-warm-tan bg-card px-3 py-2.5 text-sm outline-none focus:border-gold focus:ring-1 focus:ring-gold"
+              className="w-full rounded-md border border-input bg-card px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
               placeholder="admin@puholdings.com"
               required
             />
@@ -105,7 +104,7 @@ export default function AdminSetupPage() {
               type="password"
               value={form.password}
               onChange={(e) => setForm({ ...form, password: e.target.value })}
-              className="w-full rounded-md border border-warm-tan bg-card px-3 py-2.5 text-sm outline-none focus:border-gold focus:ring-1 focus:ring-gold"
+              className="w-full rounded-md border border-input bg-card px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
               placeholder="8자 이상"
               required
             />
@@ -120,7 +119,7 @@ export default function AdminSetupPage() {
               type="password"
               value={form.confirmPassword}
               onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
-              className="w-full rounded-md border border-warm-tan bg-card px-3 py-2.5 text-sm outline-none focus:border-gold focus:ring-1 focus:ring-gold"
+              className="w-full rounded-md border border-input bg-card px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-1 focus:ring-primary"
               placeholder="비밀번호 재입력"
               required
             />
@@ -129,14 +128,14 @@ export default function AdminSetupPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-md bg-dark py-2.5 text-sm font-medium text-primary-foreground hover:bg-dark-muted transition-colors disabled:opacity-50"
+            className="w-full rounded-md bg-primary py-2.5 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
           >
             {loading ? "만드는 중…" : "관리자 계정 생성"}
           </button>
 
           <p className="mt-4 text-center text-xs text-text-secondary">
             이미 계정이 있으신가요?{" "}
-            <a href="/admin/login" className="text-gold hover:underline">
+            <a href="/admin/login" className="text-link underline underline-offset-2 hover:text-dark">
               로그인
             </a>
           </p>

@@ -96,7 +96,7 @@ function shortMD(d: string): string {
 function Row({ label, children, action }: { label: string; children: ReactNode; action?: ReactNode }) {
   return (
     <div className="grid grid-cols-[6.5rem_1fr_auto] items-baseline gap-x-3 gap-y-1 py-2.5">
-      <dt className="text-[15px] text-[#3f3f4e]">{label}</dt>
+      <dt className="text-[15px] text-text-muted-strong">{label}</dt>
       <dd className="min-w-0 text-[15px] text-dark [word-break:keep-all]">{children}</dd>
       <div>{action}</div>
     </div>

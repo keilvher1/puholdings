@@ -13,6 +13,7 @@ import { EmptyState, Notice, PageHeader } from "@/components/saas"
 import { ExpensesNav } from "@/components/admin/expenses/expenses-nav"
 import { PayrollEntryHeaderButton } from "@/components/admin/expenses/payroll-entry"
 import { ReceiptUploader, type UploaderProject } from "@/components/admin/expenses/receipt-uploader"
+import { adminEyebrow } from "@/lib/help/shell"
 
 // 증빙 처리 기본 화면 = 증빙 올리기(계획서 4.2.2).
 // 활성 프로젝트가 하나도 없으면 먼저 사업·프로젝트 등록(온보딩)으로 보낸다.
@@ -76,6 +77,7 @@ export default async function AdminExpensesPage({
     <div className="p-5 md:p-8">
       <PageHeader
         title="증빙 올리기"
+        eyebrow={adminEyebrow("expenses")}
         breadcrumbs={[{ label: "증빙 처리" }, { label: "증빙 올리기" }]}
         description="사업비(정부지원사업) 증빙을 올리고 정리해요"
         help={EXPENSES_UPLOAD_HELP}

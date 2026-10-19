@@ -11,6 +11,7 @@ import { PageHeader, TableSkeleton } from "@/components/saas"
 import { BillingNav } from "@/components/admin/billing-nav"
 import { AddChargeButton, BillsScreen } from "@/components/admin/billing/bills"
 import { DEFAULT_CONTACT, type ContactInfo } from "@/components/sections/footer"
+import { adminEyebrow } from "@/lib/help/shell"
 
 export const metadata = { title: "청구서 · 관리비 정산" }
 
@@ -38,6 +39,7 @@ export default async function AdminBillingBillsPage() {
     <div className="p-4 sm:p-6 lg:p-8">
       <PageHeader
         title="청구서"
+        eyebrow={adminEyebrow("billing")}
         breadcrumbs={[{ label: "관리비 정산", href: "/admin/billing" }, { label: "청구서" }]}
         description="받을 돈을 확인하고, 입금되면 납부 처리해요"
         help={BILLING_BILLS_HELP}

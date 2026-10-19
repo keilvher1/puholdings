@@ -100,11 +100,11 @@ export function RoomsTab() {
           <Table className="text-[15px]">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead className="h-11 text-[#3f3f4e]">호실</TableHead>
-                <TableHead className="h-11 text-[#3f3f4e]">건물</TableHead>
-                <TableHead className="hidden h-11 text-right text-[#3f3f4e] sm:table-cell">층</TableHead>
-                <TableHead className="h-11 text-right text-[#3f3f4e]">면적</TableHead>
-                <TableHead className="hidden h-11 text-[#3f3f4e] md:table-cell">지금 입주 기업</TableHead>
+                <TableHead className="h-11 text-text-muted-strong">호실</TableHead>
+                <TableHead className="h-11 text-text-muted-strong">건물</TableHead>
+                <TableHead className="hidden h-11 text-right text-text-muted-strong sm:table-cell">층</TableHead>
+                <TableHead className="h-11 text-right text-text-muted-strong">면적</TableHead>
+                <TableHead className="hidden h-11 text-text-muted-strong md:table-cell">지금 입주 기업</TableHead>
                 <TableHead className="h-11 w-20">
                   <span className="sr-only">동작</span>
                 </TableHead>
@@ -244,7 +244,7 @@ function RoomDialog({ room, onClose, onSaved }: { room: RoomRow | null; onClose:
             <RadioGroup value={form.building} onValueChange={(v) => setForm({ ...form, building: v as RoomForm["building"] })} className="flex flex-wrap gap-2">
               {(["본관", "공장동"] as const).map((b) => (
                 <label key={b} htmlFor={`room-building-${b}`} className="flex min-h-11 cursor-pointer items-center gap-2 rounded-md border border-warm-tan bg-card px-3 has-[[data-state=checked]]:border-dark">
-                  <RadioGroupItem id={`room-building-${b}`} value={b} className="border-[#6b6b7b]" />
+                  <RadioGroupItem id={`room-building-${b}`} value={b} className="border-text-secondary" />
                   <span className="text-base">{b}</span>
                 </label>
               ))}
@@ -282,7 +282,7 @@ function RoomDialog({ room, onClose, onSaved }: { room: RoomRow | null; onClose:
                 { v: "maintenance", l: "사용 불가", h: "보수 중처럼 쓸 수 없는 호실이에요. 호실 현황에서 빗금으로 보여요" },
               ].map((o) => (
                 <label key={o.v} htmlFor={`room-status-${o.v}`} className="flex min-h-11 cursor-pointer items-start gap-3 rounded-md border border-warm-tan bg-card px-3 py-2.5 has-[[data-state=checked]]:border-dark">
-                  <RadioGroupItem id={`room-status-${o.v}`} value={o.v} className="mt-1 border-[#6b6b7b]" />
+                  <RadioGroupItem id={`room-status-${o.v}`} value={o.v} className="mt-1 border-text-secondary" />
                   <span>
                     <span className="block text-base font-medium text-dark">{o.l}</span>
                     <span className="block text-sm text-text-secondary">{o.h}</span>

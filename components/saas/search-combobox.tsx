@@ -80,7 +80,7 @@ export function SearchCombobox({
           className={cn("h-10 w-full justify-between bg-card px-3 text-left text-base font-normal hover:bg-warm-beige hover:text-dark", className)}
         >
           <span className={cn("truncate", !selected && "text-text-secondary")}>{selected ? selected.label : placeholder}</span>
-          <ChevronsUpDown className="shrink-0 text-[#3f3f4e]" aria-hidden />
+          <ChevronsUpDown className="shrink-0 text-text-muted-strong" aria-hidden />
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="app-shell w-[var(--radix-popover-trigger-width)] min-w-64 p-0">
@@ -103,7 +103,7 @@ export function SearchCombobox({
                 >
                   <span className="min-w-0">
                     <span className={cn("block truncate", it.value === value && "font-semibold")}>{it.label}</span>
-                    {it.hint && <span className="block truncate text-sm text-[#3f3f4e]">{it.hint}</span>}
+                    {it.hint && <span className="block truncate text-sm text-text-muted-strong">{it.hint}</span>}
                   </span>
                   {it.badge}
                 </CommandItem>

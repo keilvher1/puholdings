@@ -44,6 +44,7 @@ import {
   type MailLogRow,
 } from "@/lib/email-model"
 import { ComposeSheet } from "@/components/admin/emails/compose-sheet"
+import { adminEyebrow } from "@/lib/help/shell"
 
 type Counts = { failed: number; not_configured: number; sent: number; queued: number; all: number }
 type View = "failed" | "not_configured" | "sent" | "queued" | "all"
@@ -236,6 +237,7 @@ export function EmailsManager({ mailEnabled }: { mailEnabled: boolean }) {
     <>
       <PageHeader
         title="메일"
+        eyebrow={adminEyebrow("emails")}
         description="시스템이 보낸 메일 기록을 보고, 입주기업에 새 메일을 보내요"
         help={EMAILS_HELP}
         secondary={
@@ -396,11 +398,11 @@ export function EmailsManager({ mailEnabled }: { mailEnabled: boolean }) {
                   <button type="button" onClick={() => setLogParam(log.id)} className="min-w-0 flex-1 px-4 py-3 text-left">
                     <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
                       <StatusBadge domain="email" status={st} showDefaultDetail={false} />
-                      <span className="text-sm text-[#3f3f4e]">{mailTypeLabel(log.template_code)}</span>
+                      <span className="text-sm text-text-muted-strong">{mailTypeLabel(log.template_code)}</span>
                       <span className="ml-auto text-sm text-text-secondary">{relative(log.sent_at || log.created_at)}</span>
                     </span>
                     <span className="mt-1 block truncate text-base font-medium text-dark">{log.tenant_name ?? log.to_email}</span>
-                    <span className="block truncate text-[15px] text-[#3f3f4e]">{log.subject || "-"}</span>
+                    <span className="block truncate text-[15px] text-text-muted-strong">{log.subject || "-"}</span>
                     {st === "failed" && <span className="mt-0.5 block text-sm text-red-800 [word-break:keep-all]">{friendlyMailError(log.error)}</span>}
                   </button>
                   <div className="pt-2">{rowActions(log)}</div>
@@ -490,7 +492,7 @@ function LogSheet({
               <dd className="text-dark [word-break:keep-all]">{friendlyMailError(log.error)}</dd>
               {log.error && (
                 <details className="mt-1">
-                  <summary className="cursor-pointer text-sm text-[#3f3f4e]">오류 원문 보기</summary>
+                  <summary className="cursor-pointer text-sm text-text-muted-strong">오류 원문 보기</summary>
                   <p className="mt-1 break-all rounded-sm bg-warm-beige/60 px-2 py-1 font-mono text-sm text-dark">{log.error}</p>
                 </details>
               )}
@@ -508,7 +510,7 @@ function LogSheet({
           )}
         </dl>
         {showResend && (
-          <p className="rounded-md bg-warm-beige/60 px-3 py-2 text-sm leading-relaxed text-[#3f3f4e] [word-break:keep-all]">
+          <p className="rounded-md bg-warm-beige/60 px-3 py-2 text-sm leading-relaxed text-text-muted-strong [word-break:keep-all]">
             {a.canResend
               ? a.billMail
                 ? "다시 보내면 첨부 PDF 없이 그때 보낸 본문 그대로 다시 가요. PDF가 필요하면 청구서 화면에서 받아 따로 전달해 주세요."
@@ -517,7 +519,7 @@ function LogSheet({
           </p>
         )}
         {st === "not_configured" && (
-          <p className="rounded-md bg-warm-beige/60 px-3 py-2 text-sm text-[#3f3f4e]">메일 발송 설정이 없던 때의 기록이라 다시 보내지 않아요.</p>
+          <p className="rounded-md bg-warm-beige/60 px-3 py-2 text-sm text-text-muted-strong">메일 발송 설정이 없던 때의 기록이라 다시 보내지 않아요.</p>
         )}
       </div>
     </DetailSheet>

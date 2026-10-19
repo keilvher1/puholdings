@@ -215,7 +215,7 @@ export function EmailTemplatesManager() {
                       <span className="block font-medium text-dark">{MAIL_TYPES[t.code]?.label ?? t.name}</span>
                       <span className="block font-mono text-xs text-text-secondary">{t.code}</span>
                     </TableCell>
-                    <TableCell className="align-top text-[#3f3f4e] [word-break:keep-all]">{MAIL_TYPES[t.code]?.when ?? "-"}</TableCell>
+                    <TableCell className="align-top text-text-muted-strong [word-break:keep-all]">{MAIL_TYPES[t.code]?.when ?? "-"}</TableCell>
                     <TableCell className="max-w-72 align-top">
                       <span className="block truncate" title={t.subject}>
                         {t.subject}
@@ -239,7 +239,7 @@ export function EmailTemplatesManager() {
               <li key={t.code}>
                 <button type="button" onClick={() => openEdit(t)} className="block w-full px-4 py-3 text-left">
                   <span className="block text-base font-medium text-dark">{MAIL_TYPES[t.code]?.label ?? t.name}</span>
-                  <span className="block text-sm text-[#3f3f4e] [word-break:keep-all]">{MAIL_TYPES[t.code]?.when ?? ""}</span>
+                  <span className="block text-sm text-text-muted-strong [word-break:keep-all]">{MAIL_TYPES[t.code]?.when ?? ""}</span>
                   <span className="mt-0.5 block truncate text-[15px] text-dark">{t.subject}</span>
                   <span className="block font-mono text-xs text-text-secondary">{t.code}</span>
                 </button>

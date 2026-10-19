@@ -10,18 +10,18 @@ import { statusMeta } from "@/lib/status"
 import { cn } from "@/lib/utils"
 import { leavingText, legendOf, pyeongText, type BoardRoom, type LegendKey } from "./move-model"
 
-// 빗금(사용 불가): CSS 그라데이션 대신 작은 SVG 무늬(차분한 회색 사선)
+// 빗금(사용 불가): CSS 그라데이션 대신 작은 SVG 무늬(차분한 회색 사선 — 관리자 테마의 차가운 회색)
 const HATCH: CSSProperties = {
   backgroundImage:
-    "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M-2 2l4-4M0 8l8-8M6 10l4-4' stroke='%23d9d4c7' stroke-width='1.5'/%3E%3C/svg%3E\")",
-  backgroundColor: "#f4f2ec",
+    "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M-2 2l4-4M0 8l8-8M6 10l4-4' stroke='%23cdd6e0' stroke-width='1.5'/%3E%3C/svg%3E\")",
+  backgroundColor: "#f1f4f8",
 }
 
 export const TILE_CLASS: Record<Exclude<LegendKey, "all">, string> = {
   occupied: "border border-warm-tan bg-card text-dark",
   leaving: "border-2 border-amber-500 bg-card text-dark",
-  vacant: "border border-dashed border-[#8a8a99] bg-transparent text-dark",
-  unavailable: "border border-warm-tan text-[#3f3f4e]",
+  vacant: "border border-dashed border-text-tertiary bg-transparent text-dark",
+  unavailable: "border border-warm-tan text-text-muted-strong",
 }
 
 /** 범례 칩 안의 작은 견본(타일 모양) */
@@ -77,7 +77,7 @@ export function RoomTile({
       <span className="mt-1 line-clamp-2 w-full text-[15px] leading-snug [word-break:keep-all]">
         {kind === "vacant" || kind === "unavailable" ? statusMeta("room", kind).label : room.tenant_name || "-"}
       </span>
-      <span className="mt-1 text-sm text-[#5f6070] tabular-nums">{pyeongText(room.pyeong)}</span>
+      <span className="mt-1 text-sm text-text-on-beige tabular-nums">{pyeongText(room.pyeong)}</span>
       {leaving && (
         // 줄을 바꿀 자리는 구분자 뒤 빈칸 하나: "10월 31일 퇴실 ·" / "29일 남음"(각 덩어리는 끊지 않는다, 타일 밖으로 넘치지 않게)
         <span className="mt-0.5 w-full min-w-0 text-sm font-medium text-amber-800">

@@ -51,7 +51,7 @@ export function HelpButton({ topic, contact = null, label = "도움말" }: { top
                   return (
                     <div key={key}>
                       <dt className="font-medium">{g.term}</dt>
-                      <dd className="text-[15px] text-[#3f3f4e]">{g.definition}</dd>
+                      <dd className="text-[15px] text-text-muted-strong">{g.definition}</dd>
                     </div>
                   )
                 })}

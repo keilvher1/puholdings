@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { AdminPageHeader, AdminCard } from "@/components/admin/admin-ui"
 import { dateTime } from "@/lib/format"
+import { adminEyebrow } from "@/lib/help/shell"
 
 export const dynamic = "force-dynamic"
 
@@ -48,6 +49,7 @@ export default async function AdminPopupsPage() {
     <div className="p-5 md:p-8">
       <AdminPageHeader
         title="팝업"
+        eyebrow={adminEyebrow("popups")}
         description="홈페이지 첫 화면에 뜨는 팝업을 관리해요"
         actions={
           <Button asChild>

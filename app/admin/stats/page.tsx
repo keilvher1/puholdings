@@ -3,6 +3,7 @@ import { getSession } from "@/lib/auth"
 import { getDb, FALLBACK_STATS } from "@/lib/db"
 import { AdminPageHeader } from "@/components/admin/admin-ui"
 import { StatsForm } from "@/components/admin/stats-form"
+import { adminEyebrow } from "@/lib/help/shell"
 
 async function getStats() {
   const sql = getDb()
@@ -25,6 +26,7 @@ export default async function AdminStatsPage() {
     <div className="p-5 md:p-8">
       <AdminPageHeader
         title="통계 관리"
+        eyebrow={adminEyebrow("stats")}
         description="홈페이지 첫 화면에 보이는 핵심 지표를 관리해요"
       />
       <StatsForm initialData={stats as any[]} />

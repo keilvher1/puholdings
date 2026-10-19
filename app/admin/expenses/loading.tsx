@@ -5,6 +5,8 @@ export default function ExpensesLoading() {
   return (
     <div className="p-5 md:p-8">
       <div className="mb-6 space-y-2" aria-hidden>
+        {/* 영문 머리말·이동 경로 줄 자리(PageHeader eyebrow) */}
+        <span className="mt-1 mb-3.5 block h-3 w-48 rounded-sm bg-warm-beige/70" />
         <span className="block h-7 w-40 rounded-sm bg-warm-beige" />
         <span className="block h-4 w-72 max-w-full rounded-sm bg-warm-beige/70" />
       </div>

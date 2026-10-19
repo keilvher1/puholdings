@@ -327,7 +327,7 @@ export function useTenantForm({
               "진행 중인 계약이 없어요"
             )}
           </p>
-          <p className="mt-1 text-sm text-[#5f6070] [word-break:keep-all]">
+          <p className="mt-1 text-sm text-text-on-beige [word-break:keep-all]">
             계약에서 가져와요. 여기서는 고칠 수 없어요 —{" "}
             <Link href={roomsHref(roomCode ? { room: roomCode } : {})} className="text-link underline underline-offset-2">
               호실 현황에서 처리 ›

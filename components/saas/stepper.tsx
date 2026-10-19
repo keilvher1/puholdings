@@ -61,7 +61,7 @@ export function Stepper({
       {cur && (
         <p className="text-[15px] font-medium text-dark sm:hidden">
           {steps.length}단계 중 {curIdx + 1}단계 · {cur.label}
-          <span className="ml-1.5 font-normal text-[#3f3f4e]">({statusText(cur)})</span>
+          <span className="ml-1.5 font-normal text-text-muted-strong">({statusText(cur)})</span>
         </p>
       )}
       <ol className={cn("hidden sm:grid", compact ? "gap-1.5" : "gap-2")} style={{ gridTemplateColumns: `repeat(${steps.length}, minmax(0, 1fr))` }}>
@@ -72,7 +72,7 @@ export function Stepper({
               <span
                 className={cn(
                   "inline-flex size-5 shrink-0 items-center justify-center rounded-full border text-xs font-semibold tabular-nums",
-                  s.status === "done" ? "border-green-800 bg-green-50 text-green-800" : isCur ? "border-dark bg-dark text-primary-foreground" : "border-warm-tan bg-card text-[#3f3f4e]",
+                  s.status === "done" ? "border-green-800 bg-green-50 text-green-800" : isCur ? "border-dark bg-dark text-primary-foreground" : "border-warm-tan bg-card text-text-muted-strong",
                 )}
                 aria-hidden
               >
@@ -91,7 +91,7 @@ export function Stepper({
                 <span
                   className={cn(
                     "inline-flex size-6 shrink-0 items-center justify-center rounded-full border text-xs font-semibold tabular-nums",
-                    s.status === "done" ? "border-green-800 bg-green-50 text-green-800" : isCur ? "border-dark bg-dark text-primary-foreground" : "border-warm-tan bg-card text-[#3f3f4e]",
+                    s.status === "done" ? "border-green-800 bg-green-50 text-green-800" : isCur ? "border-dark bg-dark text-primary-foreground" : "border-warm-tan bg-card text-text-muted-strong",
                   )}
                   aria-hidden
                 >
@@ -102,13 +102,13 @@ export function Stepper({
               <span
                 className={cn(
                   "mt-1 flex items-center gap-1 text-sm",
-                  s.status === "attention" ? "text-amber-800" : s.status === "done" ? "text-green-800" : "text-[#3f3f4e]",
+                  s.status === "attention" ? "text-amber-800" : s.status === "done" ? "text-green-800" : "text-text-muted-strong",
                 )}
               >
                 {s.status === "attention" && <TriangleAlert className="size-3.5 shrink-0" aria-hidden />}
                 <span className="sr-only">{i + 1}단계 </span>
                 {statusText(s)}
-                {s.note && s.status !== "blocked" ? <span className="text-[#3f3f4e]"> · {s.note}</span> : null}
+                {s.note && s.status !== "blocked" ? <span className="text-text-muted-strong"> · {s.note}</span> : null}
               </span>
             </>
           )

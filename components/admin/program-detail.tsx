@@ -37,6 +37,7 @@ import { friendlyError, MSG } from "@/lib/messages"
 import { statusMeta } from "@/lib/status"
 import { AttachmentList } from "@/components/attachment-list"
 import type { Attachment } from "@/lib/db"
+import { adminEyebrow } from "@/lib/help/shell"
 
 interface Program {
   id: number
@@ -225,15 +226,22 @@ export function ProgramDetail({
   return (
     <div>
       <div className="mb-6">
-        <Link
-          href="/admin/programs"
-          className="mb-2 inline-flex min-h-8 items-center gap-1 text-[15px] text-link underline underline-offset-2 hover:text-dark"
-        >
-          <ArrowLeft className="size-4" aria-hidden />
-          프로그램
-        </Link>
+        {/* 머리말 줄은 PageHeader와 같은 모양: "PROGRAMS | ← 프로그램" */}
+        <div className="mb-1.5 flex flex-wrap items-center gap-x-2.5">
+          <p aria-hidden className="text-xs font-bold uppercase leading-5 tracking-[0.16em] text-link">
+            {adminEyebrow("programs")}
+          </p>
+          <span aria-hidden className="h-3 w-px bg-warm-tan" />
+          <Link
+            href="/admin/programs"
+            className="inline-flex min-h-8 items-center gap-1 text-[15px] text-link underline underline-offset-2 hover:text-dark"
+          >
+            <ArrowLeft className="size-4" aria-hidden />
+            프로그램
+          </Link>
+        </div>
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-dark">{program.title}</h1>
+          <h1 data-slot="page-title" className="text-2xl font-bold text-dark">{program.title}</h1>
           <StatusBadge domain="program" status={program.status} />
         </div>
         <p className="mt-1 text-base text-text-secondary">

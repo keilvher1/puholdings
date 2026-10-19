@@ -200,7 +200,7 @@ export function RoomsBoard() {
             기업명·호실 찾기
           </Label>
           <div className="relative">
-            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-[#5f6070]" aria-hidden />
+            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-text-on-beige" aria-hidden />
             <Input
               id="room-search"
               type="search"
@@ -263,7 +263,7 @@ export function RoomsBoard() {
               <div className="divide-y divide-warm-tan border-y border-warm-tan">
                 {g.floors.map((f) => (
                   <div key={String(f.floor)} className="grid gap-2 py-3 sm:grid-cols-[3.5rem_1fr]">
-                    <h3 className="text-[15px] font-semibold text-[#3f3f4e] sm:pt-2">{f.floor === null ? "층 없음" : `${f.floor}층`}</h3>
+                    <h3 className="text-[15px] font-semibold text-text-muted-strong sm:pt-2">{f.floor === null ? "층 없음" : `${f.floor}층`}</h3>
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-[repeat(auto-fill,minmax(9.5rem,1fr))]">
                       {f.rooms.map((r) => (
                         <RoomTile key={r.id} room={r} match={matchRoom(r, q)} selected={selected?.id === r.id} onOpen={() => openRoom(r)} />

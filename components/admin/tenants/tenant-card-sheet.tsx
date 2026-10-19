@@ -72,7 +72,7 @@ function Dl({ rows }: { rows: { label: string; value: ReactNode }[] }) {
     <dl className="grid grid-cols-1 gap-x-4 gap-y-1 text-base sm:grid-cols-[9rem_1fr] sm:gap-y-2">
       {rows.map((r) => (
         <div key={r.label} className="contents">
-          <dt className="pt-1 text-[#5f6070] sm:pt-0">{r.label}</dt>
+          <dt className="pt-1 text-text-on-beige sm:pt-0">{r.label}</dt>
           <dd className="min-w-0 break-words text-dark">{r.value}</dd>
         </div>
       ))}
@@ -428,7 +428,7 @@ export function TenantCardSheet({
                           mail.email
                         ) : mail.via === "contact" ? (
                           <span>
-                            담당자 메일을 써요 <span className="text-[#5f6070]">({mail.email})</span>
+                            담당자 메일을 써요 <span className="text-text-on-beige">({mail.email})</span>
                           </span>
                         ) : (
                           <ToneBadge tone="warning">없음</ToneBadge>
@@ -570,7 +570,7 @@ export function TenantCardSheet({
                     받을 돈 <strong className="font-semibold">{r.count}건</strong>{" "}
                     <Money value={r.total} strong tone={r.late_count > 0 ? "danger" : "default"} />
                   </p>
-                  {oldestText && <p className="mt-0.5 text-[15px] text-[#5f6070]">{oldestText}</p>}
+                  {oldestText && <p className="mt-0.5 text-[15px] text-text-on-beige">{oldestText}</p>}
                   <div className="mt-2">
                     <CopyButton
                       value={paymentNoticeText({ tenantName: tn.name, bills: r.bills, total: r.total, bank, contactPhone })}
@@ -650,14 +650,14 @@ export function TenantCardSheet({
                   rows={[
                     {
                       label: "청구서 받을 메일",
-                      value: tn.tax_email || <span className="text-[#5f6070]">비어 있어요</span>,
+                      value: tn.tax_email || <span className="text-text-on-beige">비어 있어요</span>,
                     },
                     { label: "청구 담당자", value: tn.manager_name || "-" },
                     { label: "담당자 메일", value: tn.contact_email || "-" },
                     { label: "연락처", value: tn.contact_phone || "-" },
                   ]}
                 />
-                <p className="mt-3 text-sm leading-relaxed text-[#5f6070] [word-break:keep-all]">
+                <p className="mt-3 text-sm leading-relaxed text-text-on-beige [word-break:keep-all]">
                   {mail.via === "none"
                     ? "청구서 받을 메일과 담당자 메일이 모두 비어 있어 청구서 발행 메일을 받을 곳이 없어요."
                     : mailEnabled
@@ -697,7 +697,7 @@ export function TenantCardSheet({
                         <li key={e.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5">
                           <span className="text-base text-dark">{mailLabel(e.template_code, e.subject)}</span>
                           <StatusBadge domain="email" status={st} showDefaultDetail={false} />
-                          <span className="ml-auto text-sm text-[#5f6070]" title={dateTime(e.created_at)}>
+                          <span className="ml-auto text-sm text-text-on-beige" title={dateTime(e.created_at)}>
                             {relative(e.created_at)}
                           </span>
                         </li>
@@ -727,7 +727,7 @@ export function TenantCardSheet({
                 <BusyButton type="button" busy={memoSaving} busyLabel={MSG.busySave} onClick={() => void saveMemo()} disabled={!memoDirty && !memoSaving}>
                   메모 저장하기
                 </BusyButton>
-                {memoDirty && <span className="text-sm text-[#5f6070]">저장하지 않은 변경이 있어요</span>}
+                {memoDirty && <span className="text-sm text-text-on-beige">저장하지 않은 변경이 있어요</span>}
               </div>
             </div>
             <Section
@@ -744,7 +744,7 @@ export function TenantCardSheet({
                     <li key={n.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5">
                       <span className="min-w-0 flex-1 text-base text-dark [word-break:keep-all]">{n.title}</span>
                       <StatusBadge domain="note" status={n.status} />
-                      <span className="text-sm text-[#5f6070]">{dateShort(n.created_at)}</span>
+                      <span className="text-sm text-text-on-beige">{dateShort(n.created_at)}</span>
                     </li>
                   ))}
                 </ul>

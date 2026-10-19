@@ -59,7 +59,7 @@ export function FilterBar({
           </div>
         )}
         {filters}
-        {summary && <div className="ml-auto text-[15px] tabular-nums text-[#3f3f4e]">{summary}</div>}
+        {summary && <div className="ml-auto text-[15px] tabular-nums text-text-muted-strong">{summary}</div>}
       </div>
       {chips.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">

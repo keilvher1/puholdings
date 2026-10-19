@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 import { getSession } from "@/lib/auth"
 import { AdminPageHeader } from "@/components/admin/admin-ui"
 import { SiteContentManager } from "@/components/admin/site-content-manager"
+import { adminEyebrow } from "@/lib/help/shell"
 
 export default async function AdminSitePage() {
   const session = await getSession()
@@ -11,6 +12,7 @@ export default async function AdminSitePage() {
     <div className="p-5 md:p-8">
       <AdminPageHeader
         title="사이트 콘텐츠"
+        eyebrow={adminEyebrow("site")}
         description="홈페이지에 보이는 조직·연혁·운영도·연락처 등을 고쳐요"
       />
       <SiteContentManager />

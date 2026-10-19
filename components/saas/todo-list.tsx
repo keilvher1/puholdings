@@ -78,21 +78,22 @@ export function TodoList({
         <li key={it.key}>
           <Link
             href={it.href}
+            data-slot="todo-row"
             className="group flex min-h-12 items-center gap-3 px-4 py-3 hover:bg-warm-ivory"
           >
-            <span className="inline-flex h-6 w-16 shrink-0 items-center justify-center rounded-sm bg-warm-beige px-1 text-xs font-medium text-[#3f3f4e]">
+            <span className="inline-flex h-6 w-16 shrink-0 items-center justify-center rounded-sm bg-warm-beige px-1 text-xs font-medium text-text-muted-strong">
               {it.area}
             </span>
             <span className="min-w-0 flex-1 text-base leading-snug text-dark [word-break:keep-all]">
               {it.tone === "warning" && <TriangleAlert className="mr-1 inline size-4 align-[-2px] text-amber-800" aria-label="확인 필요" />}
               {it.title}
-              {it.detail && <span className="mt-0.5 block text-sm text-[#3f3f4e]">{it.detail}</span>}
+              {it.detail && <span className="mt-0.5 block text-sm text-text-muted-strong">{it.detail}</span>}
             </span>
             <span className="hidden shrink-0 items-center gap-0.5 text-[15px] font-medium text-link underline-offset-2 group-hover:underline sm:inline-flex">
               {it.actionLabel}
               <ChevronRight className="size-4" aria-hidden />
             </span>
-            <ChevronRight className="size-4 shrink-0 text-[#3f3f4e] sm:hidden" aria-hidden />
+            <ChevronRight className="size-4 shrink-0 text-text-muted-strong sm:hidden" aria-hidden />
           </Link>
         </li>
       ))}
@@ -117,24 +118,25 @@ export function StatCard({
 }) {
   const body = (
     <>
-      <span className="block text-sm font-medium text-[#3f3f4e]">{label}</span>
+      <span data-slot="stat-label" className="block text-sm font-medium text-text-muted-strong">{label}</span>
       <span className="mt-0.5 flex items-baseline gap-1">
-        <span className="text-2xl font-bold tabular-nums text-dark">{value}</span>
-        {unit && <span className="text-base text-[#3f3f4e]">{unit}</span>}
+        <span data-slot="stat-value" className="text-2xl font-bold tabular-nums text-dark">{value}</span>
+        {unit && <span className="text-base text-text-muted-strong">{unit}</span>}
       </span>
-      {hint && <span className="mt-0.5 block text-sm text-[#3f3f4e] [word-break:keep-all]">{hint}</span>}
+      {hint && <span className="mt-0.5 block text-sm text-text-muted-strong [word-break:keep-all]">{hint}</span>}
     </>
   )
   if (href) {
     return (
       <Link
         href={href}
+        data-slot="stat-card"
         className={cn("flex min-h-12 items-center justify-between gap-3 rounded-md border border-warm-tan bg-card px-4 py-3 hover:border-dark", className)}
       >
         <span className="min-w-0">{body}</span>
-        <ChevronRight className="size-4 shrink-0 text-[#3f3f4e]" aria-hidden />
+        <ChevronRight className="size-4 shrink-0 text-text-muted-strong" aria-hidden />
       </Link>
     )
   }
-  return <div className={cn("px-1 py-2", className)}>{body}</div>
+  return <div data-slot="stat-card" className={cn("px-1 py-2", className)}>{body}</div>
 }

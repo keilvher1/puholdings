@@ -114,7 +114,7 @@ export function StepAllocation({
     .map(([k, label]) => ({ field: k, label, message: fieldErrors[k]! }))
 
   // 검산 한 줄: 계산 전 / 맞아요 / 원인 한 문장
-  let check: ReactNode = <span className="text-[#3f3f4e]">{metersBlock ? "1단계 검침을 저장하면 계산해요" : "아직 계산 전이에요"}</span>
+  let check: ReactNode = <span className="text-text-muted-strong">{metersBlock ? "1단계 검침을 저장하면 계산해요" : "아직 계산 전이에요"}</span>
   if (preview && alloc) {
     if (preview.factoryA < 0 || (elecTotal !== null && preview.factoryA > elecTotal)) {
       check = (
@@ -174,7 +174,7 @@ export function StepAllocation({
             <WonInput id="f-elecTotal" value={form.elecTotal} onChange={(v) => setForm({ elecTotal: v })} {...ro} {...err("elecTotal")} className={cn("max-w-xs", roClass)} />
             <FieldErr id="f-elecTotal-error">{fieldErrors.elecTotal}</FieldErr>
             <p className="text-sm text-text-secondary">한전 고지서의 청구금액이에요. 사용량(kWh)이 아니에요.</p>
-            <p className="text-[15px] text-[#3f3f4e]">
+            <p className="text-[15px] text-text-muted-strong">
               지난달 {kepco.prevMonthTotal === null ? "기록 없음" : won(kepco.prevMonthTotal)} · {lastYearLabel} {kepco.lastYearTotal === null ? "기록 없음" : won(kepco.lastYearTotal)}
             </p>
             {outlier && <p className="text-[15px] font-medium text-amber-800">지난달과 30% 넘게 달라요. 자릿수를 확인해 주세요</p>}
@@ -202,7 +202,7 @@ export function StepAllocation({
                       {num(helped.raw, 2)} → <b className="font-semibold">{won(helped.rounded)}</b>(원 단위 반올림)
                     </span>
                   ) : (
-                    <span className="text-[#3f3f4e]">사용단가를 넣으면 계산돼요</span>
+                    <span className="text-text-muted-strong">사용단가를 넣으면 계산돼요</span>
                   )}
                 </div>
                 <div className="mt-2 flex flex-wrap gap-2">
@@ -249,7 +249,7 @@ export function StepAllocation({
                 { label: "센터(C)", value: alloc.centerC },
               ].map((c) => (
                 <div key={c.label} className="rounded-md border border-warm-tan px-3 py-2">
-                  <dt className="text-sm text-[#3f3f4e]">{c.label}</dt>
+                  <dt className="text-sm text-text-muted-strong">{c.label}</dt>
                   <dd className="text-lg font-semibold tabular-nums text-dark">
                     <Money value={c.value} tone={c.value < 0 ? "danger" : "default"} />
                   </dd>
@@ -258,13 +258,13 @@ export function StepAllocation({
             </dl>
           ) : metersBlock ? (
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-              <p className="text-[15px] text-[#3f3f4e] [word-break:keep-all]">아직 계산 전이에요. {metersBlock}.</p>
+              <p className="text-[15px] text-text-muted-strong [word-break:keep-all]">아직 계산 전이에요. {metersBlock}.</p>
               <Button type="button" size="sm" variant="outline" className="hover:bg-warm-beige hover:text-dark" onClick={onGoMeters}>
                 1단계로 가기
               </Button>
             </div>
           ) : (
-            <p className="text-[15px] text-[#3f3f4e]">아직 계산 전이에요. 한전 청구금액과 kWh 단가를 넣으면 계산돼요.</p>
+            <p className="text-[15px] text-text-muted-strong">아직 계산 전이에요. 한전 청구금액과 kWh 단가를 넣으면 계산돼요.</p>
           )}
 
           {/* 10평당 청구단가 확정 */}
@@ -273,13 +273,13 @@ export function StepAllocation({
               10평당 청구단가 제안 <b className="font-semibold tabular-nums">{suggested === null ? "계산 전" : won(suggested)}</b>
             </p>
             {locked ? (
-              <p className="text-[15px] text-[#3f3f4e]">
+              <p className="text-[15px] text-text-muted-strong">
                 확정단가 <b className="font-semibold text-dark">{saved.per10 === null ? "확정하지 않음" : won(saved.per10)}</b>
               </p>
             ) : saved.per10 === null && suggested === null ? (
               // 계산 전(검침 미저장 등)에는 확정 체크를 보이지 않는다 — 엉터리 제안값을 한 번에 확정 저장하지 않게
               <>
-                <p className="text-[15px] text-[#3f3f4e] [word-break:keep-all]">
+                <p className="text-[15px] text-text-muted-strong [word-break:keep-all]">
                   제안값이 계산되면 여기서 10평당 단가를 확정해요. 지금 저장하면 확정하지 않은 채로 저장돼요.
                 </p>
                 {form.per10Choice === "manual" && (
@@ -314,7 +314,7 @@ export function StepAllocation({
               </>
             ) : (
               <>
-                <p className="text-[15px] text-[#3f3f4e] [word-break:keep-all]">
+                <p className="text-[15px] text-text-muted-strong [word-break:keep-all]">
                   저장된 값 <b className="font-semibold text-dark">{won(saved.per10)}</b>
                   {per10Differs && <> · 지금 제안 {won(suggested)}(한전 금액·검침·계약 면적이 바뀌면 제안값도 바뀌어요)</>}
                 </p>
@@ -369,7 +369,7 @@ export function StepAllocation({
                 <ChevronRight className="size-4 shrink-0 text-text-secondary group-open:rotate-90" aria-hidden />
                 계산 근거 보기
               </summary>
-              <ul className="space-y-1 border-t border-warm-tan px-4 py-3 text-[15px] leading-relaxed text-[#3f3f4e] [word-break:keep-all]">
+              <ul className="space-y-1 border-t border-warm-tan px-4 py-3 text-[15px] leading-relaxed text-text-muted-strong [word-break:keep-all]">
                 <li>
                   면적별 기업부담 = (한전 청구금액 − 공장동 A) × {form.areaPct ?? "-"}% = {won(Math.round(alloc.areaShare))}
                 </li>

@@ -424,7 +424,7 @@ export function BillsScreen({ bank, phone, mailEnabled }: { bank: BankForGuide; 
               />
               <p className="mb-3 rounded-md border border-warm-tan bg-card px-4 py-2.5 text-[15px] tabular-nums text-dark [word-break:keep-all]">
                 청구 {mSummary.total.count}건 <span className="font-semibold">{won(mSummary.total.sum)}</span>
-                <span className="text-[#3f3f4e]"> · 납부 {won(mSummary.paid.sum)} · 받을 돈 {won(mSummary.receivable.sum)}</span>
+                <span className="text-text-muted-strong"> · 납부 {won(mSummary.paid.sum)} · 받을 돈 {won(mSummary.receivable.sum)}</span>
               </p>
               <FilterBar
                 search={{ value: u.q, onChange: (v) => setU({ q: v || null }), label: "기업 이름 찾기", placeholder: "기업 이름 찾기" }}
@@ -463,7 +463,7 @@ export function BillsScreen({ bank, phone, mailEnabled }: { bank: BankForGuide; 
 
       {view === "draft" && (
         <>
-          <p className="mb-3 text-[15px] text-[#3f3f4e] [word-break:keep-all]">
+          <p className="mb-3 text-[15px] text-text-muted-strong [word-break:keep-all]">
             정기 청구서는 월 마감 4단계에서 한꺼번에 발행해요. 수기 청구서는 청구서를 열어 [이 청구서만 발행]으로 따로 발행할 수 있어요.
           </p>
           <FilterBar
@@ -558,11 +558,11 @@ function ReceivableCards({
               on ? "border-dark bg-warm-beige" : "border-warm-tan",
             )}
           >
-            <span className="block text-sm text-[#3f3f4e]">{BUCKET_CARD_LABEL[b]}</span>
+            <span className="block text-sm text-text-muted-strong">{BUCKET_CARD_LABEL[b]}</span>
             <span className={cn("block text-lg font-semibold tabular-nums", late && c.count > 0 ? "text-red-800" : "text-dark")}>
               {ready ? `${c.count}건` : "…"}
             </span>
-            <span className="block text-sm tabular-nums text-[#3f3f4e]">{ready ? won(c.sum) : ""}</span>
+            <span className="block text-sm tabular-nums text-text-muted-strong">{ready ? won(c.sum) : ""}</span>
           </button>
         )
       })}

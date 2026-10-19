@@ -45,6 +45,7 @@ export function SubNav({ items, label = "하위 메뉴", className }: { items: S
             key={item.href}
             href={item.href}
             aria-current={active ? "page" : undefined}
+            data-slot="sub-nav-link"
             className={cn(
               "-mb-px inline-flex min-h-11 shrink-0 items-center gap-1.5 border-b-2 px-3 text-[15px] transition-colors sm:px-4",
               active ? "border-dark font-semibold text-dark" : "border-transparent font-medium text-text-secondary hover:border-warm-tan hover:text-dark",

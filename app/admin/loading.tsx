@@ -6,6 +6,8 @@ export default function AdminLoading() {
   return (
     <div className="p-4 sm:p-6 lg:p-8" aria-busy="true">
       <div className="mb-6 grid gap-2" aria-hidden>
+        {/* 영문 머리말 줄 자리(PageHeader eyebrow) */}
+        <span className="mb-1.5 mt-1 block h-3 w-24 rounded-sm bg-warm-beige/70" />
         <span className="block h-7 w-40 rounded-sm bg-warm-beige" />
         <span className="block h-4 w-64 max-w-full rounded-sm bg-warm-beige" />
       </div>

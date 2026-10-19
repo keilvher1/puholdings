@@ -82,7 +82,7 @@ export function CopyButton({
             onFocus={(e) => e.currentTarget.select()}
             className="h-8 w-44 rounded-md border border-warm-tan bg-card px-2 text-[15px] tabular-nums text-dark"
           />
-          <span role="status" className="text-sm text-[#3f3f4e]">
+          <span role="status" className="text-sm text-text-muted-strong">
             길게 눌러 복사해 주세요
           </span>
         </span>

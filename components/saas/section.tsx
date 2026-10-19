@@ -37,11 +37,11 @@ export function Section({
   const H = headingLevel === 3 ? "h3" : "h2"
   const hasHead = title !== undefined || description !== undefined || actions !== undefined
   return (
-    <Tag id={id} className={cn("overflow-hidden rounded-md border border-warm-tan bg-card", className)}>
+    <Tag id={id} data-slot="section" className={cn("overflow-hidden rounded-md border border-warm-tan bg-card", className)}>
       {hasHead && (
-        <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 border-b border-warm-tan px-4 py-3 sm:px-5">
+        <div data-slot="section-header" className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 border-b border-warm-tan px-4 py-3 sm:px-5">
           <div className="min-w-0">
-            {title !== undefined && <H className="text-lg font-semibold leading-snug text-dark [word-break:keep-all]">{title}</H>}
+            {title !== undefined && <H data-slot="section-title" className="text-lg font-semibold leading-snug text-dark [word-break:keep-all]">{title}</H>}
             {description !== undefined && (
               <p className="mt-0.5 text-sm leading-relaxed text-text-secondary [word-break:keep-all]">{description}</p>
             )}

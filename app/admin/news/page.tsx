@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { AdminPageHeader, AdminCard } from "@/components/admin/admin-ui"
 import { date } from "@/lib/format"
+import { adminEyebrow } from "@/lib/help/shell"
 
 async function getNews() {
   const sql = getDb()
@@ -31,6 +32,7 @@ export default async function AdminNewsPage() {
     <div className="p-5 md:p-8">
       <AdminPageHeader
         title="최신 소식"
+        eyebrow={adminEyebrow("news")}
         description="뉴스와 공지사항을 관리해요"
         actions={
           <Button asChild>

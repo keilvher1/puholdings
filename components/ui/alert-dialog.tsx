@@ -129,6 +129,8 @@ function AlertDialogAction({
 }: React.ComponentProps<typeof AlertDialogPrimitive.Action>) {
   return (
     <AlertDialogPrimitive.Action
+      data-slot="alert-dialog-action"
+      data-variant="default"
       className={cn(buttonVariants(), className)}
       {...props}
     />
@@ -141,6 +143,8 @@ function AlertDialogCancel({
 }: React.ComponentProps<typeof AlertDialogPrimitive.Cancel>) {
   return (
     <AlertDialogPrimitive.Cancel
+      data-slot="alert-dialog-cancel"
+      data-variant="outline"
       className={cn(buttonVariants({ variant: 'outline' }), className)}
       {...props}
     />

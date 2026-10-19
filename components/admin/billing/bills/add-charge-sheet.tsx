@@ -387,7 +387,7 @@ export function AddChargeSheet({
         {tenant && (
           <div aria-live="polite">
             {checking ? (
-              <p className="text-[15px] text-[#3f3f4e]">{tenant.name}의 {billMonthShort(period, today)} 청구서를 확인하는 중…</p>
+              <p className="text-[15px] text-text-muted-strong">{tenant.name}의 {billMonthShort(period, today)} 청구서를 확인하는 중…</p>
             ) : checkError ? (
               <EmptyState kind="error" title="청구서 상태를 확인하지 못했어요" description={checkError} onRetry={() => {
                   setCheck(null)
@@ -407,7 +407,7 @@ export function AddChargeSheet({
             <h3 id="charge-items-title" className="text-base font-semibold text-dark">
               청구 항목
             </h3>
-            <p id="charge-items-hint" className="text-sm text-[#3f3f4e] [word-break:keep-all]">
+            <p id="charge-items-hint" className="text-sm text-text-muted-strong [word-break:keep-all]">
               항목은 모두 조정 항목으로 들어가요. 차감이면 금액 앞에 −(빼기)를 붙여요.
             </p>
             <ul className="space-y-2">
@@ -454,7 +454,7 @@ export function AddChargeSheet({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="text-[#3f3f4e] hover:bg-warm-beige hover:text-red-800"
+                    className="text-text-muted-strong hover:bg-warm-beige hover:text-red-800"
                     aria-label={`${it.label || `${i + 1}번째`} 항목 삭제`}
                     disabled={items.length === 1}
                     onClick={() => setItems((p) => p.filter((x) => x.key !== it.key))}

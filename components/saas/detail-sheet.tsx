@@ -33,7 +33,7 @@ export function Highlights({ items, className }: { items: HighlightItem[]; class
     <dl className={cn("grid grid-cols-2 gap-px overflow-hidden rounded-md border border-warm-tan bg-warm-tan sm:grid-cols-[repeat(auto-fit,minmax(9rem,1fr))]", className)}>
       {items.map((it, i) => (
         <div key={i} className="min-w-0 bg-card px-3 py-2.5">
-          <dt className="text-sm text-[#3f3f4e]">{it.label}</dt>
+          <dt className="text-sm text-text-muted-strong">{it.label}</dt>
           <dd className="mt-0.5 break-words text-base font-semibold tabular-nums text-dark">{it.value}</dd>
         </div>
       ))}
@@ -123,7 +123,7 @@ export function DetailSheet({
               )}
             </div>
             {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
-            <Button type="button" variant="ghost" size="icon-sm" className="-mr-1 shrink-0 text-[#3f3f4e] hover:bg-warm-beige hover:text-dark" onClick={() => void requestClose()} aria-label={`${title} 닫기`}>
+            <Button type="button" variant="ghost" size="icon-sm" className="-mr-1 shrink-0 text-text-muted-strong hover:bg-warm-beige hover:text-dark" onClick={() => void requestClose()} aria-label={`${title} 닫기`}>
               <X aria-hidden />
             </Button>
           </div>
@@ -137,7 +137,7 @@ export function DetailSheet({
                   <TabsTrigger
                     key={t.value}
                     value={t.value}
-                    className="-mb-px h-11 flex-none rounded-none border-0 border-b-2 border-transparent px-3 text-[15px] font-medium text-[#3f3f4e] shadow-none data-[state=active]:border-dark data-[state=active]:font-semibold data-[state=active]:text-dark data-[state=active]:shadow-none"
+                    className="-mb-px h-11 flex-none rounded-none border-0 border-b-2 border-transparent px-3 text-[15px] font-medium text-text-muted-strong shadow-none data-[state=active]:border-dark data-[state=active]:font-semibold data-[state=active]:text-dark data-[state=active]:shadow-none"
                   >
                     {t.label}
                   </TabsTrigger>

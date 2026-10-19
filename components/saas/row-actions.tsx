@@ -51,7 +51,7 @@ export function RowActions({
   const danger = items.filter((i) => i.danger)
   const render = (it: RowActionItem) => {
     const cls = cn("min-h-9 text-[15px]", it.danger && "text-red-800 focus:bg-red-50 focus:text-red-800")
-    const reason = it.disabled && it.disabledReason ? <span className="block text-sm text-[#3f3f4e]">{it.disabledReason}</span> : null
+    const reason = it.disabled && it.disabledReason ? <span className="block text-sm text-text-muted-strong">{it.disabledReason}</span> : null
     if (it.href && !it.disabled) {
       return (
         <DropdownMenuItem key={it.label} asChild className={cls}>
@@ -74,7 +74,7 @@ export function RowActions({
           variant="ghost"
           size="icon-sm"
           aria-label={triggerLabel ?? `${label} 동작 더 보기`}
-          className={cn("text-[#3f3f4e] hover:bg-warm-beige hover:text-dark", className)}
+          className={cn("text-text-muted-strong hover:bg-warm-beige hover:text-dark", className)}
         >
           <Ellipsis aria-hidden />
         </Button>

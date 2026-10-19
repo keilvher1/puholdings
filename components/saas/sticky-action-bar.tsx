@@ -31,7 +31,7 @@ export function StickyActionBar({
       )}
     >
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        {summary && <p className="min-w-0 flex-1 text-[15px] text-[#3f3f4e] [word-break:keep-all]">{summary}</p>}
+        {summary && <p className="min-w-0 flex-1 text-[15px] text-text-muted-strong [word-break:keep-all]">{summary}</p>}
         <div className="ml-auto flex flex-wrap items-center gap-2">
           {secondary}
           {primary}

@@ -247,7 +247,7 @@ function CollectionEditor({ def }: { def: CollectionDef }) {
                       className="inline-flex size-8 items-center justify-center rounded-md hover:bg-warm-beige"
                     >
                       {item.is_active ? (
-                        <Eye className="h-4 w-4 text-[#3f3f4e]" aria-hidden />
+                        <Eye className="h-4 w-4 text-text-muted-strong" aria-hidden />
                       ) : (
                         <EyeOff className="h-4 w-4 text-text-secondary" aria-hidden />
                       )}

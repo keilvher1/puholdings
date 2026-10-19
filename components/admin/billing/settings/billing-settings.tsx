@@ -60,7 +60,7 @@ export function BillingSettings({ rates = null, bankText = null, supportContact 
           <TabsTrigger
             key={t.value}
             value={t.value}
-            className="h-auto min-h-9 flex-none rounded-[5px] border border-transparent px-3 py-1.5 text-[15px] font-medium text-[#3f3f4e] hover:text-dark data-[state=active]:border-warm-tan data-[state=active]:bg-card data-[state=active]:font-semibold data-[state=active]:text-dark data-[state=active]:shadow-none"
+            className="h-auto min-h-9 flex-none rounded-[5px] border border-transparent px-3 py-1.5 text-[15px] font-medium text-text-muted-strong hover:text-dark data-[state=active]:border-warm-tan data-[state=active]:bg-card data-[state=active]:font-semibold data-[state=active]:text-dark data-[state=active]:shadow-none"
           >
             {t.label}
           </TabsTrigger>

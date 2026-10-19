@@ -519,7 +519,7 @@ export function MessageItem({ message: m, compact = false, inThread = false, pen
         ) : (
           <MemberAvatar
             label={displayName}
-            color={isBot ? "#1a1a2e" : undefined}
+            color={isBot ? "var(--dark)" : undefined}
             icon={isBot ? m.author_label ? <Webhook className="size-4" /> : <Bell className="size-4" /> : undefined}
             size={36}
           />

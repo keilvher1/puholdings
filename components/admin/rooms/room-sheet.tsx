@@ -22,7 +22,7 @@ export type SheetMode = "info" | "movein" | "moveout"
 function Item({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="grid grid-cols-[6.5rem_1fr] gap-x-3 py-2.5">
-      <dt className="text-[15px] text-[#3f3f4e]">{label}</dt>
+      <dt className="text-[15px] text-text-muted-strong">{label}</dt>
       <dd className="min-w-0 text-[15px] text-dark [word-break:keep-all]">{children}</dd>
     </div>
   )

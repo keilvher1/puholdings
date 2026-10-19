@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { AdminPageHeader, AdminCard } from "@/components/admin/admin-ui"
+import { adminEyebrow } from "@/lib/help/shell"
 
 async function getPortfolio() {
   const sql = getDb()
@@ -30,6 +31,7 @@ export default async function AdminPortfolioPage() {
     <div className="p-5 md:p-8">
       <AdminPageHeader
         title="포트폴리오"
+        eyebrow={adminEyebrow("portfolio")}
         description="투자 기업 목록을 관리해요"
         actions={
           <Button asChild>

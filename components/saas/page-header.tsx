@@ -1,12 +1,13 @@
 // 정형 페이지 헤더(PageHeader)·하위 탭(SubNav)·작업 맥락 한 줄(ContextBar) — 계획서 2.1·4.1.2.
 // PageHeader는 서버 컴포넌트에서 부르므로 이 파일에는 "use client"를 붙이지 않는다.
-//   배치: 1줄 브레드크럼(상위는 링크) → 제목(h1 24px/700) + 오른쪽 [도움말][보조][주 버튼][⋯] → 한 줄 설명(16px, 해요체)
+//   배치: 1줄 [영문 머리말 | 브레드크럼(상위는 링크)] → 제목(h1 24px/700, 관리자 테마는 28px/600) + 오른쪽 [도움말][보조][주 버튼][⋯] → 한 줄 설명(16px, 해요체)
 //   주 버튼은 0~1개(채움). 보조는 외곽선. 휴대폰에서는 보조 버튼을 ⋯ 안으로 접는다.
 //   more는 링크만(함수 없음). 클릭 동작이 필요한 메뉴는 클라이언트 컴포넌트가 만든 RowActions 등을 moreMenu 슬롯으로 넘긴다.
 //
 // 사용 예(서버 컴포넌트):
 //   <PageHeader
 //     title="청구서"
+//     eyebrow={adminEyebrow("billing")}   // "BILLING"
 //     description="받을 돈과 월별 청구서를 확인해요"
 //     breadcrumbs={[{ label: "관리비 정산", href: "/admin/billing" }, { label: "청구서" }]}
 //     help={BILLS_HELP} helpContact={getSupportContact()}
@@ -41,6 +42,7 @@ export interface BreadcrumbEntry {
 
 export function PageHeader({
   title,
+  eyebrow,
   description,
   breadcrumbs,
   primary,
@@ -53,6 +55,8 @@ export function PageHeader({
   children,
 }: {
   title: string
+  /** 제목 위 영문 머리말(관리자: lib/help/shell.ts adminEyebrow()). 이동 경로가 있으면 같은 줄 앞에 둔다 */
+  eyebrow?: string
   description?: ReactNode
   breadcrumbs?: BreadcrumbEntry[]
   /** 주 버튼 0~1개(헤더 오른쪽 끝, 채움) */
@@ -72,34 +76,27 @@ export function PageHeader({
   children?: ReactNode
 }) {
   const hasActions = help || secondary || primary || (more && more.length > 0) || moreMenu
+  const hasCrumbs = !!breadcrumbs && breadcrumbs.length > 0
   return (
-    <header className={cn("mb-6", className)}>
-      {breadcrumbs && breadcrumbs.length > 0 && (
-        <Breadcrumb className="mb-1.5" aria-label="이동 경로">
-          <BreadcrumbList className="text-sm text-text-secondary">
-            {breadcrumbs.map((b, i) => {
-              const last = i === breadcrumbs.length - 1
-              // 구분자(li)는 항목(li)과 같은 단계에 둔다 — li 안에 li를 넣으면 하이드레이션 오류가 난다.
-              return (
-                <Fragment key={`${b.label}-${i}`}>
-                  <BreadcrumbItem>
-                    {b.href && !last ? (
-                      <BreadcrumbLink asChild className="text-link underline underline-offset-2 hover:text-dark">
-                        <Link href={b.href}>{b.label}</Link>
-                      </BreadcrumbLink>
-                    ) : (
-                      <BreadcrumbPage className="text-text-secondary">{b.label}</BreadcrumbPage>
-                    )}
-                  </BreadcrumbItem>
-                  {!last && <BreadcrumbSeparator />}
-                </Fragment>
-              )
-            })}
-          </BreadcrumbList>
-        </Breadcrumb>
+    <header data-slot="page-header" className={cn("mb-6", className)}>
+      {/* 머리말과 이동 경로는 한 줄: "BILLING / 관리비 정산 › 청구서" (홈 섹션 머리말 — 파랑 대문자·넓은 자간).
+          짧은 화면에서 이 줄을 숨기려면 className에 [&>[data-slot=page-header-meta]]:hidden */}
+      {(eyebrow || hasCrumbs) && (
+        <div data-slot="page-header-meta" className="mb-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1">
+          {/* 영문 머리말은 꾸밈이다(메뉴 이름을 영어로 한 번 더) — 화면 읽기 프로그램에는 숨긴다 */}
+          {eyebrow && (
+            <p aria-hidden className="text-xs font-bold uppercase leading-5 tracking-[0.16em] text-link">
+              {eyebrow}
+            </p>
+          )}
+          {eyebrow && hasCrumbs && (
+            <span aria-hidden className="h-3 w-px bg-warm-tan" />
+          )}
+          {hasCrumbs && <Crumbs breadcrumbs={breadcrumbs} />}
+        </div>
       )}
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
-        <h1 className="min-w-0 text-2xl font-bold leading-tight text-dark [word-break:keep-all]">{title}</h1>
+        <h1 data-slot="page-title" className="min-w-0 text-2xl font-bold leading-tight text-dark [word-break:keep-all]">{title}</h1>
         {hasActions && (
           // 클라이언트 컴포넌트(도움말·⋯·화면이 넘긴 버튼)는 형제 없는 display: contents 감싸개 안에 둔다.
           // JS 조각이 하이드레이션 때 늦게 오면 React가 그 배열의 부모를 다시 그리는데, 부모가 형제 배열의 한 칸이면
@@ -114,9 +111,40 @@ export function PageHeader({
           </div>
         )}
       </div>
-      {description && <p className="mt-1.5 text-base leading-relaxed text-text-secondary [word-break:keep-all]">{description}</p>}
+      {description && (
+        <p data-slot="page-description" className="mt-1.5 text-base leading-relaxed text-text-secondary [word-break:keep-all]">
+          {description}
+        </p>
+      )}
       {children}
     </header>
+  )
+}
+
+function Crumbs({ breadcrumbs }: { breadcrumbs: BreadcrumbEntry[] }) {
+  return (
+    <Breadcrumb aria-label="이동 경로">
+      <BreadcrumbList className="text-sm text-text-secondary">
+        {breadcrumbs.map((b, i) => {
+          const last = i === breadcrumbs.length - 1
+          // 구분자(li)는 항목(li)과 같은 단계에 둔다 — li 안에 li를 넣으면 하이드레이션 오류가 난다.
+          return (
+            <Fragment key={`${b.label}-${i}`}>
+              <BreadcrumbItem>
+                {b.href && !last ? (
+                  <BreadcrumbLink asChild className="text-link underline underline-offset-2 hover:text-dark">
+                    <Link href={b.href}>{b.label}</Link>
+                  </BreadcrumbLink>
+                ) : (
+                  <BreadcrumbPage className="text-text-secondary">{b.label}</BreadcrumbPage>
+                )}
+              </BreadcrumbItem>
+              {!last && <BreadcrumbSeparator />}
+            </Fragment>
+          )
+        })}
+      </BreadcrumbList>
+    </Breadcrumb>
   )
 }
 

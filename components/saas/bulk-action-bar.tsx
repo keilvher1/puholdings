@@ -45,7 +45,7 @@ export function BulkActionBar({
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 sm:px-6">
         <p className="text-[15px] font-medium text-dark tabular-nums" aria-live="polite">
           {count}건 선택
-          {summary ? <span className="text-[#3f3f4e]"> · {summary}</span> : null}
+          {summary ? <span className="text-text-muted-strong"> · {summary}</span> : null}
         </p>
         <Button type="button" variant="outline" size="sm" className="hover:bg-warm-beige hover:text-dark" onClick={onClear}>
           선택 해제

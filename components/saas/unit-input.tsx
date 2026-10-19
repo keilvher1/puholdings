@@ -75,7 +75,7 @@ function NumberWithUnit({
         className={cn("text-right text-base tabular-nums", inputClassName)}
       />
       <InputGroupAddon align="inline-end">
-        <InputGroupText className="text-[15px] text-[#3f3f4e]">{unit}</InputGroupText>
+        <InputGroupText className="text-[15px] text-text-muted-strong">{unit}</InputGroupText>
       </InputGroupAddon>
     </InputGroup>
   )

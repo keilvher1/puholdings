@@ -13,6 +13,7 @@ import { Callout, PageHeader, Section, StatCard, Stepper, TodoList } from "@/com
 import { AdminNotesCard } from "@/components/admin/admin-notes"
 import { BlockError } from "@/components/admin/dashboard/block-error"
 import { buildHomeTodo, CLOSE_STEP_LABELS, closeSummary } from "@/components/admin/dashboard/home-todo"
+import { adminEyebrow } from "@/lib/help/shell"
 
 // 관리자 홈 = "오늘 할 일"(계획서 3.2·4.1.3). 블록 4개: 오늘 할 일 / 관리비 마감 한 줄 / 운영 현황 + 메모 / 홈페이지 현황(접힘).
 // 블록마다 따로 불러오고, 실패한 블록만 "불러오지 못했어요 [다시 시도]"를 보인다(실패를 0으로 바꾸지 않는다).
@@ -120,6 +121,7 @@ export default async function AdminHomePage() {
     <div className="p-4 sm:p-6 lg:p-8">
       <PageHeader
         title="홈"
+        eyebrow={adminEyebrow("home")}
         description={description}
         help={HOME_HELP}
         helpContact={getSupportContact()}
@@ -279,19 +281,21 @@ function Ops({ data, today }: { data: OpsData; today: string }) {
   return (
     <div className="grid gap-4">
       <div>
-        <p className="flex flex-wrap items-baseline gap-x-2 text-dark">
-          <span className="text-sm font-medium text-[#3f3f4e]">입주율</span>
-          <span className="text-2xl font-bold tabular-nums">{rate}%</span>
-          <span className="text-sm text-text-secondary">
+        {/* 홈 실적 숫자처럼 큰 파랑 숫자(data-slot="stat-value" — app/admin/admin-theme.css) + 가는 막대 */}
+        <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1 text-dark">
+          <p>
+            <span className="block text-sm font-medium text-text-muted-strong">입주율</span>
+            <span data-slot="stat-value" className="mt-1.5 block text-[40px] font-bold leading-none tabular-nums">
+              {rate}
+              <span className="ml-0.5 text-xl">%</span>
+            </span>
+          </p>
+          <p className="pb-0.5 text-sm text-text-secondary">
             {total}실 중 {occupied}실 입주 중
-          </span>
-        </p>
-        <div
-          className="mt-2 h-1.5 overflow-hidden rounded-full bg-warm-beige"
-          role="img"
-          aria-label={`입주율 ${rate}%`}
-        >
-          <div className="h-full bg-dark" style={{ width: `${rate}%` }} />
+          </p>
+        </div>
+        <div className="mt-3 h-1 overflow-hidden bg-warm-beige" role="img" aria-label={`입주율 ${rate}%`}>
+          <div className="h-full bg-primary" style={{ width: `${rate}%` }} />
         </div>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">

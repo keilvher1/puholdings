@@ -32,7 +32,7 @@ export function GuideDialog({
       <DialogContent showCloseButton={false} className="app-shell sm:max-w-lg">
         <DialogHeader className="text-left">
           <DialogTitle className="text-lg font-semibold text-dark">납부 안내 문구</DialogTitle>
-          <DialogDescription className="text-[15px] leading-relaxed text-[#3f3f4e] [word-break:keep-all]">
+          <DialogDescription className="text-[15px] leading-relaxed text-text-muted-strong [word-break:keep-all]">
             복사해서 문자나 카카오톡으로 보내요. 이 화면에서는 메일이 나가지 않아요.
           </DialogDescription>
         </DialogHeader>

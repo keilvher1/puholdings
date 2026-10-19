@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { EmptyState, Notice, PageHeader, Section } from "@/components/saas"
 import { ExpensesNav } from "@/components/admin/expenses/expenses-nav"
 import { DESKTOP_PLATFORMS, DESKTOP_PLATFORM_INFO, formatFileSize, listDesktopReleases } from "@/lib/desktop-release"
+import { adminEyebrow } from "@/lib/help/shell"
 
 // 데스크톱 앱(포연기 증빙함) 설치 안내(계획서 4.2.5).
 // 설치 파일은 비공개 Blob desktop/{버전}/…에 있고, 플랫폼별 최신 버전을 찾아
@@ -75,6 +76,7 @@ export default async function AdminExpensesDesktopPage() {
     <div className="p-5 md:p-8">
       <PageHeader
         title="데스크톱 앱 설치"
+        eyebrow={adminEyebrow("expenses")}
         breadcrumbs={[{ label: "증빙 처리", href: "/admin/expenses" }, { label: "데스크톱 앱 설치" }]}
         description="포연기 증빙함 앱을 컴퓨터에 설치해요"
         help={EXPENSES_DESKTOP_HELP}

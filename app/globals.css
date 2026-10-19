@@ -24,6 +24,8 @@
   --input: #d6cfc7;
   --ring: #c9a84c;
   --radius: 0.375rem;
+  /* rounded-lg·xl이 rounded-md보다 커지는 폭. 관리자 테마(app/admin/admin-theme.css)는 2px로 줄인다 */
+  --radius-step: 4px;
 
   --dark: #1a1a2e;
   --dark-muted: #2d2d44;
@@ -61,8 +63,8 @@
   --color-ring: var(--ring);
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: var(--radius);
-  --radius-lg: calc(var(--radius) + 4px);
-  --radius-xl: calc(var(--radius) + 8px);
+  --radius-lg: calc(var(--radius) + var(--radius-step));
+  --radius-xl: calc(var(--radius) + 2 * var(--radius-step));
   --color-dark: var(--dark);
   --color-dark-muted: var(--dark-muted);
   --color-dark-surface: var(--dark-surface);
