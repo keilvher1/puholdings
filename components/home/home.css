@@ -2818,9 +2818,6 @@ html:has(#puh) {
   transform: none;
   mix-blend-mode: multiply;
 }
-#puh .centered-portrait.portrait-photo img[src*="byun-jeongwoo"] {
-  object-position: center 4%;
-}
 #puh .person-card .bio a {
   text-decoration: underline;
   text-underline-offset: 3px;
